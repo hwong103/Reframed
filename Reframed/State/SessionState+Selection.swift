@@ -59,15 +59,24 @@ extension SessionState {
 
     let coordinator = SelectionCoordinator()
     selectionCoordinator = coordinator
-    coordinator.beginSelection(session: self)
+    coordinator.beginSelection(request: makeSelectionRequest())
 
     if options.rememberLastSelection,
       let savedRect = StateService.shared.lastSelectionRect
     {
       let displayID = StateService.shared.lastDisplayID
-      coordinator.restoreSelection(savedRect, displayID: displayID, session: self)
+      coordinator.restoreSelection(savedRect, displayID: displayID)
       captureTarget = .region(SelectionRect(rect: savedRect, displayID: displayID))
     }
+  }
+
+  private func makeSelectionRequest() -> SelectionRequest {
+    SelectionRequest(
+      timerDelay: options.timerDelay.rawValue,
+      onCountdownStart: { [weak self] in self?.hideToolbar() },
+      onConfirm: { [weak self] selection in self?.confirmSelection(selection) },
+      onCancel: { [weak self] in self?.cancelSelection() }
+    )
   }
 
   func confirmSelection(_ selection: SelectionRect) {

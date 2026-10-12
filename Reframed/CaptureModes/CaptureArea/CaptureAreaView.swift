@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct CaptureAreaView: View {
-  let session: SessionState
+  let timerDelay: Int
+  let onCountdownStart: () -> Void
+  let onCancel: () -> Void
+  let onConfirm: () -> Void
+  let onSelectionRectChange: (CGRect) -> Void
   @State private var x: Int = 0
   @State private var y: Int = 0
   @State private var w: Int = 0
@@ -75,10 +79,10 @@ struct CaptureAreaView: View {
       }
 
       StartRecordingButton(
-        delay: session.options.timerDelay.rawValue,
-        onCountdownStart: { session.hideToolbar() },
-        onCancel: { session.cancelSelection() },
-        action: { session.overlayView?.confirmSelection() },
+        delay: timerDelay,
+        onCountdownStart: onCountdownStart,
+        onCancel: onCancel,
+        action: onConfirm,
         trigger: $triggerStart
       )
 
@@ -137,7 +141,7 @@ struct CaptureAreaView: View {
       width: CGFloat(max(w, 10)),
       height: CGFloat(max(h, 10))
     )
-    session.updateOverlaySelection(rect)
+    onSelectionRectChange(rect)
   }
 
   private func centerSelection() {

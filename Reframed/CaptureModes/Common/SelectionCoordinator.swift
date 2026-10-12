@@ -1,13 +1,37 @@
 import AppKit
 
+/// Everything an area-selection overlay needs from its owner.
+///
+/// Deliberately session-free so a still-capture flow can reuse region
+/// selection without owning a `SessionState`.
+@MainActor
+struct SelectionRequest {
+  let timerDelay: Int
+  let onCountdownStart: () -> Void
+  let onConfirm: (SelectionRect) -> Void
+  let onCancel: () -> Void
+
+  init(
+    timerDelay: Int,
+    onCountdownStart: @escaping () -> Void,
+    onConfirm: @escaping (SelectionRect) -> Void,
+    onCancel: @escaping () -> Void
+  ) {
+    self.timerDelay = timerDelay
+    self.onCountdownStart = onCountdownStart
+    self.onConfirm = onConfirm
+    self.onCancel = onCancel
+  }
+}
+
 @MainActor
 final class SelectionCoordinator {
   private var overlayWindows: [SelectionOverlayWindow] = []
   private var borderWindow: RecordingBorderWindow?
 
-  func beginSelection(session: SessionState) {
+  func beginSelection(request: SelectionRequest) {
     for screen in NSScreen.screens {
-      let window = SelectionOverlayWindow(screen: screen, session: session)
+      let window = SelectionOverlayWindow(screen: screen, request: request)
       overlayWindows.append(window)
       window.orderFrontRegardless()
     }
@@ -15,7 +39,7 @@ final class SelectionCoordinator {
     NSApp.activate(ignoringOtherApps: true)
   }
 
-  func restoreSelection(_ globalRect: CGRect, displayID: CGDirectDisplayID, session: SessionState) {
+  func restoreSelection(_ globalRect: CGRect, displayID: CGDirectDisplayID) {
     guard let screen = NSScreen.screen(for: displayID) else { return }
     guard
       let window = overlayWindows.first(where: {
@@ -31,7 +55,6 @@ final class SelectionCoordinator {
       height: globalRect.height
     )
     overlayView.applyExternalRect(localRect)
-    session.overlayView = overlayView
   }
 
   func showRecordingBorder(screenRect: CGRect) {

@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class SelectionOverlayView: NSView {
-  let session: SessionState
+  let request: SelectionRequest
 
   var selectionRect: CGRect?
   var dragOrigin: CGPoint?
@@ -17,8 +17,8 @@ final class SelectionOverlayView: NSView {
   override var acceptsFirstResponder: Bool { true }
   override var isFlipped: Bool { false }
 
-  init(frame: NSRect, session: SessionState) {
-    self.session = session
+  init(frame: NSRect, request: SelectionRequest) {
+    self.request = request
     super.init(frame: frame)
   }
 
@@ -101,7 +101,6 @@ final class SelectionOverlayView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
-    session.overlayView = self
     let point = convert(event.locationInWindow, from: nil)
 
     if let hosting = controlsHost, !hosting.isHidden {
@@ -207,7 +206,7 @@ final class SelectionOverlayView: NSView {
 
     switch event.keyCode {
     case 53:  // escape
-      session.cancelSelection()
+      request.onCancel()
     case 36:  // enter
       NotificationCenter.default.post(name: .areaSelectionConfirmRequested, object: nil)
     default:

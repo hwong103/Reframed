@@ -10,12 +10,12 @@ extension SelectionOverlayView {
 
   func confirmSelection() {
     guard let rect = selectionRect, rect.width >= 10, rect.height >= 10 else {
-      session.cancelSelection()
+      request.onCancel()
       return
     }
 
     guard let window = self.window else {
-      session.cancelSelection()
+      request.onCancel()
       return
     }
 
@@ -25,7 +25,7 @@ extension SelectionOverlayView {
     let displayID = NSScreen.screens.first { $0.frame.contains(midPoint) }?.displayID ?? CGMainDisplayID()
 
     let selection = SelectionRect(rect: screenRect, displayID: displayID)
-    session.confirmSelection(selection)
+    request.onConfirm(selection)
   }
 
   func updateControlsPanel() {
@@ -36,7 +36,13 @@ extension SelectionOverlayView {
 
     let isFirstCreate = controlsHost == nil
     if isFirstCreate {
-      let view = CaptureAreaView(session: session)
+      let view = CaptureAreaView(
+        timerDelay: request.timerDelay,
+        onCountdownStart: request.onCountdownStart,
+        onCancel: request.onCancel,
+        onConfirm: { [weak self] in self?.confirmSelection() },
+        onSelectionRectChange: { [weak self] rect in self?.applyExternalRect(rect) }
+      )
       let hosting = NSHostingView(rootView: view)
       addSubview(hosting)
       controlsHost = hosting

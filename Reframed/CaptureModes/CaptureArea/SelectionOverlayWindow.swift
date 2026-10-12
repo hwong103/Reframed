@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 final class SelectionOverlayWindow: NSWindow {
-  init(screen: NSScreen, session: SessionState) {
+  init(screen: NSScreen, request: SelectionRequest) {
     super.init(
       contentRect: screen.frame,
       styleMask: .borderless,
@@ -21,7 +21,7 @@ final class SelectionOverlayWindow: NSWindow {
     appearance = NSAppearance(named: .aqua)
 
     let localFrame = CGRect(origin: .zero, size: screen.frame.size)
-    let overlayView = SelectionOverlayView(frame: localFrame, session: session)
+    let overlayView = SelectionOverlayView(frame: localFrame, request: request)
     contentView = overlayView
 
     setFrame(screen.frame, display: true)
