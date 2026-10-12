@@ -23,7 +23,7 @@ jobs:
       - name: Build Release
         run: |
           set -o pipefail
-          xcodebuild -project Reframed.xcodeproj -scheme Reframed -configuration Release build -derivedDataPath .build -destination 'platform=macOS,arch=arm64' CODE_SIGN_IDENTITY="-" "CODE_SIGN_IDENTITY[sdk=macosx*]=-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=""
+          xcodebuild -project Reframed.xcodeproj -scheme Reframed -configuration Release build -derivedDataPath .build -destination 'platform=macOS,arch=arm64' CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=""
 
       - name: Sign and verify
         run: |
