@@ -66,11 +66,11 @@ screenshot ships than after.
 7. Repeat last capture. A hotkey that repeats the previous region without reselecting
    is core Xnip muscle memory. It belongs in P0, and it has to be tracked separately
    from the recording flow's last selection.
-8. Sanitized export. If the document can be reopened and re-exported, a sidecar or a
-   second clipboard flavour can leak pixels that a blur was meant to destroy. Decide
-   the rule: either redaction permanently sanitizes the editable source, or an editable
-   source containing unredacted pixels is never written or published. Weak blur is not
-   a privacy guarantee; offer opaque redaction.
+8. Sanitized export. Settled: annotations are never persisted as an editable document,
+   so nothing on disk or on the pasteboard can leak pixels that a blur was meant to
+   destroy. The rule is simply that every output is a flattened render of the sanitized
+   canvas, and weak blur is still not a privacy guarantee, so opaque redaction is
+   offered as a separate tool.
 9. Memory budget. A 2880x5120 display is about 59 MB per 8-bit image, before the
    rendered cache, blur intermediates, clipboard encodings and undo history. Set
    decoded-pixel and resident-memory limits, do not snapshot bitmaps per undo step, and
@@ -166,7 +166,7 @@ ellipse, line, pen, highlighter, text, blur/pixelate, crop; toolbar with colours
 widths; undo/redo as its own lightweight command stack; copy and save with annotations
 baked in. Acceptance: annotate, undo, crop, blur, copy, paste elsewhere and confirm
 pixels match the canvas at 100%; redaction destroys the underlying pixels in every
-output; drag-out and numbered steps land here if they are daily workflows.
+output. Drag-out lands here (decided); the numbered step tool stays in P3.
 
 P2 - OCR and pinning. About a week. Whole-image and text-snip OCR to the clipboard, and
 pinned panels that behave defined-ly across Spaces, full-screen apps, Mission Control,
@@ -176,12 +176,12 @@ text; a pin survives app switching and full-screen apps and restores its positio
 P3 - polish. About a week. Padding, shadow, background and rounded border reusing the
 video background styles, colour picker, ruler, recent captures strip.
 
-P4 - scrolling capture, as a spike. Several days to a feasibility spike, then decide
-from measured seam quality rather than from the spike finishing. The cheap honest
-version is user-driven: record a fixed region while scrolling with deliberate overlaps,
-import the raw screen track, crop fixed headers, propose seams, let the user correct
-them, and refuse uncertain joins. No automatic scrolling, no end detection, and no
-promise of a clean stitched page on lazy-loaded content.
+P4 - scrolling capture, as a spike after P1 (decided). Several days to a feasibility
+spike, then decide from measured seam quality rather than from the spike finishing. The
+cheap honest version is user-driven: record a fixed region while scrolling with
+deliberate overlaps, import the raw screen track, crop fixed headers, propose seams,
+let the user correct them, and refuse uncertain joins. No automatic scrolling, no end
+detection, and no promise of a clean stitched page on lazy-loaded content.
 
 Retirement criterion for Xnip: the owner's named daily workflows pass end to end -
 capture, annotate, copy, save, and paste into the real destination apps. Not "P1
@@ -208,19 +208,28 @@ optimistic.
 - Frame to `CGImage`: `Compositor/FrameRenderer+Helpers.swift:316`. Useful for offline
   stitching; not needed for direct still capture.
 
-## Decisions needed
+## Decisions
 
-1. Scrolling capture: spike it as described, defer it, or keep Xnip only for long
-   pages. Recommendation: spike after P1, and gate the real build on measured seams.
-2. Re-editable annotations: bake and forget, or a sidecar, and if a sidecar exists,
-   which redaction rule from the contract applies. Recommendation: no sidecar for
-   redacted images, period.
-3. Screenshot naming and destination: configurable prefix in the existing output
-   folder, default `Screenshot-2026-10-13-101027.png`. The export project-name logic
-   does not apply, since stills have no project.
-4. Do screenshots become `.frm` projects? Recommendation: no; standalone files, plus a
-   later "open in editor" action that drops the image in as a background layer.
-5. Retire Xnip when the named daily workflows pass, not at a phase boundary.
+Settled by the owner on 2026-10-13:
+
+1. Scrolling capture: feasibility spike after P1, gated on measured seam quality, and
+   keep Xnip installed for long pages if the spike fails.
+2. Annotations are not re-editable. Bake them into the exported image; no annotation
+   sidecar and no persisted editable document. This removes the whole class of
+   redaction-leak concerns in contract item 8, because there is no editable source
+   containing unredacted pixels to write out.
+3. Screenshot naming: default `Screenshot-2026-10-13-101027.png` in the existing output
+   folder, overridable by a prefix setting.
+4. Screenshots do not become `.frm` projects. Standalone files; an "open in editor"
+   action can come later if it turns out to be useful.
+5. Repeat-last capture is in P0. Drag-out is in P1.
+6. Xnip is retired when the named daily workflows pass end to end, not at a phase
+   boundary.
+
+Still open:
+
+1. The numbered step tool and the ruler: confirm they are wanted before building them
+   in P3 rather than adding them by default.
 
 ## Risks
 
