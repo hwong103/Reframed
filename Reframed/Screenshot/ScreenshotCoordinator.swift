@@ -139,8 +139,19 @@ final class ScreenshotCoordinator {
     ScreenshotActionBarWindow.show(
       near: rect,
       onCopy: { [weak self] in self?.captureSession.copyLastToClipboard() },
-      onSaveAndCopy: { [weak self] in self?.savedStatus() ?? "" }
+      onSaveAndCopy: { [weak self] in self?.savedStatus() ?? "" },
+      onAnnotate: { [weak self] in self?.openAnnotation() }
     )
+  }
+
+  private func openAnnotation() {
+    guard let result = captureSession.lastResult else { return }
+    let reference = SourceImageReference(
+      identifier: "\(result.displayID)-\(result.createdAt.timeIntervalSince1970)",
+      pixelWidth: result.image.width,
+      pixelHeight: result.image.height
+    )
+    AnnotationEditorWindowController.present(image: result.image, reference: reference)
   }
 
   private func savedStatus() -> String {

@@ -4,6 +4,7 @@ struct ScreenshotActionBarView: View {
   let status: String
   let onCopy: () -> Void
   let onSaveAndCopy: () -> Void
+  let onAnnotate: () -> Void
 
   var body: some View {
     HStack(spacing: 6) {
@@ -54,17 +55,11 @@ struct ScreenshotActionBarView: View {
   }
 
   private var annotateButton: some View {
-    Button(action: {}) {
-      itemLabel(icon: "pencil.tip.crop.circle", title: "Annotate")
-        .foregroundStyle(.white.opacity(0.35))
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: Radius.md))
-    }
-    .buttonStyle(.plain)
-    .disabled(true)
-    .overlay(
-      Color.clear
-        .contentShape(Rectangle())
-        .help("Annotation arrives in a later update")
+    actionButton(
+      icon: "pencil.tip.crop.circle",
+      title: "Annotate",
+      help: "Annotate the capture",
+      action: onAnnotate
     )
   }
 

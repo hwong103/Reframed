@@ -9,6 +9,7 @@ final class ScreenshotActionBarWindow: NSPanel {
   private let captureRect: CGRect
   private let onCopy: () -> Void
   private let onSaveAndCopy: () -> String
+  private let onAnnotate: () -> Void
   private var dismissTask: Task<Void, Never>?
 
   static var isVisible: Bool { current != nil }
@@ -16,10 +17,16 @@ final class ScreenshotActionBarWindow: NSPanel {
   static func show(
     near rect: CGRect,
     onCopy: @escaping () -> Void,
-    onSaveAndCopy: @escaping () -> String
+    onSaveAndCopy: @escaping () -> String,
+    onAnnotate: @escaping () -> Void
   ) {
     current?.dismissNow()
-    let window = ScreenshotActionBarWindow(captureRect: rect, onCopy: onCopy, onSaveAndCopy: onSaveAndCopy)
+    let window = ScreenshotActionBarWindow(
+      captureRect: rect,
+      onCopy: onCopy,
+      onSaveAndCopy: onSaveAndCopy,
+      onAnnotate: onAnnotate
+    )
     current = window
     window.render(status: "Copied to clipboard")
     window.orderFrontRegardless()
@@ -30,10 +37,16 @@ final class ScreenshotActionBarWindow: NSPanel {
     current?.dismissNow()
   }
 
-  private init(captureRect: CGRect, onCopy: @escaping () -> Void, onSaveAndCopy: @escaping () -> String) {
+  private init(
+    captureRect: CGRect,
+    onCopy: @escaping () -> Void,
+    onSaveAndCopy: @escaping () -> String,
+    onAnnotate: @escaping () -> Void
+  ) {
     self.captureRect = captureRect
     self.onCopy = onCopy
     self.onSaveAndCopy = onSaveAndCopy
+    self.onAnnotate = onAnnotate
 
     super.init(
       contentRect: .zero,
@@ -82,6 +95,11 @@ final class ScreenshotActionBarWindow: NSPanel {
         guard let self else { return }
         self.render(status: self.onSaveAndCopy())
         self.scheduleDismiss(after: .seconds(2.4))
+      },
+      onAnnotate: { [weak self] in
+        guard let self else { return }
+        self.dismissNow()
+        self.onAnnotate()
       }
     )
     let hosting = NSHostingView(rootView: view)
