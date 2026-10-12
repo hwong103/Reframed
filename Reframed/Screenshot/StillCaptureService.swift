@@ -79,6 +79,47 @@ struct StillCaptureService {
     )
   }
 
+  func captureScreens(
+    excludingApplications: [SCRunningApplication] = []
+  ) async throws -> [CGDirectDisplayID: CGImage] {
+    var images: [CGDirectDisplayID: CGImage] = [:]
+    var firstError: Error?
+    for screen in NSScreen.screens {
+      do {
+        let result = try await captureDisplay(screen.displayID, excludingApplications: excludingApplications)
+        images[screen.displayID] = result.image
+      } catch {
+        firstError = firstError ?? error
+      }
+    }
+    if images.isEmpty, let firstError {
+      throw firstError
+    }
+    return images
+  }
+
+  func crop(_ selection: SelectionRect, from image: CGImage) throws -> ScreenshotResult {
+    let scale = selection.backingScaleFactor > 0 ? selection.backingScaleFactor : 1
+    let points = selection.stillCaptureRect
+    let pixelRect = CGRect(
+      x: points.minX * scale,
+      y: points.minY * scale,
+      width: points.width * scale,
+      height: points.height * scale
+    ).integral
+    let imageBounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+    let cropped = pixelRect.intersection(imageBounds)
+    guard cropped.width >= 1, cropped.height >= 1, let croppedImage = image.cropping(to: cropped) else {
+      throw ScreenshotCaptureError.emptySelection
+    }
+    return ScreenshotResult(
+      image: croppedImage,
+      displayID: selection.displayID,
+      pointSize: points.size,
+      backingScale: scale
+    )
+  }
+
   private func resolveScreen(_ displayID: CGDirectDisplayID) throws -> NSScreen {
     guard let screen = NSScreen.screen(for: displayID) else {
       throw ScreenshotCaptureError.displayNotFound(displayID)

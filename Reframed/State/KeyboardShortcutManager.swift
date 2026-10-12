@@ -88,6 +88,10 @@ final class KeyboardShortcutManager {
         return false
       }
 
+      if keyCode == 53, manager.screenshotCoordinator.handleEscape() {
+        return true
+      }
+
       for action in ShortcutAction.allCases where action.isGlobal {
         let shortcut = ConfigService.shared.shortcut(for: action)
         guard shortcut.matchesCGEvent(keyCode: keyCode, flags: flags) else { continue }

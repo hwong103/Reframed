@@ -7,10 +7,11 @@ import ScreenCaptureKit
 final class ScreenshotCoordinator {
   private let captureSession: ScreenshotSession
   private let selectionCoordinator = SelectionCoordinator()
-  private weak var appState: SessionState?
-  private var exclusions: [SCRunningApplication] = []
-  private var previousApplication: NSRunningApplication?
-  private var isCapturing = false
+  weak var appState: SessionState?
+  var exclusions: [SCRunningApplication] = []
+  var previousApplication: NSRunningApplication?
+  var isCapturing = false
+  var frozenDisplays: [CGDirectDisplayID: CGImage] = [:]
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -23,15 +24,7 @@ final class ScreenshotCoordinator {
     Task { [weak self] in
       guard let self else { return }
       self.exclusions = await self.resolveExclusions()
-      let request = SelectionRequest(
-        timerDelay: 0,
-        confirmTitle: "Capture",
-        hint: "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
-        onCountdownStart: {},
-        onConfirm: { selection in self.confirmRegion(selection) },
-        onCancel: { self.cancel() }
-      )
-      self.selectionCoordinator.beginSelection(request: request)
+      await self.freezeThenSelect()
     }
   }
 
@@ -62,8 +55,16 @@ final class ScreenshotCoordinator {
   func cancel() {
     selectionCoordinator.destroyAll()
     isCapturing = false
+    frozenDisplays.removeAll()
+    ScreenshotActionBarWindow.dismiss()
     restoreFocus(previousApplication)
     previousApplication = nil
+  }
+
+  func handleEscape() -> Bool {
+    guard ScreenshotActionBarWindow.isVisible else { return false }
+    ScreenshotActionBarWindow.dismiss()
+    return true
   }
 
   var hasLastCapture: Bool {
@@ -89,17 +90,67 @@ final class ScreenshotCoordinator {
     Task { await finishRegionCapture(selection) }
   }
 
-  private func finishRegionCapture(_ selection: SelectionRect) async {
-    defer { isCapturing = false }
+  private func freezeThenSelect() async {
     do {
-      let result = try await captureSession.capture(selection, excludingApplications: exclusions)
+      frozenDisplays = try await captureSession.freezeScreens(excludingApplications: exclusions)
+    } catch {
+      isCapturing = false
+      present(error.localizedDescription)
+      restoreFocus(previousApplication)
+      previousApplication = nil
+      return
+    }
+    let request = SelectionRequest(
+      timerDelay: 0,
+      confirmTitle: "Capture",
+      hint: "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
+      backgroundImages: frozenDisplays,
+      onCountdownStart: {},
+      onConfirm: { selection in self.confirmRegion(selection) },
+      onCancel: { self.cancel() }
+    )
+    selectionCoordinator.beginSelection(request: request)
+  }
+
+  private func finishRegionCapture(_ selection: SelectionRect) async {
+    defer {
+      isCapturing = false
+      frozenDisplays.removeAll()
+    }
+    do {
+      let result = try await capturedRegion(selection)
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-      ScreenshotFeedbackWindow.show("Copied to clipboard", near: CGPoint(x: selection.rect.midX, y: selection.rect.minY))
+      showActionBar(near: selection.rect)
     } catch {
       present(error.localizedDescription)
     }
     restoreFocus(previousApplication)
     previousApplication = nil
+  }
+
+  private func capturedRegion(_ selection: SelectionRect) async throws -> ScreenshotResult {
+    if let frozen = frozenDisplays[selection.displayID] {
+      return try captureSession.captureFrozenRegion(selection, from: frozen)
+    }
+    return try await captureSession.capture(selection, excludingApplications: exclusions)
+  }
+
+  private func showActionBar(near rect: CGRect) {
+    ScreenshotActionBarWindow.show(
+      near: rect,
+      onCopy: { [weak self] in self?.captureSession.copyLastToClipboard() },
+      onSaveAndCopy: { [weak self] in self?.savedStatus() ?? "" }
+    )
+  }
+
+  private func savedStatus() -> String {
+    do {
+      let url = try captureSession.saveLast()
+      captureSession.copyLastToClipboard()
+      return "Saved \(url.lastPathComponent)"
+    } catch {
+      return error.localizedDescription
+    }
   }
 
   private func finishDisplayCapture() async {
@@ -129,65 +180,4 @@ final class ScreenshotCoordinator {
     previousApplication = nil
   }
 
-  private func admit() -> Bool {
-    guard !isCapturing else { return false }
-    guard Permissions.hasScreenRecordingPermission else {
-      Permissions.requestScreenRecordingPermission()
-      refuse("Screen Recording permission is required to take screenshots.")
-      return false
-    }
-    if let state = appState?.state, let reason = blockedReason(for: state) {
-      refuse(reason)
-      return false
-    }
-    isCapturing = true
-    return true
-  }
-
-  private func blockedReason(for state: CaptureState) -> String? {
-    switch state {
-    case .idle:
-      return nil
-    case .selecting:
-      return "Finish the current selection before taking a screenshot."
-    case .countdown:
-      return "A recording countdown is running."
-    case .recording:
-      return "A recording is in progress."
-    case .paused:
-      return "A recording is paused."
-    case .processing:
-      return "A recording is being processed."
-    case .editing:
-      return "Close the editor before taking a screenshot."
-    }
-  }
-
-  private func resolveExclusions() async -> [SCRunningApplication] {
-    guard let bundleID = Bundle.main.bundleIdentifier else { return [] }
-    guard let content = try? await Permissions.fetchShareableContent() else { return [] }
-    return content.applications.filter { $0.bundleIdentifier == bundleID }
-  }
-
-  private func refuse(_ message: String) {
-    let restore = NSWorkspace.shared.frontmostApplication
-    present(message)
-    restoreFocus(restore)
-  }
-
-  private func present(_ message: String) {
-    NSApp.activate()
-    let alert = NSAlert()
-    alert.messageText = "Screenshot unavailable"
-    alert.informativeText = message
-    alert.alertStyle = .informational
-    alert.addButton(withTitle: "OK")
-    alert.runModal()
-  }
-
-  private func restoreFocus(_ application: NSRunningApplication?) {
-    guard let application else { return }
-    guard application.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
-    application.activate()
-  }
 }

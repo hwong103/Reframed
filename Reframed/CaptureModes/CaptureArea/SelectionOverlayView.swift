@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class SelectionOverlayView: NSView {
   let request: SelectionRequest
+  let backgroundImage: CGImage?
 
   var selectionRect: CGRect?
   var dragOrigin: CGPoint?
@@ -17,8 +18,9 @@ final class SelectionOverlayView: NSView {
   override var acceptsFirstResponder: Bool { true }
   override var isFlipped: Bool { false }
 
-  init(frame: NSRect, request: SelectionRequest) {
+  init(frame: NSRect, request: SelectionRequest, backgroundImage: CGImage? = nil) {
     self.request = request
+    self.backgroundImage = backgroundImage
     super.init(frame: frame)
   }
 
@@ -41,36 +43,7 @@ final class SelectionOverlayView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-    context.setFillColor(ReframedColors.overlayBackground.cgColor)
-    context.fill(bounds)
-
-    if let rect = selectionRect {
-      context.setBlendMode(.clear)
-      context.fill(rect)
-      context.setBlendMode(.normal)
-
-      context.setStrokeColor(ReframedColors.selectionBorder.cgColor)
-      context.setLineWidth(1.0)
-      context.setLineDash(phase: 0, lengths: [5, 4])
-      context.stroke(rect)
-
-      drawGrid(context: context, rect: rect)
-      drawCircularHandles(context: context, rect: rect)
-    } else {
-      let crossColor = ReframedColors.crosshair
-      context.setStrokeColor(crossColor.cgColor)
-      context.setLineWidth(0.5)
-      context.setLineDash(phase: 0, lengths: [])
-
-      context.move(to: CGPoint(x: bounds.minX, y: mouseLocation.y))
-      context.addLine(to: CGPoint(x: bounds.maxX, y: mouseLocation.y))
-      context.strokePath()
-
-      context.move(to: CGPoint(x: mouseLocation.x, y: bounds.minY))
-      context.addLine(to: CGPoint(x: mouseLocation.x, y: bounds.maxY))
-      context.strokePath()
-    }
+    drawOverlay(context: context)
   }
 
   override func mouseMoved(with event: NSEvent) {

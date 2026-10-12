@@ -166,6 +166,9 @@
 		AB5C00000000000000000008 /* ShortcutAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000018 /* ShortcutAction.swift */; };
 		AB5C00000000000000000009 /* ScreenshotFeedbackWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */; };
 		AB5C0000000000000000000A /* KeyboardShortcutManager+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001A /* KeyboardShortcutManager+Actions.swift */; };
+		AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001B /* ScreenshotActionBarView.swift */; };
+		AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */; };
+		AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */; };
 		A50000000000000000000001 /* MouseClickMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000001 /* MouseClickMonitor.swift */; };
 		A50000000000000000000002 /* MouseClickWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000002 /* MouseClickWindow.swift */; };
 		A60000000000000000000001 /* CodableColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000001 /* CodableColor.swift */; };
@@ -426,6 +429,9 @@
 		AB5C00000000000000000018 /* ShortcutAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutAction.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotFeedbackWindow.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000001A /* KeyboardShortcutManager+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcutManager+Actions.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000001B /* ScreenshotActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarView.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarWindow.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Support.swift"; sourceTree = "<group>"; };
 		B432E80EDC8E91A6B74634AC /* VideoPreviewView+Update.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "VideoPreviewView+Update.swift"; sourceTree = "<group>"; };
 		B4B39BCCC031C1D78AE47B52 /* SelectionOverlayView+Controls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Controls.swift"; sourceTree = "<group>"; };
 		B50000000000000000000001 /* MouseClickMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseClickMonitor.swift; sourceTree = "<group>"; };
@@ -746,6 +752,9 @@
 			isa = PBXGroup;
 			children = (
 				AB5C00000000000000000011 /* ImageExporter.swift */,
+				AB5C0000000000000000001B /* ScreenshotActionBarView.swift */,
+				AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */,
+				AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */,
 				AB5C00000000000000000016 /* ScreenshotCoordinator.swift */,
 				AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */,
 				AB5C00000000000000000012 /* ScreenshotNaming.swift */,
@@ -1267,6 +1276,9 @@
 				AB5C00000000000000000008 /* ShortcutAction.swift in Sources */,
 				AB5C00000000000000000009 /* ScreenshotFeedbackWindow.swift in Sources */,
 				AB5C0000000000000000000A /* KeyboardShortcutManager+Actions.swift in Sources */,
+				AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */,
+				AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */,
+				AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */

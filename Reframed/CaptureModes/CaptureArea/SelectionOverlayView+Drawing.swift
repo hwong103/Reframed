@@ -1,6 +1,57 @@
 import AppKit
 
 extension SelectionOverlayView {
+  func drawOverlay(context: CGContext) {
+    if let backgroundImage {
+      context.draw(backgroundImage, in: bounds)
+      drawDimOverlay(context: context, hole: selectionRect)
+    } else {
+      context.setFillColor(ReframedColors.overlayBackground.cgColor)
+      context.fill(bounds)
+      if let rect = selectionRect {
+        context.setBlendMode(.clear)
+        context.fill(rect)
+        context.setBlendMode(.normal)
+      }
+    }
+
+    if let rect = selectionRect {
+      context.setStrokeColor(ReframedColors.selectionBorder.cgColor)
+      context.setLineWidth(1.0)
+      context.setLineDash(phase: 0, lengths: [5, 4])
+      context.stroke(rect)
+
+      drawGrid(context: context, rect: rect)
+      drawCircularHandles(context: context, rect: rect)
+    } else {
+      let crossColor = ReframedColors.crosshair
+      context.setStrokeColor(crossColor.cgColor)
+      context.setLineWidth(0.5)
+      context.setLineDash(phase: 0, lengths: [])
+
+      context.move(to: CGPoint(x: bounds.minX, y: mouseLocation.y))
+      context.addLine(to: CGPoint(x: bounds.maxX, y: mouseLocation.y))
+      context.strokePath()
+
+      context.move(to: CGPoint(x: mouseLocation.x, y: bounds.minY))
+      context.addLine(to: CGPoint(x: mouseLocation.x, y: bounds.maxY))
+      context.strokePath()
+    }
+  }
+
+  func drawDimOverlay(context: CGContext, hole rect: CGRect?) {
+    let path = CGMutablePath()
+    path.addRect(bounds)
+    if let rect {
+      path.addRect(rect)
+    }
+    context.saveGState()
+    context.addPath(path)
+    context.setFillColor(ReframedColors.overlayBackground.cgColor)
+    context.fillPath(using: .evenOdd)
+    context.restoreGState()
+  }
+
   func drawGrid(context: CGContext, rect: CGRect) {
     let gridColor = ReframedColors.selectionGrid
     context.setStrokeColor(gridColor.cgColor)

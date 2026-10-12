@@ -62,6 +62,21 @@ final class ScreenshotSession {
     return try await captureDisplay(previous.displayID, excludingApplications: excludingApplications)
   }
 
+  func freezeScreens(
+    excludingApplications: [SCRunningApplication] = []
+  ) async throws -> [CGDirectDisplayID: CGImage] {
+    try await service.captureScreens(excludingApplications: excludingApplications)
+  }
+
+  @discardableResult
+  func captureFrozenRegion(_ selection: SelectionRect, from image: CGImage) throws -> ScreenshotResult {
+    let result = try service.crop(selection, from: image)
+    lastSelection = selection
+    lastResult = result
+    lastSavedURL = nil
+    return result
+  }
+
   @discardableResult
   func copyLastToClipboard() -> Bool {
     guard let result = lastResult else { return false }

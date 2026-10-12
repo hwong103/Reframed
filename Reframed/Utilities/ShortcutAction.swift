@@ -78,7 +78,7 @@ enum ShortcutAction: String, CaseIterable, Codable, Sendable {
     case .restartRecording:
       return KeyboardShortcut(keyCode: 15, modifierFlags: cmdShift)
     case .captureRegion:
-      return KeyboardShortcut(keyCode: 21, modifierFlags: optionShift)
+      return KeyboardShortcut(keyCode: 23, modifierFlags: cmdShift)
     case .captureWindow:
       return KeyboardShortcut(keyCode: 23, modifierFlags: optionShift)
     case .captureDisplay:

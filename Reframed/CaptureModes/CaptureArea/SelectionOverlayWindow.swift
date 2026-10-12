@@ -21,7 +21,8 @@ final class SelectionOverlayWindow: NSWindow {
     appearance = NSAppearance(named: .aqua)
 
     let localFrame = CGRect(origin: .zero, size: screen.frame.size)
-    let overlayView = SelectionOverlayView(frame: localFrame, request: request)
+    let background = request.backgroundImages[screen.displayID]
+    let overlayView = SelectionOverlayView(frame: localFrame, request: request, backgroundImage: background)
     contentView = overlayView
 
     setFrame(screen.frame, display: true)

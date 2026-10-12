@@ -9,6 +9,7 @@ struct SelectionRequest {
   let timerDelay: Int
   let confirmTitle: String?
   let hint: String
+  let backgroundImages: [CGDirectDisplayID: CGImage]
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
   let onCancel: () -> Void
@@ -17,6 +18,7 @@ struct SelectionRequest {
     timerDelay: Int,
     confirmTitle: String? = nil,
     hint: String = "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to start",
+    backgroundImages: [CGDirectDisplayID: CGImage] = [:],
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
     onCancel: @escaping () -> Void
@@ -24,6 +26,7 @@ struct SelectionRequest {
     self.timerDelay = timerDelay
     self.confirmTitle = confirmTitle
     self.hint = hint
+    self.backgroundImages = backgroundImages
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
     self.onCancel = onCancel
