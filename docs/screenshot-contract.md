@@ -51,12 +51,32 @@ toolbar - is excluded from every capture.
 ## R4 - activation and focus
 
 R4.1 Region and window selection activate Reframed because the overlays need focus.
-R4.2 Immediate capture freezes display pixels before the overlays appear, so an open
-menu survives the capture. Delayed capture takes fresh pixels after the countdown.
+R4.2 Capture freezes first, selection second, in the Xnip and CleanShot shape: the
+display is captured before the overlays appear, the frozen image is shown dimmed as the
+overlay background, and the drag selects a region on that frozen image. Consequences
+that are now required, not optional: an open menu or sheet survives the capture, an
+animation cannot move between selection and capture, and the pixels copied are exactly
+the pixels seen under the selection.
 R4.3 After copy or cancel, focus returns to the app that was frontmost before the
 capture started.
 R4.4 The still flow does not touch microphone, camera or accessibility permissions;
 Screen Recording alone gates it.
+
+## R9 - post-capture action bar
+
+The Xnip flow ends in a small bar offering annotate, copy, and save-and-copy. Ours
+matches that shape:
+
+R9.1 `Copy` publishes to the clipboard and writes no file. This is the default action
+and the current behaviour.
+R9.2 `Save & Copy` writes the PNG into the configured output folder and publishes the
+same image, plus its file URL, to the clipboard.
+R9.3 `Annotate` opens the annotation canvas (phase P1). Until P1 lands the button is
+either absent or visibly disabled; it is never a no-op.
+R9.4 Escape dismisses the bar and leaves no file and no clipboard change beyond what
+the action already did.
+R9.5 The bar appears near the capture, does not take focus, and is excluded from any
+further capture.
 
 ## R5 - output
 
@@ -76,9 +96,12 @@ explanation.
 
 ## R7 - hotkeys and entry points
 
-R7.1 Defaults, all rebindable through the existing shortcut settings: region
-`Option-Shift-4`, window `Option-Shift-5`, display `Option-Shift-3`, repeat last
-`Option-Shift-R`. The system's own Command-Shift-3/4/5 bindings are not touched.
+R7.1 Defaults, all rebindable through the existing shortcut settings: **Command-Shift-5
+for the main capture**, window `Option-Shift-5`, display `Option-Shift-3`, repeat last
+`Option-Shift-R`, save last `Option-Shift-S`. Command-Shift-5 shadows the system
+screenshot toolbar while Reframed is running, which is what Xnip does; the tap must
+consume the event so the system UI does not also open, and the setting must be
+rebindable so the system behaviour can be restored.
 R7.2 The global shortcut gate is widened per action through an explicit allowlist, so
 stop, pause and restart still only fire during a session.
 R7.3 Menu bar gains the same four actions under Quick Actions.

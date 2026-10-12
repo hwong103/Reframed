@@ -7,17 +7,23 @@ import AppKit
 @MainActor
 struct SelectionRequest {
   let timerDelay: Int
+  let confirmTitle: String?
+  let hint: String
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
   let onCancel: () -> Void
 
   init(
     timerDelay: Int,
+    confirmTitle: String? = nil,
+    hint: String = "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to start",
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
     onCancel: @escaping () -> Void
   ) {
     self.timerDelay = timerDelay
+    self.confirmTitle = confirmTitle
+    self.hint = hint
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
     self.onCancel = onCancel

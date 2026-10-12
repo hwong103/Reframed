@@ -25,6 +25,8 @@ final class ScreenshotCoordinator {
       self.exclusions = await self.resolveExclusions()
       let request = SelectionRequest(
         timerDelay: 0,
+        confirmTitle: "Capture",
+        hint: "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
         onCountdownStart: {},
         onConfirm: { selection in self.confirmRegion(selection) },
         onCancel: { self.cancel() }
@@ -64,6 +66,24 @@ final class ScreenshotCoordinator {
     previousApplication = nil
   }
 
+  var hasLastCapture: Bool {
+    captureSession.lastResult != nil
+  }
+
+  func saveLastCapture() {
+    guard captureSession.lastResult != nil else {
+      refuse("There is no screenshot to save yet.")
+      return
+    }
+    do {
+      let url = try captureSession.saveLast()
+      captureSession.copyLastToClipboard()
+      ScreenshotFeedbackWindow.show("Screenshot saved", detail: url.lastPathComponent, near: NSEvent.mouseLocation)
+    } catch {
+      present(error.localizedDescription)
+    }
+  }
+
   private func confirmRegion(_ selection: SelectionRect) {
     selectionCoordinator.destroyAll()
     Task { await finishRegionCapture(selection) }
@@ -74,6 +94,7 @@ final class ScreenshotCoordinator {
     do {
       let result = try await captureSession.capture(selection, excludingApplications: exclusions)
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: CGPoint(x: selection.rect.midX, y: selection.rect.minY))
     } catch {
       present(error.localizedDescription)
     }
@@ -87,6 +108,7 @@ final class ScreenshotCoordinator {
     do {
       let result = try await captureSession.captureDisplay(displayID, excludingApplications: exclusions)
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
     } catch {
       present(error.localizedDescription)
     }
@@ -99,6 +121,7 @@ final class ScreenshotCoordinator {
     do {
       let result = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
     } catch {
       present(error.localizedDescription)
     }

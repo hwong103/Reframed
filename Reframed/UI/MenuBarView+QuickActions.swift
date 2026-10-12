@@ -109,6 +109,17 @@ extension MenuBarView {
           }
 
           ActionGridItem(
+            icon: "square.and.arrow.down",
+            title: "Save",
+            hoverId: "action.saveLastScreenshot",
+            isEnabled: screenshotCoordinator.hasLastCapture
+          ) {
+            onDismiss()
+            screenshotCoordinator.saveLastCapture()
+          }
+          .help("Save Last Screenshot")
+
+          ActionGridItem(
             icon: "macwindow.on.rectangle",
             title: "Window",
             hoverId: "action.captureWindow",

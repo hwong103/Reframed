@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CaptureAreaView: View {
   let timerDelay: Int
+  let confirmTitle: String?
+  let hint: String
   let onCountdownStart: () -> Void
   let onCancel: () -> Void
   let onConfirm: () -> Void
@@ -78,15 +80,19 @@ struct CaptureAreaView: View {
         .buttonStyle(SecondaryButtonStyle(size: .small, forceLightMode: true))
       }
 
-      StartRecordingButton(
-        delay: timerDelay,
-        onCountdownStart: onCountdownStart,
-        onCancel: onCancel,
-        action: onConfirm,
-        trigger: $triggerStart
-      )
+      if let confirmTitle {
+        stillConfirmButton(title: confirmTitle)
+      } else {
+        StartRecordingButton(
+          delay: timerDelay,
+          onCountdownStart: onCountdownStart,
+          onCancel: onCancel,
+          action: onConfirm,
+          trigger: $triggerStart
+        )
+      }
 
-      Text("Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to start")
+      Text(hint)
         .font(.system(size: FontSize.xxs))
         .foregroundStyle(Color.black.opacity(0.35))
     }
@@ -104,6 +110,22 @@ struct CaptureAreaView: View {
     }
     .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { _ in
       triggerStart = true
+    }
+  }
+
+  private func stillConfirmButton(title: String) -> some View {
+    Button(action: onConfirm) {
+      HStack(spacing: 6) {
+        Image(systemName: "camera")
+        Text(title)
+      }
+    }
+    .buttonStyle(PrimaryButtonStyle(size: .large, forceLightMode: true))
+    .onChange(of: triggerStart) { _, newValue in
+      if newValue {
+        triggerStart = false
+        onConfirm()
+      }
     }
   }
 

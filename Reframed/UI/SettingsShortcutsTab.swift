@@ -25,6 +25,7 @@ extension SettingsView {
           ShortcutRow(action: .captureWindow)
           ShortcutRow(action: .captureDisplay)
           ShortcutRow(action: .repeatLastCapture)
+          ShortcutRow(action: .saveLastScreenshot)
         }
       }
 

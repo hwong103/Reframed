@@ -38,6 +38,8 @@ extension SelectionOverlayView {
     if isFirstCreate {
       let view = CaptureAreaView(
         timerDelay: request.timerDelay,
+        confirmTitle: request.confirmTitle,
+        hint: request.hint,
         onCountdownStart: request.onCountdownStart,
         onCancel: request.onCancel,
         onConfirm: { [weak self] in self?.confirmSelection() },

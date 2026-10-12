@@ -3,7 +3,7 @@ import AppKit
 @MainActor
 final class KeyboardShortcutManager {
   private weak var session: SessionState?
-  private let screenshotCoordinator: ScreenshotCoordinator
+  let screenshotCoordinator: ScreenshotCoordinator
   private var localMonitor: Any?
   private var eventTap: CFMachPort?
   private var tapRunLoopSource: CFRunLoopSource?
@@ -120,78 +120,4 @@ final class KeyboardShortcutManager {
     localMonitor = nil
   }
 
-  private func performAction(_ action: ShortcutAction, on session: SessionState) {
-    switch action {
-    case .switchToDisplay:
-      guard case .idle = session.state else { return }
-      session.selectMode(.entireScreen)
-
-    case .switchToWindow:
-      guard case .idle = session.state else { return }
-      session.selectMode(.selectedWindow)
-
-    case .switchToArea:
-      guard case .idle = session.state else { return }
-      session.selectMode(.selectedArea)
-
-    case .stopRecording:
-      switch session.state {
-      case .recording, .paused:
-        Task {
-          try? await session.stopRecording()
-        }
-      default:
-        break
-      }
-
-    case .pauseResumeRecording:
-      switch session.state {
-      case .recording:
-        session.pauseRecording()
-      case .paused:
-        session.resumeRecording()
-      default:
-        break
-      }
-
-    case .restartRecording:
-      switch session.state {
-      case .recording, .paused, .countdown:
-        session.restartRecording()
-      default:
-        break
-      }
-
-    case .captureRegion:
-      screenshotCoordinator.captureRegion()
-
-    case .captureWindow:
-      screenshotCoordinator.captureWindow()
-
-    case .captureDisplay:
-      screenshotCoordinator.captureDisplay()
-
-    case .repeatLastCapture:
-      screenshotCoordinator.repeatLast()
-
-    case .editorUndo, .editorRedo:
-      return
-    }
-  }
-
-  private func allowsGlobalAction(_ action: ShortcutAction, in session: SessionState) -> Bool {
-    switch action {
-    case .stopRecording, .pauseResumeRecording, .restartRecording:
-      switch session.state {
-      case .countdown, .recording, .paused:
-        return true
-      default:
-        return false
-      }
-    case .captureRegion, .captureWindow, .captureDisplay, .repeatLastCapture:
-      return true
-    default:
-      return false
-    }
-  }
 }
