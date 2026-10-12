@@ -15,11 +15,11 @@
 	<key>LSUIElement</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/jkuri/Reframed/releases/download/appcast/appcast.xml</string>
+	<string>https://github.com/hwong103/Reframed/releases/download/appcast/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>fbTkPksA1K4eUhGRCvIscQ7QGdUy3tstkNtWy/NstdY=</string>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<false/>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Reframed needs screen recording access to capture your screen.</string>
 	<key>NSMicrophoneUsageDescription</key>

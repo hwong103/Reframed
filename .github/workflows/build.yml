@@ -1,0 +1,46 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feat/rename-blur-and-export-naming
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build Release
+        run: |
+          set -o pipefail
+          xcodebuild -project Reframed.xcodeproj -scheme Reframed -configuration Release build -derivedDataPath .build -destination 'platform=macOS,arch=arm64' CODE_SIGN_IDENTITY="-" "CODE_SIGN_IDENTITY[sdk=macosx*]=-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=""
+
+      - name: Sign and verify
+        run: |
+          set -o pipefail
+          APP=".build/Build/Products/Release/Reframed.app"
+          codesign --force --deep --sign - --entitlements Reframed/Reframed.entitlements "$APP"
+          codesign -dv --verbose=2 "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist"
+
+      - name: Package
+        run: |
+          set -o pipefail
+          ditto -c -k --keepParent .build/Build/Products/Release/Reframed.app Reframed.zip
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reframed
+          path: Reframed.zip
+          retention-days: 14
