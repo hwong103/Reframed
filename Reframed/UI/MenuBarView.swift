@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MenuBarView: View {
   let session: SessionState
+  let screenshotCoordinator: ScreenshotCoordinator
   let onDismiss: () -> Void
   let onShowPermissions: () -> Void
 
@@ -13,16 +14,11 @@ struct MenuBarView: View {
 
   private let permissionTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-  private var isBusy: Bool {
+  var isBusy: Bool {
     if case .idle = session.state { return false }
     if case .editing = session.state { return false }
     return true
   }
-
-  private let gridColumns = Array(
-    repeating: GridItem(.flexible(), spacing: 6),
-    count: 4
-  )
 
   var body: some View {
     let _ = colorScheme
@@ -39,62 +35,7 @@ struct MenuBarView: View {
           .padding(.top, 8)
       }
 
-      if permissionsGranted {
-        Spacer().frame(height: 2)
-
-        HoverEffectScope {
-          LazyVGrid(columns: gridColumns, spacing: 6) {
-            ActionGridItem(
-              icon: "house",
-              title: "Home",
-              hoverId: "action.home"
-            ) {
-              onDismiss()
-              session.showToolbar()
-            }
-
-            ActionGridItem(
-              icon: "display",
-              title: "Display",
-              hoverId: "action.display"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.entireScreen)
-            }
-
-            ActionGridItem(
-              icon: "macwindow",
-              title: "Window",
-              hoverId: "action.window"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.selectedWindow)
-            }
-
-            ActionGridItem(
-              icon: "rectangle.dashed",
-              title: "Area",
-              hoverId: "action.area"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.selectedArea)
-            }
-          }
-        }
-        .disabled(isBusy)
-        .padding(.horizontal, 10)
-      } else {
-        PermissionsPrompt {
-          onDismiss()
-          onShowPermissions()
-        }
-      }
+      quickActionsSection
 
       MenuBarDivider()
 

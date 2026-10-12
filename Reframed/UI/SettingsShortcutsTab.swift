@@ -19,6 +19,15 @@ extension SettingsView {
         }
       }
 
+      settingsRow(label: "Screenshots") {
+        VStack(spacing: 4) {
+          ShortcutRow(action: .captureRegion)
+          ShortcutRow(action: .captureWindow)
+          ShortcutRow(action: .captureDisplay)
+          ShortcutRow(action: .repeatLastCapture)
+        }
+      }
+
       settingsRow(label: "Editor") {
         VStack(spacing: 4) {
           ShortcutRow(action: .editorUndo)

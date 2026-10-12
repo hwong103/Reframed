@@ -18,6 +18,7 @@ struct ActionGridItem: View {
   let icon: String
   let title: String
   let hoverId: String
+  var isEnabled = true
   let action: () -> Void
 
   @Environment(\.colorScheme) private var colorScheme
@@ -42,6 +43,8 @@ struct ActionGridItem: View {
     }
     .buttonStyle(PlainCustomButtonStyle())
     .hoverEffect(id: hoverId)
+    .disabled(!isEnabled)
+    .opacity(isEnabled ? 1 : 0.4)
   }
 }
 

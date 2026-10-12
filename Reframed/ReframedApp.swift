@@ -14,6 +14,7 @@ struct ReframedApp: App {
     MenuBarExtra {
       MenuBarView(
         session: appDelegate.session,
+        screenshotCoordinator: appDelegate.screenshotCoordinator,
         onDismiss: { isMenuPresented = false },
         onShowPermissions: { appDelegate.showPermissionsWindow() }
       )

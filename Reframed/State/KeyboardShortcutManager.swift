@@ -3,6 +3,7 @@ import AppKit
 @MainActor
 final class KeyboardShortcutManager {
   private weak var session: SessionState?
+  private let screenshotCoordinator: ScreenshotCoordinator
   private var localMonitor: Any?
   private var eventTap: CFMachPort?
   private var tapRunLoopSource: CFRunLoopSource?
@@ -13,8 +14,9 @@ final class KeyboardShortcutManager {
     var eventTap: CFMachPort?
   }
 
-  init(session: SessionState) {
+  init(session: SessionState, screenshotCoordinator: ScreenshotCoordinator) {
     self.session = session
+    self.screenshotCoordinator = screenshotCoordinator
   }
 
   func start() {
@@ -86,19 +88,12 @@ final class KeyboardShortcutManager {
         return false
       }
 
-      switch session.state {
-      case .countdown, .recording, .paused:
-        break
-      default:
-        return false
-      }
-
       for action in ShortcutAction.allCases where action.isGlobal {
         let shortcut = ConfigService.shared.shortcut(for: action)
-        if shortcut.matchesCGEvent(keyCode: keyCode, flags: flags) {
-          manager.performAction(action, on: session)
-          return true
-        }
+        guard shortcut.matchesCGEvent(keyCode: keyCode, flags: flags) else { continue }
+        guard manager.allowsGlobalAction(action, in: session) else { continue }
+        manager.performAction(action, on: session)
+        return true
       }
       return false
     }
@@ -167,8 +162,36 @@ final class KeyboardShortcutManager {
         break
       }
 
+    case .captureRegion:
+      screenshotCoordinator.captureRegion()
+
+    case .captureWindow:
+      screenshotCoordinator.captureWindow()
+
+    case .captureDisplay:
+      screenshotCoordinator.captureDisplay()
+
+    case .repeatLastCapture:
+      screenshotCoordinator.repeatLast()
+
     case .editorUndo, .editorRedo:
       return
+    }
+  }
+
+  private func allowsGlobalAction(_ action: ShortcutAction, in session: SessionState) -> Bool {
+    switch action {
+    case .stopRecording, .pauseResumeRecording, .restartRecording:
+      switch session.state {
+      case .countdown, .recording, .paused:
+        return true
+      default:
+        return false
+      }
+    case .captureRegion, .captureWindow, .captureDisplay, .repeatLastCapture:
+      return true
+    default:
+      return false
     }
   }
 }
