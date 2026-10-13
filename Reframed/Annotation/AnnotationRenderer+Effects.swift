@@ -6,18 +6,10 @@ extension AnnotationRenderer {
     _ item: AnnotationItem,
     in context: CGContext,
     viewport: Viewport,
-    document: AnnotationDocument,
-    source: CGImage
+    document: AnnotationDocument
   ) {
     let radius = max(0, Int(item.style.blurRadius.rounded()))
-    transformRegion(
-      item,
-      in: context,
-      viewport: viewport,
-      document: document,
-      source: source,
-      padding: radius
-    ) { buffer, width, height in
+    transformRegion(item, in: context, viewport: viewport, document: document, padding: radius) { buffer, width, height in
       boxBlur(&buffer, width: width, height: height, radius: radius)
     }
   }
@@ -26,18 +18,10 @@ extension AnnotationRenderer {
     _ item: AnnotationItem,
     in context: CGContext,
     viewport: Viewport,
-    document: AnnotationDocument,
-    source: CGImage
+    document: AnnotationDocument
   ) {
     let block = Int(item.style.blurRadius.rounded())
-    transformRegion(
-      item,
-      in: context,
-      viewport: viewport,
-      document: document,
-      source: source,
-      padding: 0
-    ) { buffer, width, height in
+    transformRegion(item, in: context, viewport: viewport, document: document, padding: 0) { buffer, width, height in
       pixelate(&buffer, width: width, height: height, block: block)
     }
   }
@@ -47,24 +31,31 @@ extension AnnotationRenderer {
     in context: CGContext,
     viewport: Viewport,
     document: AnnotationDocument,
-    source: CGImage,
     padding: Int,
     transform: (inout [UInt8], Int, Int) -> Void
   ) {
     let crop = cropRect(for: document)
-    let cropX = crop?.minX ?? 0
-    let cropY = crop?.minY ?? 0
     let visible = crop ?? CGRect(origin: .zero, size: document.pixelSize)
     let inner = item.bounds.standardized.integral.intersection(visible).integral
     let halo = CGFloat(max(0, padding))
     let expanded = inner.insetBy(dx: -halo, dy: -halo).integral.intersection(visible).integral
-    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1 else {
+    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1,
+      let snapshot = context.makeImage()
+    else {
       return
     }
-    let width = Int(expanded.width)
-    let height = Int(expanded.height)
+
+    let bounds = CGRect(x: 0, y: 0, width: snapshot.width, height: snapshot.height)
+    let expandedRect = imageRect(viewport.rect(expanded).integral, in: bounds)
+    guard expandedRect.width >= 1, expandedRect.height >= 1,
+      let region = snapshot.cropping(to: expandedRect)
+    else {
+      return
+    }
+    let width = Int(expandedRect.width)
+    let height = Int(expandedRect.height)
     var buffer = [UInt8](repeating: 0, count: width * height * 4)
-    buffer.withUnsafeMutableBytes { raw in
+    let drawn = buffer.withUnsafeMutableBytes { raw -> Bool in
       guard
         let temp = CGContext(
           data: raw.baseAddress,
@@ -76,20 +67,24 @@ extension AnnotationRenderer {
           bitmapInfo: bitmapInfo
         )
       else {
-        return
+        return false
       }
-      let tempViewport = Viewport(
-        originX: expanded.minX - cropX,
-        originY: expanded.minY - cropY,
-        outputHeight: CGFloat(height)
-      )
-      temp.draw(source, in: tempViewport.imageRect(width: source.width, height: source.height))
+      temp.draw(region, in: CGRect(x: 0, y: 0, width: width, height: height))
+      return true
     }
+    guard drawn else { return }
     transform(&buffer, width, height)
-    let innerWidth = Int(inner.width)
-    let innerHeight = Int(inner.height)
-    let offsetX = Int(inner.minX - expanded.minX)
-    let offsetY = Int(inner.minY - expanded.minY)
+
+    let innerRect = imageRect(viewport.rect(inner).integral, in: bounds)
+    let offsetX = Int(innerRect.minX - expandedRect.minX)
+    let offsetY = Int(innerRect.minY - expandedRect.minY)
+    let innerWidth = Int(innerRect.width)
+    let innerHeight = Int(innerRect.height)
+    guard innerWidth >= 1, innerHeight >= 1, offsetX >= 0, offsetY >= 0,
+      offsetX + innerWidth <= width, offsetY + innerHeight <= height
+    else {
+      return
+    }
     var innerBuffer = [UInt8](repeating: 0, count: innerWidth * innerHeight * 4)
     for y in 0..<innerHeight {
       for x in 0..<innerWidth {
@@ -109,6 +104,15 @@ extension AnnotationRenderer {
     context.interpolationQuality = .none
     context.draw(regionImage, in: viewport.rect(inner))
     context.restoreGState()
+  }
+
+  private static func imageRect(_ rect: CGRect, in bounds: CGRect) -> CGRect {
+    CGRect(
+      x: rect.minX,
+      y: bounds.maxY - rect.maxY,
+      width: rect.width,
+      height: rect.height
+    ).integral.intersection(bounds).integral
   }
 
   static func boxBlur(_ buffer: inout [UInt8], width: Int, height: Int, radius: Int) {

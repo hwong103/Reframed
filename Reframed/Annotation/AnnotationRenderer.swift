@@ -69,13 +69,25 @@ enum AnnotationRenderer {
   }
 
   static func render(_ document: AnnotationDocument, image: CGImage, into context: CGContext) {
+    if document.hasEffects, let composed = makeImage(document, image: image) {
+      let viewport = viewport(for: document)
+      context.saveGState()
+      context.interpolationQuality = .none
+      context.draw(composed, in: viewport.imageRect(width: composed.width, height: composed.height))
+      context.restoreGState()
+      return
+    }
+    renderDirect(document, image: image, into: context)
+  }
+
+  static func renderDirect(_ document: AnnotationDocument, image: CGImage, into context: CGContext) {
     let viewport = viewport(for: document)
     context.saveGState()
     context.interpolationQuality = .none
     context.draw(image, in: viewport.imageRect(width: image.width, height: image.height))
     context.restoreGState()
     for item in document.items {
-      draw(item, in: context, viewport: viewport, document: document, source: image)
+      draw(item, in: context, viewport: viewport, document: document)
     }
   }
 
@@ -102,7 +114,7 @@ enum AnnotationRenderer {
       else {
         return
       }
-      render(document, image: image, into: context)
+      renderDirect(document, image: image, into: context)
       result = context.makeImage()
     }
     return result

@@ -35,6 +35,10 @@ struct AnnotationDocument: Codable, Sendable, Equatable {
     items.count
   }
 
+  var hasEffects: Bool {
+    items.contains { $0.kind == .blur || $0.kind == .pixelate }
+  }
+
   func item(id: UUID) -> AnnotationItem? {
     items.first { $0.id == id }
   }

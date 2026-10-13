@@ -92,16 +92,18 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   }
 
   private func resize(by delta: CGFloat) {
-    var width = frame.width + delta
-    width = min(max(width, minSide), maxSide)
-    let height = width / aspect
+    var width = min(max(frame.width + delta, minSide), maxSide)
+    var height = width / aspect
+    if let screen = NSScreen.screen(for: displayID), height > screen.visibleFrame.height * 0.9 {
+      height = screen.visibleFrame.height * 0.9
+      width = height * aspect
+    }
     var newFrame = frame
     newFrame.origin.y += frame.height - height
     newFrame.size = CGSize(width: width, height: height)
     setFrame(newFrame, display: true)
     onFrameChange?(pinID)
   }
-
   private static func naturalSize(for image: CGImage, displayID: CGDirectDisplayID) -> CGSize {
     let scale = NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2
     var width = CGFloat(image.width) / scale

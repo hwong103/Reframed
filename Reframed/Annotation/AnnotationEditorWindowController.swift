@@ -117,7 +117,11 @@ final class AnnotationEditorWindowController: NSObject, NSWindowDelegate {
 
   private func copyRendered() {
     guard let image = model.renderedImage() else { return }
-    ImageExporter.copyToPasteboard(image)
+    if ImageExporter.copyToPasteboard(image) {
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+    } else {
+      present("Could not copy the screenshot to the clipboard.")
+    }
   }
 
   private func saveRendered() {
@@ -125,8 +129,12 @@ final class AnnotationEditorWindowController: NSObject, NSWindowDelegate {
     let url = ScreenshotNaming.destinationURL()
     do {
       try ImageExporter.writePNG(image, to: url)
-      ImageExporter.copyToPasteboard(image, fileURL: url)
-      ScreenshotFeedbackWindow.show("Saved", detail: url.lastPathComponent, near: NSEvent.mouseLocation)
+      let copied = ImageExporter.copyToPasteboard(image, fileURL: url)
+      ScreenshotFeedbackWindow.show(
+        copied ? "Saved" : "Saved, but the clipboard copy failed",
+        detail: url.lastPathComponent,
+        near: NSEvent.mouseLocation
+      )
     } catch {
       present(error.localizedDescription)
     }
