@@ -70,10 +70,13 @@ enum AnnotationRenderer {
 
   static func render(_ document: AnnotationDocument, image: CGImage, into context: CGContext) {
     if document.hasEffects, let composed = makeImage(document, image: image) {
-      let viewport = viewport(for: document)
       context.saveGState()
       context.interpolationQuality = .none
-      context.draw(composed, in: viewport.imageRect(width: composed.width, height: composed.height))
+      let rect = CGRect(
+        origin: .zero,
+        size: CGSize(width: composed.width, height: composed.height)
+      )
+      context.draw(composed, in: rect)
       context.restoreGState()
       return
     }

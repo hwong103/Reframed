@@ -94,32 +94,30 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   private func resize(by delta: CGFloat) {
     var width = min(max(frame.width + delta, minSide), maxSide)
     var height = width / aspect
-    if let screen = NSScreen.screen(for: displayID), height > screen.visibleFrame.height * 0.9 {
-      height = screen.visibleFrame.height * 0.9
+    let visible = (screen ?? NSScreen.main)?.visibleFrame
+    if let visible, height > visible.height * 0.9 {
+      height = visible.height * 0.9
       width = height * aspect
     }
     var newFrame = frame
     newFrame.origin.y += frame.height - height
+    if let limit {
+      newFrame.origin.y = min(max(newFrame.origin.y, limit.minY + 8), limit.maxY - height - 8)
+    }
     newFrame.size = CGSize(width: width, height: height)
     setFrame(newFrame, display: true)
     onFrameChange?(pinID)
   }
   private static func naturalSize(for image: CGImage, displayID: CGDirectDisplayID) -> CGSize {
     let scale = NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2
-    var width = CGFloat(image.width) / scale
-    var height = CGFloat(image.height) / scale
+    let width = CGFloat(image.width) / scale
+    let height = CGFloat(image.height) / scale
     guard width > 0, height > 0 else { return CGSize(width: minimumSide, height: minimumSide) }
     let floorRatio = max(1, minimumSide / width, minimumSide / height)
-    width *= floorRatio
-    height *= floorRatio
-    if let screen = NSScreen.screen(for: displayID) {
-      let maxWidth = screen.visibleFrame.width * 0.8
-      let maxHeight = screen.visibleFrame.height * 0.8
-      let ratio = min(1, min(maxWidth / max(width, 1), maxHeight / max(height, 1)))
-      width *= ratio
-      height *= ratio
-    }
-    return CGSize(width: width, height: height)
+    let size = CGSize(width: width * floorRatio, height: height * floorRatio)
+    guard let limit = NSScreen.screen(for: displayID)?.visibleFrame else { return size }
+    let ratio = min(1, min(limit.width * 0.8 / max(size.width, 1), limit.height * 0.8 / max(size.height, 1)))
+    return CGSize(width: size.width * ratio, height: size.height * ratio)
   }
 }
 
