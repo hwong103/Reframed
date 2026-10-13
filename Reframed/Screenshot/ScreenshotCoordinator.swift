@@ -117,6 +117,7 @@ final class ScreenshotCoordinator {
   }
 
   func freezeThenSelect() async {
+    OCRService.warmUp()
     do {
       frozenDisplays = try await captureSession.freezeScreens(excludingApplications: exclusions)
     } catch {

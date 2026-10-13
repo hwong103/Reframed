@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     _ = SparkleUpdater.shared
     ConfigService.shared.applyAppearance()
+    OCRService.warmUp()
 
     let manager = KeyboardShortcutManager(session: session, screenshotCoordinator: screenshotCoordinator)
     manager.start()

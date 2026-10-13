@@ -29,6 +29,18 @@ struct OCRResult: Sendable, Equatable {
 }
 
 enum OCRService {
+  @MainActor private static var warmUpStarted = false
+
+  @MainActor
+  static func warmUp() {
+    guard !warmUpStarted else { return }
+    warmUpStarted = true
+    Task.detached(priority: .utility) {
+      guard let image = sampleImage() else { return }
+      _ = try? recognize(in: image)
+    }
+  }
+
   static func recognize(in image: CGImage) throws -> OCRResult {
     let request = VNRecognizeTextRequest()
     request.recognitionLevel = .accurate
@@ -71,5 +83,24 @@ enum OCRService {
       return lhs.0.minX < rhs.0.minX
     }
     return ordered.map(\.1)
+  }
+
+  private static func sampleImage() -> CGImage? {
+    guard
+      let context = CGContext(
+        data: nil,
+        width: 64,
+        height: 64,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      )
+    else {
+      return nil
+    }
+    context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+    return context.makeImage()
   }
 }
