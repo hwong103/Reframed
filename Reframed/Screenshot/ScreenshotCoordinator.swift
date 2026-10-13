@@ -9,6 +9,7 @@ final class ScreenshotCoordinator {
   let selectionCoordinator = SelectionCoordinator()
   weak var appState: SessionState?
   var exclusions: [SCRunningApplication] = []
+  private let frameService = StillCaptureService()
   var previousApplication: NSRunningApplication?
   var isCapturing = false
   var isTextSnip = false
@@ -16,6 +17,7 @@ final class ScreenshotCoordinator {
   var windowSelectionCoordinator: WindowSelectionCoordinator?
   var lastWindowSelection: WindowSetSelection?
   var annotationSavedURL: URL?
+  var textProgressToken: UUID?
   var scrollingSession: ScrollingCaptureSession?
   var scrollingGeneration = 0
   var scrollingRequest = 0
@@ -61,6 +63,10 @@ final class ScreenshotCoordinator {
 
   func cancel() {
     scrollingRequest += 1
+    if let token = textProgressToken {
+      textProgressToken = nil
+      ScreenshotFeedbackWindow.dismiss(token)
+    }
     if let session = scrollingSession {
       scrollingSession = nil
       scrollingGeneration = 0
@@ -162,6 +168,13 @@ final class ScreenshotCoordinator {
       return try captureSession.captureFrozenRegion(selection, from: frozen)
     }
     return try await captureSession.capture(selection, excludingApplications: exclusions)
+  }
+
+  func frameRegion(_ selection: SelectionRect) async throws -> ScreenshotResult {
+    if let frozen = frozenDisplays[selection.displayID] {
+      return try frameService.crop(selection, from: frozen)
+    }
+    return try await captureSession.frameImage(selection, excludingApplications: exclusions)
   }
 
   private func finishRepeatCapture() async {

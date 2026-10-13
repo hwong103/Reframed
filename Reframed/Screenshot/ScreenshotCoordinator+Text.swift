@@ -27,6 +27,7 @@ extension ScreenshotCoordinator {
       near: NSEvent.mouseLocation,
       sticky: true
     )
+    textProgressToken = progress
     let request = scrollingRequest
     Task { @MainActor [weak self] in
       guard let self else {
@@ -35,10 +36,12 @@ extension ScreenshotCoordinator {
       }
       let outcome = await self.recognizeText(image, detailed: detailed)
       guard self.scrollingRequest == request, self.isCapturing else {
+        self.textProgressToken = nil
         ScreenshotFeedbackWindow.dismiss(progress)
         completion(.failed)
         return
       }
+      self.textProgressToken = nil
       completion(outcome)
       switch outcome {
       case .found(let result):
