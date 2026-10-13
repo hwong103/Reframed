@@ -17,6 +17,27 @@ extension InlineAnnotationSession {
     end()
   }
 
+  func makeDragItem() -> NSPasteboardItem? {
+    guard let image = renderedSelection() else { return nil }
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ReframedDrag", isDirectory: true)
+    try? FileManager.default.createDirectory(
+      at: directory,
+      withIntermediateDirectories: true
+    )
+    let url = directory.appendingPathComponent("\(ScreenshotNaming.baseName()).png")
+    try? ImageExporter.writePNG(image, to: url)
+    let item = NSPasteboardItem()
+    item.setString(url.absoluteString, forType: .fileURL)
+    if let png = ImageExporter.pngData(from: image) {
+      item.setData(png, forType: .png)
+    }
+    if let tiff = ImageExporter.tiffData(from: image) {
+      item.setData(tiff, forType: .tiff)
+    }
+    return item
+  }
+
   func captureText() {
     apply(handlers.captureText)
     end()
@@ -101,6 +122,7 @@ extension InlineAnnotationSession {
       pin: { [weak self] in self?.pin() },
       openInWindow: { [weak self] in self?.openInWindow() },
       openInPreview: { [weak self] in self?.openInPreview() },
+      makeDragItem: { [weak self] in self?.makeDragItem() },
       cancel: { [weak self] in self?.cancel() },
       selectTool: { [weak self] tool in self?.selectTool(tool) },
       applyStyle: { [weak self] in self?.applyStyle() }

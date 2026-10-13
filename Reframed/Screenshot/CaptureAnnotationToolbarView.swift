@@ -12,6 +12,7 @@ struct CaptureAnnotationToolbarActions {
   let pin: () -> Void
   let openInWindow: () -> Void
   let openInPreview: () -> Void
+  let makeDragItem: () -> NSPasteboardItem?
   let cancel: () -> Void
   let selectTool: (CaptureAnnotationTool) -> Void
   let applyStyle: () -> Void
@@ -107,6 +108,10 @@ struct CaptureAnnotationToolbarView: View {
       IconButton(systemImage: "text.viewfinder", help: "Capture Text (O)") { actions.captureText() }
       IconButton(systemImage: "square.and.arrow.down", help: "Save (Command-S)") { actions.save() }
       IconButton(systemImage: "doc.on.doc", help: "Copy to Clipboard (Return)") { actions.copy() }
+      CaptureAnnotationDragSource(makeItem: actions.makeDragItem)
+        .frame(width: 32, height: 32)
+        .help("Drag the screenshot into another app")
+        .captureArrowCursor()
       IconButton(
         systemImage: "arrow.up.and.down.text.horizontal",
         isDimmed: true,
