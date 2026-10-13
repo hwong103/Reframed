@@ -8,6 +8,7 @@ final class PinnedImageManager {
 
   private var windows: [PinnedImageWindow] = []
   private var didRestore = false
+  private var screenObserver: NSObjectProtocol?
 
   private init() {}
 
@@ -28,6 +29,7 @@ final class PinnedImageManager {
   func restoreIfNeeded() {
     guard !didRestore else { return }
     didRestore = true
+    observeScreenChanges()
 
     let stored = StateService.shared.pinnedImages
     var survivors: [PinnedImageData] = []
@@ -59,6 +61,23 @@ final class PinnedImageManager {
       self?.persist()
     }
     windows.append(window)
+  }
+
+  private func observeScreenChanges() {
+    guard screenObserver == nil else { return }
+    screenObserver = NotificationCenter.default.addObserver(
+      forName: NSApplication.didChangeScreenParametersNotification,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      MainActor.assumeIsolated { self?.recontain() }
+    }
+  }
+
+  private func recontain() {
+    for window in windows where window.isVisible {
+      window.restoreFrame(window.frame)
+    }
   }
 
   private func remove(_ id: String) {

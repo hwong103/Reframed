@@ -2,6 +2,13 @@ import AppKit
 import CoreGraphics
 
 extension PinnedImageWindow {
+  override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+    let visible = (screen ?? self.screen ?? NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
+    guard let visible else { return frameRect }
+    let size = Self.fitted(frameRect.size, into: visible)
+    return NSRect(origin: Self.confinedOrigin(frameRect.origin, size, on: visible), size: size)
+  }
+
   func present(near point: CGPoint?) {
     let visible = (NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
     let size = Self.fitted(frame.size, into: visible)
