@@ -8,6 +8,7 @@ struct ReframedApp: App {
 
   init() {
     LogBootstrap.configure()
+    OCRService.warmUp()
   }
 
   var body: some Scene {

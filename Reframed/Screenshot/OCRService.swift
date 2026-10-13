@@ -35,7 +35,7 @@ enum OCRService {
   static func warmUp() {
     guard !warmUpStarted else { return }
     warmUpStarted = true
-    Task.detached(priority: .utility) {
+    Task.detached(priority: .userInitiated) {
       guard let image = sampleImage() else { return }
       _ = try? recognize(in: image)
     }
