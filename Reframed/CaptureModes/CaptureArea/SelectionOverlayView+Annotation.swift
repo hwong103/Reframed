@@ -113,7 +113,7 @@ extension SelectionOverlayView {
 
   func handleAnnotationKey(_ event: NSEvent) -> Bool {
     if handleViewportKey(event) { return true }
-    annotationSession?.handleKey(event) ?? false
+    return annotationSession?.handleKey(event) ?? false
   }
 
   func layoutComposedAnnotation(session: InlineAnnotationSession) {

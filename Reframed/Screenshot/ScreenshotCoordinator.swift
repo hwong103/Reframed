@@ -18,6 +18,7 @@ final class ScreenshotCoordinator {
   var annotationSavedURL: URL?
   var scrollingSession: ScrollingCaptureSession?
   var scrollingGeneration = 0
+  var scrollingRequest = 0
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -59,6 +60,7 @@ final class ScreenshotCoordinator {
   }
 
   func cancel() {
+    scrollingRequest += 1
     if let session = scrollingSession {
       scrollingSession = nil
       scrollingGeneration = 0

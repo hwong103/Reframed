@@ -7,26 +7,31 @@ extension ScrollStitcher {
     profiles measured: [FrameProfile]? = nil,
     termination: Termination = .userFinish
   ) -> StitchOutcome {
-    guard frames.count >= 2 else { return refused("Scrolling capture needs at least two frames.") }
+    var outcome = StitchOutcome(termination: termination)
+    guard frames.count >= 2 else {
+      return refused("Scrolling capture needs at least two frames.", from: outcome)
+    }
     let profiles = measured?.count == frames.count ? measured! : frames.compactMap { profile(for: $0) }
     guard !profiles.isEmpty, profiles.count == frames.count else {
-      return refused("A captured frame could not be measured.")
+      return refused("A captured frame could not be measured.", from: outcome)
     }
     let width = frames[0].width
     let height = profiles.map(\.height).min() ?? 0
     let uniform = profiles.allSatisfy { $0.height == height }
     let framed = frames.allSatisfy { $0.width == width && $0.height == height }
     guard width > 0, height >= minUsable, uniform, framed else {
-      return refused("The captured frames did not share one size.")
+      return refused("The captured frames did not share one size.", from: outcome)
     }
     let insets = fixedInsets(profiles)
     let band = height - insets.header - insets.footer
     guard band >= 1, insets.header + insets.footer < height / 2 else {
-      return refused("The region did not appear to scroll, so there is nothing to stitch.")
+      return refused("The region did not appear to scroll, so there is nothing to stitch.", from: outcome)
     }
-    var outcome = StitchOutcome(headerRows: insets.header, footerRows: insets.footer, termination: termination)
+    outcome.headerRows = insets.header
+    outcome.footerRows = insets.footer
     var cumulative = [0]
     for index in 1..<frames.count {
+      guard !Task.isCancelled else { return refused("Scrolling capture was cancelled.", from: outcome) }
       guard
         let match = offset(
           betweenPrevious: profiles[index - 1],
@@ -34,7 +39,7 @@ extension ScrollStitcher {
           topInset: insets.header,
           bottomInset: insets.footer
         )
-      else { return refused("Two frames could not be compared.") }
+      else { return refused("Two frames could not be compared.", from: outcome) }
       outcome.offsets.append(match.delta)
       cumulative.append(cumulative[cumulative.count - 1] + match.delta)
       if match.isDuplicate {
@@ -44,7 +49,10 @@ extension ScrollStitcher {
       }
     }
     guard outcome.uncertainJoins.isEmpty else {
-      outcome.message = doubtfulMessage(count: outcome.uncertainJoins.count, joins: frames.count - 1)
+      outcome.message = stoppedMessage(
+        doubtfulMessage(count: outcome.uncertainJoins.count, joins: frames.count - 1),
+        termination: outcome.termination
+      )
       return outcome
     }
     let composedHeight = cumulative[cumulative.count - 1] + band
@@ -122,6 +130,7 @@ extension ScrollStitcher {
     context.fill(CGRect(x: 0, y: 0, width: width, height: height))
     let slice = CGRect(x: 0, y: header, width: width, height: band)
     for (index, frame) in frames.enumerated() {
+      guard !Task.isCancelled else { return nil }
       guard let crop = frame.cropping(to: slice) else { return nil }
       let origin = height - cumulative[index] - band
       guard origin >= 0 else { return nil }
@@ -132,30 +141,30 @@ extension ScrollStitcher {
 
   private static func summary(frames: Int, outcome: StitchOutcome) -> String {
     var message = "Stitched \(frames) frames"
-    if outcome.droppedDuplicates > 0 {
-      message += ", \(outcome.droppedDuplicates) duplicate skipped"
+    if outcome.droppedDuplicates > 0 { message += ", \(outcome.droppedDuplicates) duplicate skipped" }
+    guard let reason = stopReason(outcome.termination) else { return message }
+    return message + ", " + reason
+  }
+
+  static func stopReason(_ termination: Termination) -> String? {
+    switch termination {
+    case .userFinish: nil
+    case .frameLimit: "capture stopped at the frame limit"
+    case .timeLimit: "capture stopped at the time limit"
+    case .memoryLimit: "capture stopped to stay within the memory limit"
+    case .captureFailures: "capture stopped after repeated capture failures"
     }
-    let stopped: String
-    switch outcome.termination {
-    case .userFinish:
-      stopped = ""
-    case .frameLimit:
-      stopped = "stopped at the frame limit"
-    case .timeLimit:
-      stopped = "stopped at the time limit"
-    case .memoryLimit:
-      stopped = "stopped to stay within the memory limit"
-    case .captureFailures:
-      stopped = "stopped after repeated capture failures"
-    }
-    return stopped.isEmpty ? message : message + ", " + stopped
+  }
+
+  private static func stoppedMessage(_ message: String, termination: Termination) -> String {
+    guard let reason = stopReason(termination) else { return message }
+    return message + " " + reason.prefix(1).uppercased() + reason.dropFirst() + "."
   }
 
   private static func doubtfulMessage(count: Int, joins: Int) -> String {
     let verb = count == 1 ? "join was" : "joins were"
-    return
-      "\(count) of \(joins) \(verb) doubtful, so the long capture was refused rather than "
-      + "guessed. Scroll more slowly so each frame overlaps the previous one by at least half."
+    return "\(count) of \(joins) \(verb) doubtful, so the long capture was refused rather "
+      + "than guessed. Scroll more slowly so frames overlap by at least half."
   }
 
   static func meanError(
@@ -180,11 +189,10 @@ extension ScrollStitcher {
     }
     return Double(total) / Double(band * width)
   }
-
   private static func refused(_ message: String, from outcome: StitchOutcome? = nil) -> StitchOutcome {
     var result = outcome ?? StitchOutcome()
     result.image = nil
-    result.message = message
+    result.message = stoppedMessage(message, termination: result.termination)
     return result
   }
 }

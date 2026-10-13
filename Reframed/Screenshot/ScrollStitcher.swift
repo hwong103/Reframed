@@ -163,22 +163,25 @@ enum ScrollStitcher {
   ) -> BandScan? {
     let width = previous.width
     guard start >= 0, start + band <= previous.height else { return nil }
+    let limit = min(upper, start)
+    guard limit >= 1 else { return nil }
     let window = previous.samples[(start * width)..<((start + band) * width)]
     guard
       let low = window.min(),
       let high = window.max(),
       Int(high) - Int(low) >= minVariation
     else { return nil }
-    var errors = [Double](repeating: 0, count: upper + 1)
-    for delta in 0...upper {
+    var errors = [Double](repeating: 0, count: limit + 1)
+    for delta in 0...limit {
+      guard !Task.isCancelled else { return nil }
       errors[delta] = meanError(previous.samples, next.samples, start: start, width: width, band: band, delta: delta)
     }
     var best = 0
-    for delta in 1...upper where errors[delta] < errors[best] {
+    for delta in 1...limit where errors[delta] < errors[best] {
       best = delta
     }
     var runner = Double.greatestFiniteMagnitude
-    for delta in 0...upper where abs(delta - best) > rowTolerance {
+    for delta in 0...limit where abs(delta - best) > rowTolerance {
       runner = min(runner, errors[delta])
     }
     guard runner < Double.greatestFiniteMagnitude else { return nil }

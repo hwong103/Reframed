@@ -119,11 +119,14 @@ extension ScreenshotCoordinator {
       ScreenshotFeedbackWindow.show("Scrolling capture needs a screen region", near: NSEvent.mouseLocation)
       return
     }
+    scrollingRequest += 1
+    let request = scrollingRequest
     Task { [weak self] in
       guard let self else { return }
       if self.exclusions.isEmpty {
         self.exclusions = await self.resolveExclusions()
       }
+      guard self.scrollingRequest == request, self.scrollingSession == nil else { return }
       self.beginScrollingCapture(selection)
     }
   }

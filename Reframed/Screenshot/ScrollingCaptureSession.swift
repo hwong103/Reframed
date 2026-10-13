@@ -90,10 +90,12 @@ final class ScrollingCaptureSession {
     frames.removeAll()
     profiles.removeAll()
     let generation = generation
-    stitchTask = Task { [weak self] in
-      let outcome = await Task.detached(priority: .userInitiated) {
-        ScrollStitcher.stitch(frames: captured, profiles: measured, termination: reason)
-      }.value
+    let worker = Task.detached(priority: .userInitiated) {
+      ScrollStitcher.stitch(frames: captured, profiles: measured, termination: reason)
+    }
+    stitchTask = worker
+    Task { [weak self] in
+      let outcome = await worker.value
       guard let self, !Task.isCancelled, self.generation == generation, self.phase == .stitching else { return }
       self.deliver(outcome)
     }
