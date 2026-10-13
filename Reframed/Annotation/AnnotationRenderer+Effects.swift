@@ -6,10 +6,18 @@ extension AnnotationRenderer {
     _ item: AnnotationItem,
     in context: CGContext,
     viewport: Viewport,
-    document: AnnotationDocument
+    document: AnnotationDocument,
+    source: CGImage
   ) {
     let radius = max(0, Int(item.style.blurRadius.rounded()))
-    transformRegion(item, in: context, viewport: viewport, document: document, padding: radius) { buffer, width, height in
+    transformRegion(
+      item,
+      in: context,
+      viewport: viewport,
+      document: document,
+      source: source,
+      padding: radius
+    ) { buffer, width, height in
       boxBlur(&buffer, width: width, height: height, radius: radius)
     }
   }
@@ -18,10 +26,18 @@ extension AnnotationRenderer {
     _ item: AnnotationItem,
     in context: CGContext,
     viewport: Viewport,
-    document: AnnotationDocument
+    document: AnnotationDocument,
+    source: CGImage
   ) {
     let block = Int(item.style.blurRadius.rounded())
-    transformRegion(item, in: context, viewport: viewport, document: document, padding: 0) { buffer, width, height in
+    transformRegion(
+      item,
+      in: context,
+      viewport: viewport,
+      document: document,
+      source: source,
+      padding: 0
+    ) { buffer, width, height in
       pixelate(&buffer, width: width, height: height, block: block)
     }
   }
@@ -31,6 +47,7 @@ extension AnnotationRenderer {
     in context: CGContext,
     viewport: Viewport,
     document: AnnotationDocument,
+    source: CGImage,
     padding: Int,
     transform: (inout [UInt8], Int, Int) -> Void
   ) {
@@ -41,9 +58,7 @@ extension AnnotationRenderer {
     let inner = item.bounds.standardized.integral.intersection(visible).integral
     let halo = CGFloat(max(0, padding))
     let expanded = inner.insetBy(dx: -halo, dy: -halo).integral.intersection(visible).integral
-    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1,
-      let snapshot = context.makeImage()
-    else {
+    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1 else {
       return
     }
     let width = Int(expanded.width)
@@ -68,7 +83,7 @@ extension AnnotationRenderer {
         originY: expanded.minY - cropY,
         outputHeight: CGFloat(height)
       )
-      temp.draw(snapshot, in: tempViewport.imageRect(width: snapshot.width, height: snapshot.height))
+      temp.draw(source, in: tempViewport.imageRect(width: source.width, height: source.height))
     }
     transform(&buffer, width, height)
     let innerWidth = Int(inner.width)

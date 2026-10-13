@@ -55,8 +55,11 @@ extension ScreenshotCoordinator {
       previousApplication = nil
       return
     }
-    ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-    ScreenshotFeedbackWindow.show(captured.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
+    if ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL) {
+      ScreenshotFeedbackWindow.show(captured.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
+    } else {
+      present("Could not copy the screenshot to the clipboard.")
+    }
     restoreFocus(previousApplication)
     previousApplication = nil
   }

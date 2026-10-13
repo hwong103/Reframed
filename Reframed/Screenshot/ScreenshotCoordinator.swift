@@ -99,8 +99,12 @@ final class ScreenshotCoordinator {
     }
     do {
       let url = try captureSession.saveLast()
-      captureSession.copyLastToClipboard()
-      ScreenshotFeedbackWindow.show("Screenshot saved", detail: url.lastPathComponent, near: NSEvent.mouseLocation)
+      let copied = captureSession.copyLastToClipboard()
+      ScreenshotFeedbackWindow.show(
+        copied ? "Screenshot saved" : "Saved, but the clipboard copy failed",
+        detail: url.lastPathComponent,
+        near: NSEvent.mouseLocation
+      )
     } catch {
       present(error.localizedDescription)
     }
@@ -141,8 +145,11 @@ final class ScreenshotCoordinator {
     do {
       let result = try await capturedRegion(selection)
       lastWindowSelection = nil
-      ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+      if ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL) {
+        ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+      } else {
+        present("Could not copy the screenshot to the clipboard.")
+      }
     } catch {
       present(error.localizedDescription)
     }
@@ -161,8 +168,11 @@ final class ScreenshotCoordinator {
     defer { isCapturing = false }
     do {
       let outcome = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
-      ImageExporter.copyToPasteboard(outcome.result.image, fileURL: captureSession.lastSavedURL)
-      ScreenshotFeedbackWindow.show(outcome.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
+      if ImageExporter.copyToPasteboard(outcome.result.image, fileURL: captureSession.lastSavedURL) {
+        ScreenshotFeedbackWindow.show(outcome.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
+      } else {
+        present("Could not copy the screenshot to the clipboard.")
+      }
     } catch {
       present(error.localizedDescription)
     }

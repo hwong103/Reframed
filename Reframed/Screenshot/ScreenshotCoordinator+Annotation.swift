@@ -38,8 +38,11 @@ extension ScreenshotCoordinator {
 
   private func annotationCopy(_ image: CGImage, _ selection: SelectionRect) {
     adoptAnnotationRegion(image, selection)
-    captureSession.copyLastToClipboard()
-    ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+    if captureSession.copyLastToClipboard() {
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+    } else {
+      present("Could not copy the screenshot to the clipboard.")
+    }
   }
 
   private func annotationSave(_ image: CGImage, _ selection: SelectionRect, copy: Bool) {
@@ -47,11 +50,9 @@ extension ScreenshotCoordinator {
     do {
       let url = try captureSession.saveLast()
       annotationSavedURL = url
-      if copy {
-        captureSession.copyLastToClipboard()
-      }
+      let copied = !copy || captureSession.copyLastToClipboard()
       ScreenshotFeedbackWindow.show(
-        copy ? "Saved and copied" : "Screenshot saved",
+        copy && !copied ? "Saved, but the clipboard copy failed" : (copy ? "Saved and copied" : "Screenshot saved"),
         detail: url.lastPathComponent,
         near: NSEvent.mouseLocation
       )

@@ -7,7 +7,8 @@ extension AnnotationRenderer {
     _ item: AnnotationItem,
     in context: CGContext,
     viewport: Viewport,
-    document: AnnotationDocument
+    document: AnnotationDocument,
+    source: CGImage
   ) {
     switch item.kind {
     case .arrow:
@@ -25,9 +26,9 @@ extension AnnotationRenderer {
     case .text:
       drawText(item, in: context, viewport: viewport)
     case .blur:
-      applyBlur(item, in: context, viewport: viewport, document: document)
+      applyBlur(item, in: context, viewport: viewport, document: document, source: source)
     case .pixelate:
-      applyPixelate(item, in: context, viewport: viewport, document: document)
+      applyPixelate(item, in: context, viewport: viewport, document: document, source: source)
     case .crop:
       break
     }

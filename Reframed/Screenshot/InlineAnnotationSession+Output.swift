@@ -26,18 +26,19 @@ extension InlineAnnotationSession {
       baseName: ScreenshotNaming.baseName(),
       fileExtension: "png"
     )
-    try? ImageExporter.writePNG(image, to: url)
     let item = NSPasteboardItem()
-    item.setString(url.absoluteString, forType: .fileURL)
+    var published = false
+    if (try? ImageExporter.writePNG(image, to: url)) != nil {
+      published = item.setString(url.absoluteString, forType: .fileURL) || published
+    }
     if let png = try? ImageExporter.pngData(from: image) {
-      item.setData(png, forType: .png)
+      published = item.setData(png, forType: .png) || published
     }
     if let tiff = ImageExporter.tiffData(from: image) {
-      item.setData(tiff, forType: .tiff)
+      published = item.setData(tiff, forType: .tiff) || published
     }
-    return item
+    return published ? item : nil
   }
-
   func captureText() {
     guard !isReadingText else { return }
     guard let rendered = renderedSelection() else { return end() }

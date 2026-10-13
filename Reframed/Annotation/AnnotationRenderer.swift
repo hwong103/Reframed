@@ -75,7 +75,7 @@ enum AnnotationRenderer {
     context.draw(image, in: viewport.imageRect(width: image.width, height: image.height))
     context.restoreGState()
     for item in document.items {
-      draw(item, in: context, viewport: viewport, document: document)
+      draw(item, in: context, viewport: viewport, document: document, source: image)
     }
   }
 

@@ -20,18 +20,29 @@ enum ImageExportError: LocalizedError {
 
 @MainActor
 enum ImageExporter {
-  static func copyToPasteboard(_ image: CGImage, fileURL: URL? = nil) {
+  @discardableResult
+  static func copyToPasteboard(_ image: CGImage, fileURL: URL? = nil) -> Bool {
+    guard let png = try? pngData(from: image) else {
+      return publish(nil, tiff: tiffData(from: image), fileURL: fileURL)
+    }
+    return publish(png, tiff: tiffData(from: image), fileURL: fileURL)
+  }
+
+  private static func publish(_ png: Data?, tiff: Data?, fileURL: URL?) -> Bool {
+    guard png != nil || tiff != nil else { return false }
     let pasteboard = NSPasteboard.general
     pasteboard.clearContents()
-    if let png = try? pngData(from: image) {
-      pasteboard.setData(png, forType: .png)
+    var published = false
+    if let png {
+      published = pasteboard.setData(png, forType: .png) || published
     }
-    if let tiff = tiffData(from: image) {
-      pasteboard.setData(tiff, forType: .tiff)
+    if let tiff {
+      published = pasteboard.setData(tiff, forType: .tiff) || published
     }
     if let fileURL {
-      pasteboard.setString(fileURL.absoluteString, forType: .fileURL)
+      published = pasteboard.setString(fileURL.absoluteString, forType: .fileURL) || published
     }
+    return published
   }
 
   static func writePNG(_ image: CGImage, to url: URL) throws {

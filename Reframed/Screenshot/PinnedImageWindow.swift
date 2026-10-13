@@ -10,7 +10,8 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   var onClose: ((String) -> Void)?
   var onFrameChange: ((String) -> Void)?
 
-  private let minSide: CGFloat = 60
+  private static let minimumSide: CGFloat = 60
+  private let minSide = PinnedImageWindow.minimumSide
   private let maxSide: CGFloat = 4096
   private let aspect: CGFloat
 
@@ -105,6 +106,10 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
     let scale = NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2
     var width = CGFloat(image.width) / scale
     var height = CGFloat(image.height) / scale
+    guard width > 0, height > 0 else { return CGSize(width: minimumSide, height: minimumSide) }
+    let floorRatio = max(1, minimumSide / width, minimumSide / height)
+    width *= floorRatio
+    height *= floorRatio
     if let screen = NSScreen.screen(for: displayID) {
       let maxWidth = screen.visibleFrame.width * 0.8
       let maxHeight = screen.visibleFrame.height * 0.8
@@ -112,7 +117,7 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
       width *= ratio
       height *= ratio
     }
-    return CGSize(width: max(width, 60), height: max(height, 60))
+    return CGSize(width: width, height: height)
   }
 }
 

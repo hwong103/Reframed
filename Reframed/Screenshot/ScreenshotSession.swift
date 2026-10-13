@@ -165,8 +165,7 @@ final class ScreenshotSession {
   @discardableResult
   func copyLastToClipboard() -> Bool {
     guard let result = lastResult else { return false }
-    ImageExporter.copyToPasteboard(result.image, fileURL: lastSavedURL)
-    return true
+    return ImageExporter.copyToPasteboard(result.image, fileURL: lastSavedURL)
   }
 
   @discardableResult
