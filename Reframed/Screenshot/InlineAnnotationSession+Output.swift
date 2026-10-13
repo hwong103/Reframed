@@ -29,7 +29,7 @@ extension InlineAnnotationSession {
     try? ImageExporter.writePNG(image, to: url)
     let item = NSPasteboardItem()
     item.setString(url.absoluteString, forType: .fileURL)
-    if let png = ImageExporter.pngData(from: image) {
+    if let png = try? ImageExporter.pngData(from: image) {
       item.setData(png, forType: .png)
     }
     if let tiff = ImageExporter.tiffData(from: image) {
