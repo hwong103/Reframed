@@ -27,7 +27,7 @@ final class ScrollingCaptureSession {
   private(set) var phase: Phase = .idle
   private(set) var frameCount = 0
 
-  var isEscapable: Bool { phase == .collecting || phase == .stitching }
+  var isEscapable: Bool { phase == .preparing || phase == .collecting || phase == .stitching }
 
   private let selection: SelectionRect
   private let captureSession: ScreenshotSession

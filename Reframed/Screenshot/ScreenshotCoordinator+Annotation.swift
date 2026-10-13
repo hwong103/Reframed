@@ -104,6 +104,7 @@ extension ScreenshotCoordinator {
   }
 
   private func adoptAnnotationRegion(_ image: CGImage, _ selection: SelectionRect) {
+    scrollingRequest += 1
     if selection.isScreenRegion {
       lastWindowSelection = nil
     }
