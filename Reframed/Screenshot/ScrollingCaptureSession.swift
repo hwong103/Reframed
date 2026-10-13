@@ -40,7 +40,7 @@ final class ScrollingCaptureSession {
   private var profiles: [ScrollStitcher.FrameProfile] = []
   private var sourcePixels = 0
   private var collectTask: Task<Void, Never>?
-  private var stitchTask: Task<Void, Never>?
+  private var stitchTask: Task<ScrollStitcher.StitchOutcome, Never>?
   private var hud: ScrollingCaptureHUDWindow?
 
   init(
