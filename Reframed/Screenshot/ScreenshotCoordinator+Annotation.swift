@@ -35,13 +35,13 @@ extension ScreenshotCoordinator {
   }
 
   private func annotationCopy(_ image: CGImage, _ selection: SelectionRect) {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     captureSession.copyLastToClipboard()
     ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
   }
 
   private func annotationSave(_ image: CGImage, _ selection: SelectionRect, copy: Bool) {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     do {
       let url = try captureSession.saveLast()
       annotationSavedURL = url
@@ -59,18 +59,18 @@ extension ScreenshotCoordinator {
   }
 
   private func annotationCaptureText(_ image: CGImage, _ selection: SelectionRect) {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     ScreenshotFeedbackWindow.show(copyTextFromLast(), near: NSEvent.mouseLocation)
   }
 
   private func annotationPin(_ image: CGImage, _ selection: SelectionRect) {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     PinnedImageManager.shared.pin(image, displayID: selection.displayID)
     ScreenshotFeedbackWindow.show("Pinned to screen", near: NSEvent.mouseLocation)
   }
 
   private func annotationOpenInWindow(_ image: CGImage, _ selection: SelectionRect) {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     let reference = SourceImageReference(
       identifier: "\(selection.displayID)-\(selection.rect.origin.x)-\(selection.rect.origin.y)",
       pixelWidth: image.width,
@@ -80,7 +80,7 @@ extension ScreenshotCoordinator {
   }
 
   private func annotationPreviewFile(_ image: CGImage, _ selection: SelectionRect) -> URL? {
-    captureSession.adoptRendered(image: image, selection: selection)
+    adoptAnnotationRegion(image, selection)
     if let saved = annotationSavedURL, FileManager.default.fileExists(atPath: saved.path) {
       return saved
     }
@@ -92,5 +92,12 @@ extension ScreenshotCoordinator {
       present(error.localizedDescription)
       return nil
     }
+  }
+
+  private func adoptAnnotationRegion(_ image: CGImage, _ selection: SelectionRect) {
+    if selection.isScreenRegion {
+      lastWindowSelection = nil
+    }
+    captureSession.adoptRendered(image: image, selection: selection)
   }
 }
