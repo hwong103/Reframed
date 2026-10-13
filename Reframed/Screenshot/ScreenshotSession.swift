@@ -75,6 +75,25 @@ final class ScreenshotSession {
     try await service.resolveWindow(id: id)
   }
 
+  func windowImage(_ window: SCWindow, includeShadow: Bool) async throws -> ScreenshotResult {
+    try await service.captureWindow(window, includeShadow: includeShadow)
+  }
+
+  @discardableResult
+  func adoptComposedWindow(image: CGImage, displayID: CGDirectDisplayID, scale: CGFloat) -> ScreenshotResult {
+    let result = ScreenshotResult(
+      image: image,
+      displayID: displayID,
+      pointSize: CGSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale),
+      backingScale: scale
+    )
+    lastSelection = nil
+    lastWindowID = nil
+    lastResult = result
+    lastSavedURL = nil
+    return result
+  }
+
   @discardableResult
   func repeatLastCapture(
     excludingApplications: [SCRunningApplication] = []

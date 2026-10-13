@@ -3,12 +3,10 @@ import AppKit
 extension SelectionOverlayView {
   func handleMouseMoved(_ point: CGPoint) {
     mouseLocation = point
-
     if annotationHitTest(point) != nil {
       NSCursor.arrow.set()
       return
     }
-
     updateCursor()
 
     if annotationSession != nil {
@@ -89,12 +87,13 @@ extension SelectionOverlayView {
     let shift = shiftHeld || (annotationSession?.isAspectLocked ?? false)
     if let handle = activeHandle, let start = handleDragStart, let original = originalRectBeforeResize {
       let delta = CGPoint(x: point.x - start.x, y: point.y - start.y)
+      let locked = shift && original.width > 0 && original.height > 0
       var newRect = handle.resize(original: original, delta: delta).normalized
-      if shift, original.width > 0, original.height > 0 {
+      if locked {
         let aspect = original.width / original.height
         newRect = constrainToAspect(original, delta: delta, aspect: aspect, handle: handle)
       }
-      selectionRect = confined(newRect.normalized)
+      selectionRect = confined(newRect.normalized, aspect: locked)
       needsDisplay = true
       updateControlsPanel()
       return
@@ -136,8 +135,9 @@ extension SelectionOverlayView {
     updateControlsPanel()
   }
 
-  private func confined(_ rect: CGRect) -> CGRect {
-    backgroundImage == nil ? rect : rect.clamped(to: bounds)
+  private func confined(_ rect: CGRect, aspect: Bool = false) -> CGRect {
+    guard backgroundImage != nil else { return rect }
+    return aspect ? rect.clampedPreservingAspect(to: bounds) : rect.clamped(to: bounds)
   }
 
   func handleMouseUp(_ point: CGPoint) {

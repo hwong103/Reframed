@@ -122,13 +122,11 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
     }
 
     private func restoreOverlays() {
-      for window in hiddenOverlays {
-        if window === keyOverlay {
-          window.makeKeyAndOrderFront(nil)
-        } else {
-          window.orderFrontRegardless()
-        }
+      let key = keyOverlay
+      for window in hiddenOverlays where window !== key {
+        window.orderFrontRegardless()
       }
+      key?.makeKeyAndOrderFront(nil)
       hiddenOverlays.removeAll()
       keyOverlay = nil
     }

@@ -61,6 +61,12 @@ R4.3 After copy or cancel, focus returns to the app that was frontmost before th
 capture started.
 R4.4 The still flow does not touch microphone, camera or accessibility permissions;
 Screen Recording alone gates it.
+R4.5 R4.2 governs region capture. Window capture is a separate, live contract: the
+frozen backdrop is used only to choose the target window, and the window itself is
+re-rendered in isolation when the selection is confirmed, so the result keeps the
+window's own transparency, corner rounding and shadow, and never includes an
+overlapping window. An animation inside a captured window can therefore differ from
+the frozen preview; that is accepted in exchange for an isolated, composited window.
 
 ## R9 - inline annotation after confirm
 
