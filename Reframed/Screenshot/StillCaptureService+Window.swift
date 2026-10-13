@@ -20,20 +20,46 @@ extension StillCaptureService {
     configuration.width = Int(contentPixels.width)
     configuration.height = Int(contentPixels.height)
     configuration.scalesToFit = false
+    configuration.captureResolution = .best
     configuration.ignoreShadowsSingleWindow = !includeShadow
     configuration.shouldBeOpaque = !includeShadow
-    let image = try await SCScreenshotManager.captureImage(
+    let captured = try await SCScreenshotManager.captureImage(
       contentFilter: filter,
       configuration: configuration
     )
-    let realised = CGSize(width: image.width, height: image.height)
+    let realised = CGSize(width: captured.width, height: captured.height)
     try assertRealisedSize(realised, contentPixels: contentPixels, includeShadow: includeShadow, window: window)
+    let image = normalised(captured, to: contentPixels)
     return ScreenshotResult(
       image: image,
       displayID: displayID(for: window),
       pointSize: CGSize(width: realised.width / scale, height: realised.height / scale),
       backingScale: scale
     )
+  }
+
+  private func normalised(_ image: CGImage, to size: CGSize) -> CGImage {
+    let width = Int(size.width)
+    let height = Int(size.height)
+    guard width > 0, height > 0, image.width != width || image.height != height else {
+      return image
+    }
+    guard
+      let context = CGContext(
+        data: nil,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      )
+    else {
+      return image
+    }
+    context.interpolationQuality = .high
+    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+    return context.makeImage() ?? image
   }
 
   func resolveWindow(id: CGWindowID) async throws -> SCWindow {

@@ -161,6 +161,6 @@ struct AnnotationColorPopover: View {
   }
 
   private var isRedactionTool: Bool {
-    state.tool == .blur || state.tool == .pixelate
+    state.tool == .blur
   }
 }

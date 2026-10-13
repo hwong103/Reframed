@@ -12,6 +12,10 @@ enum AnnotationToolKind: String, CaseIterable, Codable, Sendable {
   case blur
   case pixelate
   case crop
+
+  static var allCases: [AnnotationToolKind] {
+    [.arrow, .rectangle, .ellipse, .line, .pen, .highlighter, .text, .blur, .crop]
+  }
 }
 
 struct AnnotationStyle: Codable, Sendable, Equatable {

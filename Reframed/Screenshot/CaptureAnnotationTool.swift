@@ -9,7 +9,6 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
   case line
   case arrow
   case freehand
-  case pixelate
   case blur
   case text
   case step
@@ -23,7 +22,6 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .line: return "Line Tool"
     case .arrow: return "Arrow Tool"
     case .freehand: return "Freehand Tool"
-    case .pixelate: return "Pixelate Tool"
     case .blur: return "Blur Tool"
     case .text: return "Text Tool"
     case .step: return "Step Annotation Tool"
@@ -39,7 +37,6 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .line: return "line.diagonal"
     case .arrow: return "arrow.up.right"
     case .freehand: return "pencil"
-    case .pixelate: return "square.grid.2x2"
     case .blur: return "drop.fill"
     case .text: return "textformat"
     case .step: return "1.circle"
@@ -55,7 +52,6 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .line: return "3"
     case .arrow: return "4"
     case .freehand: return "5"
-    case .pixelate: return "6"
     case .blur: return "0"
     case .text: return "7"
     case .step: return "8"
@@ -75,7 +71,6 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .line: return .line
     case .arrow: return .arrow
     case .freehand: return .pen
-    case .pixelate: return .pixelate
     case .blur: return .blur
     case .text: return .text
     case .step: return .text
