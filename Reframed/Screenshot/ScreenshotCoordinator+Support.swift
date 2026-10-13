@@ -97,14 +97,9 @@ extension ScreenshotCoordinator {
   }
 
   private func finishTextSnip(_ selection: SelectionRect) async {
-    defer {
-      isCapturing = false
-      isTextSnip = false
-      frozenDisplays.removeAll()
-    }
     let request = scrollingRequest
+    let progress = ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
     do {
-      ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
       let result = try await capturedRegion(selection)
       lastWindowSelection = nil
       let image = result.image
@@ -112,14 +107,18 @@ extension ScreenshotCoordinator {
         try OCRService.recognize(in: image)
       }.value
       guard scrollingRequest == request else {
-        ScreenshotFeedbackWindow.dismissCurrent()
         return
       }
       ScreenshotFeedbackWindow.show(publishText(ocr), near: NSEvent.mouseLocation)
     } catch {
-      ScreenshotFeedbackWindow.dismissCurrent()
+      guard scrollingRequest == request else { return }
+      ScreenshotFeedbackWindow.dismiss(progress)
       present(error.localizedDescription)
     }
+    guard scrollingRequest == request else { return }
+    isCapturing = false
+    isTextSnip = false
+    frozenDisplays.removeAll()
     restoreFocus(previousApplication)
     previousApplication = nil
   }

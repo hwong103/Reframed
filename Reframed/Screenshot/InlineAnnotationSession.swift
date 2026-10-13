@@ -45,6 +45,7 @@ final class InlineAnnotationSession {
   var isSelectionToolActive: Bool { state.tool == .selection }
   var isAspectLocked: Bool { state.aspectLocked }
   var isReadingText = false
+  var retryArmed = false
 
   private var displayScale: CGFloat {
     selection.backingScaleFactor > 0 ? selection.backingScaleFactor : 2

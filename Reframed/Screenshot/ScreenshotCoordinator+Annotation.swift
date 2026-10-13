@@ -7,7 +7,9 @@ extension ScreenshotCoordinator {
       copy: { [weak self] image, selection in self?.annotationCopy(image, selection) },
       save: { [weak self] image, selection in self?.annotationSave(image, selection, copy: false) },
       saveAndCopy: { [weak self] image, selection in self?.annotationSave(image, selection, copy: true) },
-      captureText: { [weak self] image, selection in self?.annotationCaptureText(image, selection) },
+      captureText: { [weak self] image, selection, detailed, completion in
+        self?.annotationCaptureText(image, selection, detailed: detailed, completion: completion)
+      },
       pin: { [weak self] image, selection in self?.annotationPin(image, selection) },
       openInWindow: { [weak self] image, selection in self?.annotationOpenInWindow(image, selection) },
       openInPreview: { [weak self] image, selection in self?.annotationPreviewFile(image, selection) },

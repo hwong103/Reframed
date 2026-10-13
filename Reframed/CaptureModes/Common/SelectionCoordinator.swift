@@ -1,11 +1,17 @@
 import AppKit
 
 @MainActor
+enum AnnotationTextOutcome: Equatable {
+  case found(OCRResult)
+  case empty
+  case failed
+}
+
 struct SelectionAnnotationHandlers {
   let copy: (CGImage, SelectionRect) -> Void
   let save: (CGImage, SelectionRect) -> Void
   let saveAndCopy: (CGImage, SelectionRect) -> Void
-  let captureText: (CGImage, SelectionRect) -> Void
+  let captureText: (CGImage, SelectionRect, Bool, @escaping (AnnotationTextOutcome) -> Void) -> Void
   let pin: (CGImage, SelectionRect) -> Void
   let openInWindow: (CGImage, SelectionRect) -> Void
   let openInPreview: (CGImage, SelectionRect) -> URL?

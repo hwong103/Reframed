@@ -39,13 +39,6 @@ extension InlineAnnotationSession {
     }
     return published ? item : nil
   }
-  func captureText() {
-    guard !isReadingText else { return }
-    guard let rendered = renderedSelection() else { return end() }
-    isReadingText = true
-    handlers.captureText(rendered, selection)
-  }
-
   func pin() {
     apply(handlers.pin)
     end()
@@ -176,7 +169,7 @@ extension InlineAnnotationSession {
     toolbarHost.needsDisplay = true
   }
 
-  private func renderedSelection() -> CGImage? {
+  func renderedSelection() -> CGImage? {
     guard let full = model.renderedImage() else { return nil }
     let scale = selection.backingScaleFactor > 0 ? selection.backingScaleFactor : 1
     let points = selection.stillCaptureRect

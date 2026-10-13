@@ -8,17 +8,21 @@ final class ScreenshotFeedbackWindow: NSPanel {
 
   private var dismissTask: Task<Void, Never>?
   private let sticky: Bool
+  private let token = UUID()
 
-  static func show(_ message: String, detail: String? = nil, near point: CGPoint, sticky: Bool = false) {
+  @discardableResult
+  static func show(_ message: String, detail: String? = nil, near point: CGPoint, sticky: Bool = false) -> UUID {
     current?.dismissNow()
     let window = ScreenshotFeedbackWindow(message: message, detail: detail, sticky: sticky)
     current = window
     window.place(near: point)
     window.orderFrontRegardless()
     window.scheduleDismiss()
+    return window.token
   }
 
-  static func dismissCurrent() {
+  static func dismiss(_ token: UUID) {
+    guard current?.token == token else { return }
     current?.dismissNow()
   }
 
