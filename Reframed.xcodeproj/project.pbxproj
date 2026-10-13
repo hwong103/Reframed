@@ -183,7 +183,6 @@
 		AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */; };
 		AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005C /* CaptureSelectionChrome.swift */; };
 		AB5C0000000000000000005F /* WindowCaptureComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005E /* WindowCaptureComposer.swift */; };
-		AB5C00000000000000000061 /* CaptureTargetReadout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000060 /* CaptureTargetReadout.swift */; };
 		AB5C00000000000000000063 /* SelectionOverlayView+WindowPick.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */; };
 		AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000042 /* HoverTargetProvider.swift */; };
 		AB5C00000000000000000045 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000044 /* OCRService.swift */; };
@@ -488,7 +487,6 @@
 		AB5C00000000000000000048 /* PinnedImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageManager.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000036 /* WindowSelectionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSelectionRequest.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
-		AB5C00000000000000000060 /* CaptureTargetReadout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTargetReadout.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+WindowPick.swift"; sourceTree = "<group>"; };
 		AC0000000000000000000011 /* AnnotationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationItem.swift; sourceTree = "<group>"; };
 		AC0000000000000000000012 /* AnnotationDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationDocument.swift; sourceTree = "<group>"; };
@@ -853,7 +851,6 @@
 				AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */,
 				AB5C0000000000000000005C /* CaptureSelectionChrome.swift */,
 				AB5C0000000000000000005E /* WindowCaptureComposer.swift */,
-				AB5C00000000000000000060 /* CaptureTargetReadout.swift */,
 			);
 			path = Screenshot;
 			sourceTree = "<group>";
@@ -1417,7 +1414,6 @@
 				AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */,
 				AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */,
 				AB5C0000000000000000005F /* WindowCaptureComposer.swift in Sources */,
-				AB5C00000000000000000061 /* CaptureTargetReadout.swift in Sources */,
 				AB5C00000000000000000063 /* SelectionOverlayView+WindowPick.swift in Sources */,
 				AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */,
 				AC0000000000000000000021 /* AnnotationItem.swift in Sources */,
