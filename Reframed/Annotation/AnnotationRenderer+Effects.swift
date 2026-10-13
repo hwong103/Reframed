@@ -39,45 +39,22 @@ extension AnnotationRenderer {
     let inner = item.bounds.standardized.integral.intersection(visible).integral
     let halo = CGFloat(max(0, padding))
     let expanded = inner.insetBy(dx: -halo, dy: -halo).integral.intersection(visible).integral
-    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1,
-      let snapshot = context.makeImage()
-    else {
+    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1 else {
       return
     }
-
-    let bounds = CGRect(x: 0, y: 0, width: snapshot.width, height: snapshot.height)
-    let expandedRect = imageRect(viewport.rect(expanded).integral, in: bounds)
+    let bounds = CGRect(x: 0, y: 0, width: context.width, height: context.height)
+    let expandedRect = viewport.rect(expanded).integral.intersection(bounds).integral
     guard expandedRect.width >= 1, expandedRect.height >= 1,
-      let region = snapshot.cropping(to: expandedRect)
-    else {
-      return
-    }
+      let region = regionBuffer(from: context, rect: expandedRect)
+    else { return }
     let width = Int(expandedRect.width)
     let height = Int(expandedRect.height)
-    var buffer = [UInt8](repeating: 0, count: width * height * 4)
-    let drawn = buffer.withUnsafeMutableBytes { raw -> Bool in
-      guard
-        let temp = CGContext(
-          data: raw.baseAddress,
-          width: width,
-          height: height,
-          bitsPerComponent: 8,
-          bytesPerRow: width * 4,
-          space: colorSpace,
-          bitmapInfo: bitmapInfo
-        )
-      else {
-        return false
-      }
-      temp.draw(region, in: CGRect(x: 0, y: 0, width: width, height: height))
-      return true
-    }
-    guard drawn else { return }
+    var buffer = region
     transform(&buffer, width, height)
 
-    let innerRect = imageRect(viewport.rect(inner).integral, in: bounds)
+    let innerRect = viewport.rect(inner).integral.intersection(bounds).integral
     let offsetX = Int(innerRect.minX - expandedRect.minX)
-    let offsetY = Int(innerRect.minY - expandedRect.minY)
+    let offsetY = Int(expandedRect.maxY - innerRect.maxY)
     let innerWidth = Int(innerRect.width)
     let innerHeight = Int(innerRect.height)
     guard innerWidth >= 1, innerHeight >= 1, offsetX >= 0, offsetY >= 0,
@@ -106,13 +83,22 @@ extension AnnotationRenderer {
     context.restoreGState()
   }
 
-  private static func imageRect(_ rect: CGRect, in bounds: CGRect) -> CGRect {
-    CGRect(
-      x: rect.minX,
-      y: bounds.maxY - rect.maxY,
-      width: rect.width,
-      height: rect.height
-    ).integral.intersection(bounds).integral
+  private static func regionBuffer(from context: CGContext, rect: CGRect) -> [UInt8]? {
+    guard let base = context.data else { return nil }
+    let width = Int(rect.width)
+    let height = Int(rect.height)
+    let stride = context.bytesPerRow
+    let firstRow = context.height - Int(rect.maxY)
+    guard firstRow >= 0, firstRow + height <= context.height else { return nil }
+    var buffer = [UInt8](repeating: 0, count: width * height * 4)
+    buffer.withUnsafeMutableBytes { raw in
+      guard let destination = raw.baseAddress else { return }
+      for row in 0..<height {
+        let source = (firstRow + row) * stride + Int(rect.minX) * 4
+        memcpy(destination.advanced(by: row * width * 4), base.advanced(by: source), width * 4)
+      }
+    }
+    return buffer
   }
 
   static func boxBlur(_ buffer: inout [UInt8], width: Int, height: Int, radius: Int) {
@@ -122,48 +108,46 @@ extension AnnotationRenderer {
     }
     let count = 2 * r + 1
     var horizontal = buffer
-    for y in 0..<height {
-      for x in 0..<width {
-        var sumRed = 0
-        var sumGreen = 0
-        var sumBlue = 0
-        var sumAlpha = 0
-        for dx in -r...r {
-          let sampleX = min(max(x + dx, 0), width - 1)
-          let index = (y * width + sampleX) * 4
-          sumRed += Int(buffer[index])
-          sumGreen += Int(buffer[index + 1])
-          sumBlue += Int(buffer[index + 2])
-          sumAlpha += Int(buffer[index + 3])
+    blurAxis(&buffer, into: &horizontal, width: width, height: height, radius: r, count: count, horizontal: true)
+    blurAxis(&horizontal, into: &buffer, width: width, height: height, radius: r, count: count, horizontal: false)
+  }
+
+  private static func blurAxis(
+    _ source: inout [UInt8],
+    into destination: inout [UInt8],
+    width: Int,
+    height: Int,
+    radius: Int,
+    count: Int,
+    horizontal: Bool
+  ) {
+    var sums = [0, 0, 0, 0]
+    let outer = horizontal ? height : width
+    let inner = horizontal ? width : height
+    for line in 0..<outer {
+      sums = [0, 0, 0, 0]
+      for offset in -radius...radius {
+        let index = pixelIndex(line, clamp(offset, inner), width: width, horizontal: horizontal)
+        for channel in 0..<4 { sums[channel] += Int(source[index + channel]) }
+      }
+      for sample in 0..<inner {
+        let out = pixelIndex(line, sample, width: width, horizontal: horizontal)
+        for channel in 0..<4 { destination[out + channel] = UInt8(sums[channel] / count) }
+        let leaving = pixelIndex(line, clamp(sample - radius, inner), width: width, horizontal: horizontal)
+        let entering = pixelIndex(line, clamp(sample + radius + 1, inner), width: width, horizontal: horizontal)
+        for channel in 0..<4 {
+          sums[channel] += Int(source[entering + channel]) - Int(source[leaving + channel])
         }
-        let output = (y * width + x) * 4
-        horizontal[output] = UInt8(sumRed / count)
-        horizontal[output + 1] = UInt8(sumGreen / count)
-        horizontal[output + 2] = UInt8(sumBlue / count)
-        horizontal[output + 3] = UInt8(sumAlpha / count)
       }
     }
-    for y in 0..<height {
-      for x in 0..<width {
-        var sumRed = 0
-        var sumGreen = 0
-        var sumBlue = 0
-        var sumAlpha = 0
-        for dy in -r...r {
-          let sampleY = min(max(y + dy, 0), height - 1)
-          let index = (sampleY * width + x) * 4
-          sumRed += Int(horizontal[index])
-          sumGreen += Int(horizontal[index + 1])
-          sumBlue += Int(horizontal[index + 2])
-          sumAlpha += Int(horizontal[index + 3])
-        }
-        let output = (y * width + x) * 4
-        buffer[output] = UInt8(sumRed / count)
-        buffer[output + 1] = UInt8(sumGreen / count)
-        buffer[output + 2] = UInt8(sumBlue / count)
-        buffer[output + 3] = UInt8(sumAlpha / count)
-      }
-    }
+  }
+
+  private static func pixelIndex(_ line: Int, _ sample: Int, width: Int, horizontal: Bool) -> Int {
+    (horizontal ? line * width + sample : sample * width + line) * 4
+  }
+
+  private static func clamp(_ value: Int, _ limit: Int) -> Int {
+    min(max(value, 0), limit - 1)
   }
 
   static func pixelate(_ buffer: inout [UInt8], width: Int, height: Int, block: Int) {

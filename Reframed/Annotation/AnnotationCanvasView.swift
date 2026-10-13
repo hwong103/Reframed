@@ -12,6 +12,17 @@ final class AnnotationCanvasView: NSView {
     let anchor: CGPoint
   }
 
+  struct DragComposition {
+    let itemID: UUID
+    let index: Int
+    let others: [AnnotationItem]
+    let crop: CGRect?
+    let prefix: [UInt8]
+    let suffix: [AnnotationItem]
+    let width: Int
+    let height: Int
+  }
+
   enum Handle: Int, CaseIterable {
     case topLeft
     case top
@@ -42,6 +53,16 @@ final class AnnotationCanvasView: NSView {
   var isInline = false
   var stepStampProvider: (() -> String?)?
   var explicitLayout: Layout?
+  var dragComposition: DragComposition?
+
+  var draggingItemID: UUID? {
+    switch dragState {
+    case .creating(let id), .moving(let id, _, _), .resizing(let id, _, _, _):
+      return id
+    default:
+      return nil
+    }
+  }
 
   init(model: AnnotationEditorModel) {
     self.model = model

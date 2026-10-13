@@ -104,23 +104,23 @@ enum AnnotationRenderer {
     var buffer = [UInt8](repeating: 0, count: width * height * 4)
     var result: CGImage?
     buffer.withUnsafeMutableBytes { raw in
-      guard
-        let context = CGContext(
-          data: raw.baseAddress,
-          width: width,
-          height: height,
-          bitsPerComponent: 8,
-          bytesPerRow: width * 4,
-          space: colorSpace,
-          bitmapInfo: bitmapInfo
-        )
-      else {
-        return
-      }
+      guard let context = bitmapContext(raw.baseAddress, width: width, height: height) else { return }
       renderDirect(document, image: image, into: context)
       result = context.makeImage()
     }
     return result
+  }
+
+  static func bitmapContext(_ data: UnsafeMutableRawPointer?, width: Int, height: Int) -> CGContext? {
+    CGContext(
+      data: data,
+      width: width,
+      height: height,
+      bitsPerComponent: 8,
+      bytesPerRow: width * 4,
+      space: colorSpace,
+      bitmapInfo: bitmapInfo
+    )
   }
 
   static func image(from buffer: [UInt8], width: Int, height: Int) -> CGImage? {

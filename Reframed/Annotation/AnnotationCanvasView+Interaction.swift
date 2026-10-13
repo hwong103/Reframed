@@ -76,6 +76,7 @@ extension AnnotationCanvasView {
     case .idle:
       break
     }
+    clearDragComposition()
     dragState = .idle
     needsDisplay = true
   }
@@ -88,6 +89,7 @@ extension AnnotationCanvasView {
       model.discardInProgress()
     }
     model.endCoalescing()
+    clearDragComposition()
     dragState = .idle
     needsDisplay = true
   }

@@ -196,6 +196,8 @@
 		AB5C0000000000000000006F /* PinnedImageWindow+Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */; };
 		AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000048 /* PinnedImageManager.swift */; };
 		AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000036 /* WindowSelectionRequest.swift */; };
+		AB5C00000000000000000071 /* AnnotationCanvasView+Viewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */; };
+		AB5C00000000000000000073 /* AnnotationCanvasView+DragCompose.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */; };
 		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
 		AC0000000000000000000022 /* AnnotationDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* AnnotationDocument.swift */; };
 		AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000013 /* AnnotationRenderer.swift */; };
@@ -495,6 +497,8 @@
 		AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PinnedImageWindow+Geometry.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000048 /* PinnedImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageManager.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000036 /* WindowSelectionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSelectionRequest.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Viewport.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+DragCompose.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+WindowPick.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationDragSource.swift; sourceTree = "<group>"; };
@@ -892,6 +896,8 @@
 				AC000000000000000000001B /* AnnotationCanvasView+Geometry.swift */,
 				AC000000000000000000001C /* AnnotationCanvasView+Interaction.swift */,
 				AC000000000000000000001D /* AnnotationCanvasView+Text.swift */,
+				AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */,
+				AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */,
 				AC000000000000000000001E /* AnnotationToolbarView.swift */,
 				AC000000000000000000001F /* AnnotationEditorWindowController.swift */,
 			);
@@ -1457,6 +1463,8 @@
 				AC000000000000000000002B /* AnnotationCanvasView+Geometry.swift in Sources */,
 				AC000000000000000000002C /* AnnotationCanvasView+Interaction.swift in Sources */,
 				AC000000000000000000002D /* AnnotationCanvasView+Text.swift in Sources */,
+				AB5C00000000000000000071 /* AnnotationCanvasView+Viewport.swift in Sources */,
+				AB5C00000000000000000073 /* AnnotationCanvasView+DragCompose.swift in Sources */,
 				AC000000000000000000002E /* AnnotationToolbarView.swift in Sources */,
 				AC000000000000000000002F /* AnnotationEditorWindowController.swift in Sources */,
 			);
