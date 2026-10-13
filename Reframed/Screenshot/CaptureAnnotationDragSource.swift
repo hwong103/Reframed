@@ -95,8 +95,7 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
 
     override func viewDidMoveToWindow() {
       super.viewDidMoveToWindow()
-      removeAllToolTips()
-      addToolTip("Drag into another app, or click to copy", owner: self, userData: nil)
+      toolTip = "Drag into another app, or click to copy"
     }
 
     override func mouseUp(with event: NSEvent) {
