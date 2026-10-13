@@ -95,8 +95,8 @@ R9.6 Tool shortcuts are backtick for Selection, 1-9 for Rectangle, Oval, Line, A
 Freehand, Pixelate, Text, Step and Highlight; actions are O (Capture Text), T (Pin),
 P (Open in Preview), W (Open in Window), Command-S (Save), Shift-Command-S (Save and
 Copy), Return/Space (Copy), Command-Z (Undo, Shift-Command-Z redo), Delete (remove the
-selected annotation) and Esc (Cancel). Scrolling capture (S) is shown dimmed with a
-tooltip rather than hidden.
+selected annotation) and Esc (Cancel). Scrolling capture (S) runs the user-driven long
+capture defined by R12.
 R9.7 `AnnotationEditorWindowController` is not presented by the default flow. W is the
 only opt-in path to a separate window, and it opens the already-rendered result.
 R9.8 `ScreenshotActionBarWindow` is retained but never presented; the feedback HUD stays
@@ -151,8 +151,7 @@ snapshots retained for undo, and a stated ceiling for future long images.
 ## Non-goals in P0
 
 Annotation, OCR and pinning were P0 non-goals and now have their own sections (R9, R11,
-R10). Still out of scope: scrolling capture (present as a disabled toolbar affordance),
-drag-out, beautify, ruler, and a capture history list.
+R10, R12). Still out of scope here: beautify, ruler, and a capture history list.
 
 ## R10 - pin to screen
 
@@ -184,3 +183,37 @@ therefore matches what Copy and Save export. The renderer's `.none` interpolatio
 bearing for the on-screen downscale and must stay `.none`; `AnnotationRenderer.makeImage`
 renders at document pixel size and is unaffected. Cancelling while recognition is in
 flight wins, and the late result is dropped.
+
+## R12 - scrolling (long) capture
+
+The P4 spike, in its honest user-driven form.
+
+R12.1 Scrolling capture is user-driven. The user scrolls the page; Reframed never
+scrolls for them and never tries to detect the end of the page.
+R12.2 It starts from an existing region selection, from the toolbar's S button or the S
+key while annotating. The overlay is torn down for the duration so the underlying app can
+receive scrolling, the selection rect is kept, and the stitched image is handed to the
+same composed-annotation path multi-window capture uses. Copy, Save, Text, Pin, Preview
+and Window therefore behave unchanged.
+R12.3 Frames are the same region at the display's native backing scale, captured serially
+every 200 ms, with Reframed's own chrome excluded exactly as R3.5 requires. A frame whose
+downsampled row profile is identical to the previous frame's is dropped rather than
+padded into the stack.
+R12.4 Every cap refuses with a message instead of crashing: 120 frames, 60 s wall clock,
+and 120 MP of decoded source pixels. The HUD reports the live frame count and the Esc and
+Return keys.
+R12.5 Seam detection correlates a bottom band of a 48-pixel-wide grayscale row profile
+against candidate vertical offsets, and accepts a join only when the mean absolute
+difference is at or below 6.0 and the winner beats the runner-up by at least 2.0.
+Otherwise the join is doubtful and the count of doubtful joins is shown to the user. A
+join is never presented as clean when it is not, and a blank or uninformative band is
+doubtful by construction.
+R12.6 Leading and trailing rows that are identical across the captured frames - a sticky
+header or footer - are detected and excluded from the composed image, so they are not
+repeated down the page.
+R12.7 The composed image is bounded at 120 MP and refuses past it. Fewer than two frames,
+or frames from a region that did not scroll, refuse with an explanation.
+R12.8 Return finishes and opens the annotation overlay on the stitched image; Escape
+cancels, discards every frame, and returns focus exactly like the other cancel paths.
+R12.9 No clean stitch is promised on lazy-loaded content: a page that re-renders as it
+scrolls produces a doubtful join rather than a silently wrong image.

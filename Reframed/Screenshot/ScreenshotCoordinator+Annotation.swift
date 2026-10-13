@@ -11,6 +11,11 @@ extension ScreenshotCoordinator {
       pin: { [weak self] image, selection in self?.annotationPin(image, selection) },
       openInWindow: { [weak self] image, selection in self?.annotationOpenInWindow(image, selection) },
       openInPreview: { [weak self] image, selection in self?.annotationPreviewFile(image, selection) },
+      scrollingCapture: { [weak self] selection in
+        Task { @MainActor in
+          self?.startScrollingCapture(selection)
+        }
+      },
       finish: { [weak self] in self?.finishInlineAnnotation() },
       finishWithoutRefocus: { [weak self] in self?.finishInlineAnnotation(refocus: false) },
       cancel: { [weak self] in self?.cancel() }
@@ -106,5 +111,65 @@ extension ScreenshotCoordinator {
       lastWindowSelection = nil
     }
     captureSession.adoptRendered(image: image, selection: selection)
+  }
+
+  func startScrollingCapture(_ selection: SelectionRect) {
+    guard scrollingSession == nil else { return }
+    guard selection.isScreenRegion, selection.rect.width >= 40, selection.rect.height >= 40 else {
+      ScreenshotFeedbackWindow.show("Scrolling capture needs a screen region", near: NSEvent.mouseLocation)
+      return
+    }
+    Task { [weak self] in
+      guard let self else { return }
+      if self.exclusions.isEmpty {
+        self.exclusions = await self.resolveExclusions()
+      }
+      self.beginScrollingCapture(selection)
+    }
+  }
+
+  private func beginScrollingCapture(_ selection: SelectionRect) {
+    guard scrollingSession == nil else { return }
+    selectionCoordinator.destroyAll()
+    windowSelectionCoordinator?.destroyOverlay()
+    windowSelectionCoordinator = nil
+    frozenDisplays.removeAll()
+    annotationSavedURL = nil
+    let session = ScrollingCaptureSession(
+      selection: selection,
+      captureSession: captureSession,
+      exclusions: exclusions,
+      onFinish: { [weak self] outcome in self?.finishScrollingCapture(outcome, selection: selection) },
+      onCancel: { [weak self] in self?.cancelScrollingCapture() }
+    )
+    scrollingSession = session
+    session.start()
+  }
+
+  private func finishScrollingCapture(_ outcome: ScrollStitcher.StitchOutcome, selection: SelectionRect) {
+    scrollingSession = nil
+    guard let image = outcome.image else {
+      isCapturing = false
+      present(outcome.message)
+      restoreFocus(previousApplication)
+      previousApplication = nil
+      return
+    }
+    lastWindowSelection = nil
+    captureSession.adoptRendered(image: image, selection: selection)
+    if !outcome.uncertainJoins.isEmpty || outcome.droppedDuplicates > 0 {
+      ScreenshotFeedbackWindow.show(outcome.message, near: NSEvent.mouseLocation)
+    }
+    selectionCoordinator.presentComposedAnnotation(
+      image: image,
+      displayID: selection.displayID,
+      handlers: makeAnnotationHandlers(),
+      onCancel: { [weak self] in self?.cancel() }
+    )
+  }
+
+  private func cancelScrollingCapture() {
+    scrollingSession = nil
+    cancel()
   }
 }

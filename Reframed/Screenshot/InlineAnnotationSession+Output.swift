@@ -19,12 +19,8 @@ extension InlineAnnotationSession {
 
   func makeDragItem() -> NSPasteboardItem? {
     guard let image = renderedSelection() else { return nil }
-    let directory = FileManager.default.temporaryDirectory
-      .appendingPathComponent("ReframedDrag", isDirectory: true)
-    try? FileManager.default.createDirectory(
-      at: directory,
-      withIntermediateDirectories: true
-    )
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ReframedDrag", isDirectory: true)
+    try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let url = ScreenshotNaming.uniqueURL(
       in: directory,
       baseName: ScreenshotNaming.baseName(),
@@ -67,6 +63,8 @@ extension InlineAnnotationSession {
       openInPreviewApplication(url)
     }
   }
+
+  func scrollingCapture() { handlers.scrollingCapture(selection) }
 
   private func openInPreviewApplication(_ url: URL) {
     let preview = URL(fileURLWithPath: "/System/Applications/Preview.app")
@@ -128,6 +126,7 @@ extension InlineAnnotationSession {
       pin: { [weak self] in self?.pin() },
       openInWindow: { [weak self] in self?.openInWindow() },
       openInPreview: { [weak self] in self?.openInPreview() },
+      scrollingCapture: { [weak self] in self?.scrollingCapture() },
       makeDragItem: { [weak self] in self?.makeDragItem() },
       cancel: { [weak self] in self?.cancel() },
       selectTool: { [weak self] tool in self?.selectTool(tool) },

@@ -9,6 +9,7 @@ struct SelectionAnnotationHandlers {
   let pin: (CGImage, SelectionRect) -> Void
   let openInWindow: (CGImage, SelectionRect) -> Void
   let openInPreview: (CGImage, SelectionRect) -> URL?
+  let scrollingCapture: (SelectionRect) -> Void
   let finish: () -> Void
   let finishWithoutRefocus: () -> Void
   let cancel: () -> Void
@@ -122,6 +123,27 @@ final class SelectionCoordinator {
     overlayWindows = [target]
     (target.contentView as? SelectionOverlayView)?.enterComposedAnnotation(image: image, displayID: displayID)
     target.makeKeyAndOrderFront(nil)
+  }
+
+  func presentComposedAnnotation(
+    image: CGImage,
+    displayID: CGDirectDisplayID,
+    handlers: SelectionAnnotationHandlers,
+    onCancel: @escaping () -> Void
+  ) {
+    guard let screen = NSScreen.screen(for: displayID), overlayWindows.isEmpty else { return }
+    let request = SelectionRequest(
+      timerDelay: 0,
+      annotation: handlers,
+      onCountdownStart: {},
+      onConfirm: { _ in },
+      onCancel: onCancel
+    )
+    let window = SelectionOverlayWindow(screen: screen, request: request, isInitialActive: true)
+    overlayWindows = [window]
+    enterComposedAnnotation(image: image, displayID: displayID)
+    window.orderFrontRegardless()
+    NSApp.activate(ignoringOtherApps: true)
   }
 
   func updateRecordingBorder(screenRect: CGRect) {

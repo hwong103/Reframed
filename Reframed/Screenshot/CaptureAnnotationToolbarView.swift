@@ -12,6 +12,7 @@ struct CaptureAnnotationToolbarActions {
   let pin: () -> Void
   let openInWindow: () -> Void
   let openInPreview: () -> Void
+  let scrollingCapture: () -> Void
   let makeDragItem: () -> NSPasteboardItem?
   let cancel: () -> Void
   let selectTool: (CaptureAnnotationTool) -> Void
@@ -114,9 +115,10 @@ struct CaptureAnnotationToolbarView: View {
         .captureArrowCursor()
       IconButton(
         systemImage: "arrow.up.and.down.text.horizontal",
-        isDimmed: true,
-        help: "Scrolling capture is not available yet (S)"
-      ) {}
+        help: "Scrolling capture (S)"
+      ) {
+        actions.scrollingCapture()
+      }
     }
   }
 }

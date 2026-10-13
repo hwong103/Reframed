@@ -161,8 +161,10 @@ final class InlineAnnotationSession {
       openInWindow()
     case "p":
       openInPreview()
+    case "s":
+      scrollingCapture()
     default:
-      return key == "s"
+      return false
     }
     return true
   }

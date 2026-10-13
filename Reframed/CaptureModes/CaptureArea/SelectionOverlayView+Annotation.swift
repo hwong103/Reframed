@@ -54,9 +54,12 @@ extension SelectionOverlayView {
     guard pixel.width >= 1, pixel.height >= 1 else { return }
 
     let fit = min(bounds.width / pixel.width, bounds.height / pixel.height)
+    let fitted = CGSize(width: pixel.width * fit, height: pixel.height * fit)
     let localRect = CGRect(
-      origin: bounds.origin,
-      size: CGSize(width: pixel.width * fit, height: pixel.height * fit)
+      x: bounds.midX - fitted.width / 2,
+      y: bounds.midY - fitted.height / 2,
+      width: fitted.width,
+      height: fitted.height
     )
     let selection = SelectionRect(
       rect: CGRect(origin: .zero, size: pixel),
