@@ -5,12 +5,14 @@ extension SelectionOverlayView {
     annotationSession != nil
   }
 
+  var overlayDisplayID: CGDirectDisplayID {
+    window?.screen?.displayID ?? CGMainDisplayID()
+  }
+
   func currentSelection() -> SelectionRect? {
     guard let rect = selectionRect, let window else { return nil }
     let screenRect = window.convertToScreen(convert(rect, to: nil))
-    let anchor = CGPoint(x: screenRect.midX, y: screenRect.midY)
-    let displayID = NSScreen.screens.first { $0.frame.contains(anchor) }?.displayID ?? CGMainDisplayID()
-    return SelectionRect(rect: screenRect, displayID: displayID)
+    return SelectionRect(rect: screenRect, displayID: overlayDisplayID)
   }
 
   func enterAnnotationMode() {

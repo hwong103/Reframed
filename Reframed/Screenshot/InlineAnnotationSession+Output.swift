@@ -25,7 +25,11 @@ extension InlineAnnotationSession {
       at: directory,
       withIntermediateDirectories: true
     )
-    let url = directory.appendingPathComponent("\(ScreenshotNaming.baseName()).png")
+    let url = ScreenshotNaming.uniqueURL(
+      in: directory,
+      baseName: ScreenshotNaming.baseName(),
+      fileExtension: "png"
+    )
     try? ImageExporter.writePNG(image, to: url)
     let item = NSPasteboardItem()
     item.setString(url.absoluteString, forType: .fileURL)

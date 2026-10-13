@@ -8,6 +8,7 @@ struct CaptureAreaView: View {
   let onCancel: () -> Void
   let onConfirm: () -> Void
   let onSelectionRectChange: (CGRect) -> Void
+  let ownerToken: ObjectIdentifier
   @State private var x: Int = 0
   @State private var y: Int = 0
   @State private var w: Int = 0
@@ -17,12 +18,10 @@ struct CaptureAreaView: View {
   @State private var triggerStart = false
   @State private var targetTitle: String?
   @State private var targetPixel: CGSize?
-
   private let textColor = Color.black
   private let secondaryTextColor = Color.black.opacity(0.6)
   private let fieldBg = Color.black.opacity(0.04)
   private let fieldBorder = Color.black.opacity(0.1)
-
   private let presets: [(String, Int, Int)] = [
     ("1920 \u{00d7} 1080", 1920, 1080),
     ("1280 \u{00d7} 720", 1280, 720),
@@ -120,7 +119,8 @@ struct CaptureAreaView: View {
       w = Int(r.width)
       h = Int(r.height)
     }
-    .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { _ in
+    .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { notification in
+      guard let sender = notification.object as? ObjectIdentifier, sender == ownerToken else { return }
       triggerStart = true
     }
     .onReceive(NotificationCenter.default.publisher(for: .selectionTargetChanged)) { notification in

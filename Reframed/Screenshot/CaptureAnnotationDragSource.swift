@@ -20,6 +20,8 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
     private var startPoint: NSPoint?
     private var isDragging = false
     private var isHovering = false
+    private var hiddenOverlays: [NSWindow] = []
+    private weak var keyOverlay: NSWindow?
 
     override var intrinsicContentSize: NSSize {
       NSSize(width: 32, height: 32)
@@ -81,6 +83,7 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
       guard hypot(point.x - start.x, point.y - start.y) > 4 else { return }
       guard let item = makeItem?() else { return }
       isDragging = true
+      hideOverlays()
       let draggingItem = NSDraggingItem(pasteboardWriter: item)
       draggingItem.setDraggingFrame(bounds, contents: previewImage())
       beginDraggingSession(with: [draggingItem], event: event, source: self)
@@ -98,8 +101,36 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
       .copy
     }
 
+    func draggingSession(
+      _ session: NSDraggingSession,
+      endedAt screenPoint: NSPoint,
+      operation: NSDragOperation
+    ) {
+      restoreOverlays()
+    }
+
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool {
       true
+    }
+
+    private func hideOverlays() {
+      keyOverlay = NSApp.keyWindow as? SelectionOverlayWindow
+      hiddenOverlays = NSApp.windows.filter { $0 is SelectionOverlayWindow && $0.isVisible }
+      for window in hiddenOverlays {
+        window.orderOut(nil)
+      }
+    }
+
+    private func restoreOverlays() {
+      for window in hiddenOverlays {
+        if window === keyOverlay {
+          window.makeKeyAndOrderFront(nil)
+        } else {
+          window.orderFrontRegardless()
+        }
+      }
+      hiddenOverlays.removeAll()
+      keyOverlay = nil
     }
 
     private func previewImage() -> NSImage {

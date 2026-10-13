@@ -57,7 +57,8 @@ extension SelectionOverlayView {
         onCountdownStart: request.onCountdownStart,
         onCancel: request.onCancel,
         onConfirm: { [weak self] in self?.confirmSelection() },
-        onSelectionRectChange: { [weak self] rect in self?.applyExternalRect(rect) }
+        onSelectionRectChange: { [weak self] rect in self?.applyExternalRect(rect) },
+        ownerToken: ObjectIdentifier(self)
       )
       let hosting = NSHostingView(rootView: view)
       addSubview(hosting)

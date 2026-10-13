@@ -11,10 +11,32 @@ struct WindowSetCapture {
   let result: ScreenshotResult?
   let capturedIDs: [CGWindowID]
   let skipped: Int
+  let liveFallbacks: Int
+  let failure: String?
+
+  init(
+    result: ScreenshotResult?,
+    capturedIDs: [CGWindowID],
+    skipped: Int,
+    liveFallbacks: Int = 0,
+    failure: String? = nil
+  ) {
+    self.result = result
+    self.capturedIDs = capturedIDs
+    self.skipped = skipped
+    self.liveFallbacks = liveFallbacks
+    self.failure = failure
+  }
 
   var notice: String? {
-    guard skipped > 0 else { return nil }
-    return skipped == 1 ? "Skipped 1 window" : "Skipped \(skipped) windows"
+    var parts: [String] = []
+    if skipped > 0 {
+      parts.append(skipped == 1 ? "Skipped 1 window" : "Skipped \(skipped) windows")
+    }
+    if liveFallbacks > 0 {
+      parts.append(liveFallbacks == 1 ? "1 window captured live" : "\(liveFallbacks) windows captured live")
+    }
+    return parts.isEmpty ? nil : parts.joined(separator: ", ")
   }
 }
 
@@ -37,7 +59,7 @@ extension ScreenshotCoordinator {
     defer { isCapturing = false }
     let captured = await captureWindowImages(selection.windowIDs, includeShadow: selection.includeShadow)
     guard let result = captured.result else {
-      present("Those windows are no longer available to capture.")
+      present(captured.failure ?? "Those windows are no longer available to capture.")
       restoreFocus(previousApplication)
       previousApplication = nil
       return
@@ -49,31 +71,63 @@ extension ScreenshotCoordinator {
   }
 
   func captureWindowImages(_ windowIDs: [CGWindowID], includeShadow: Bool) async -> WindowSetCapture {
-    var results: [ScreenshotResult] = []
+    var shots: [ScreenshotResult] = []
     var capturedIDs: [CGWindowID] = []
     var skipped = 0
+    var liveFallbacks = 0
     for windowID in windowIDs {
       do {
         let window = try await captureSession.resolveWindow(id: windowID)
-        let result = try await captureSession.captureWindow(window, includeShadow: includeShadow)
-        results.append(result)
+        if let frozen = frozenWindowShot(window, includeShadow: includeShadow) {
+          shots.append(frozen)
+        } else {
+          shots.append(try await captureSession.captureWindow(window, includeShadow: includeShadow))
+          if !frozenDisplays.isEmpty {
+            liveFallbacks += 1
+          }
+        }
         capturedIDs.append(windowID)
       } catch {
         skipped += 1
       }
     }
-    guard let first = results.first else {
-      return WindowSetCapture(result: nil, capturedIDs: [], skipped: skipped)
+    guard let first = shots.first else {
+      return WindowSetCapture(result: nil, capturedIDs: [], skipped: skipped, liveFallbacks: liveFallbacks)
     }
-    let image = WindowCaptureComposer.compose(results.map(\.image), scale: first.backingScale) ?? first.image
-    let scale = first.backingScale
-    let composed = ScreenshotResult(
+    let scale = first.backingScale > 0 ? first.backingScale : 1
+    guard let image = WindowCaptureComposer.compose(shots.map(\.image), scale: scale) else {
+      return WindowSetCapture(
+        result: nil,
+        capturedIDs: [],
+        skipped: skipped,
+        liveFallbacks: liveFallbacks,
+        failure: "Those windows are too large to combine into one image."
+      )
+    }
+    let composed = captureSession.adoptRendered(
       image: image,
-      displayID: first.displayID,
-      pointSize: CGSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale),
-      backingScale: scale
+      selection: composedSelection(first: first, image: image, scale: scale)
     )
-    return WindowSetCapture(result: composed, capturedIDs: capturedIDs, skipped: skipped)
+    return WindowSetCapture(result: composed, capturedIDs: capturedIDs, skipped: skipped, liveFallbacks: liveFallbacks)
+  }
+
+  private func frozenWindowShot(_ window: SCWindow, includeShadow: Bool) -> ScreenshotResult? {
+    guard
+      let selection = StillCaptureService.frozenWindowSelection(for: window, includeShadow: includeShadow),
+      let frozen = frozenDisplays[selection.displayID]
+    else { return nil }
+    return try? captureSession.captureFrozenRegion(selection, from: frozen)
+  }
+
+  private func composedSelection(first: ScreenshotResult, image: CGImage, scale: CGFloat) -> SelectionRect {
+    let size = CGSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
+    return SelectionRect(
+      rect: CGRect(origin: .zero, size: size),
+      displayID: first.displayID,
+      displayOrigin: .zero,
+      displayHeight: size.height,
+      scale: scale
+    )
   }
 
   private func finishWindowSetCapture(_ windowIDs: [CGWindowID], includeShadow: Bool) async {
@@ -81,7 +135,7 @@ extension ScreenshotCoordinator {
     guard let result = captured.result else {
       isCapturing = false
       frozenDisplays.removeAll()
-      present("Those windows are no longer available to capture.")
+      present(captured.failure ?? "Those windows are no longer available to capture.")
       restoreFocus(previousApplication)
       previousApplication = nil
       return

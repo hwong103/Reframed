@@ -113,7 +113,7 @@ final class SelectionOverlayView: NSView {
     case 53:  // escape
       request.onCancel()
     case 36:  // enter
-      NotificationCenter.default.post(name: .areaSelectionConfirmRequested, object: nil)
+      NotificationCenter.default.post(name: .areaSelectionConfirmRequested, object: ObjectIdentifier(self))
     default:
       super.keyDown(with: event)
     }
@@ -124,7 +124,7 @@ final class SelectionOverlayView: NSView {
       return super.hitTest(point)
     }
     if let chrome = annotationHitTest(point) {
-      return chrome
+      return chrome.hitTest(convert(point, from: superview)) ?? chrome
     }
     if session.isSelectionToolActive {
       return self

@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 enum WindowCaptureComposer {
   static let spacingPoints: CGFloat = 32
+  static let pixelBudget = 200_000_000
 
   static func compose(_ images: [CGImage], scale: CGFloat) -> CGImage? {
     guard let first = images.first else { return nil }
@@ -11,9 +12,23 @@ enum WindowCaptureComposer {
 
     let spacing = max(1, Int((spacingPoints * max(scale, 1)).rounded()))
     let contentWidth = images.map(\.width).max() ?? first.width
-    let contentHeight = images.reduce(0) { $0 + $1.height } + spacing * (images.count - 1)
-    let width = contentWidth + spacing * 2
-    let height = contentHeight + spacing * 2
+    var contentHeight = 0
+    for image in images {
+      guard let sum = adding(contentHeight, image.height) else { return nil }
+      contentHeight = sum
+    }
+    guard let gapTotal = multiplying(spacing, images.count - 1),
+      let margin = multiplying(spacing, 2),
+      let stackedHeight = adding(contentHeight, gapTotal),
+      let height = adding(stackedHeight, margin),
+      let width = adding(contentWidth, margin),
+      width >= 1,
+      height >= 1,
+      let area = multiplying(width, height),
+      area <= pixelBudget
+    else {
+      return nil
+    }
 
     guard
       let context = CGContext(
@@ -44,5 +59,15 @@ enum WindowCaptureComposer {
     }
 
     return context.makeImage()
+  }
+
+  private static func adding(_ lhs: Int, _ rhs: Int) -> Int? {
+    let (sum, overflow) = lhs.addingReportingOverflow(rhs)
+    return overflow ? nil : sum
+  }
+
+  private static func multiplying(_ lhs: Int, _ rhs: Int) -> Int? {
+    let (product, overflow) = lhs.multipliedReportingOverflow(by: rhs)
+    return overflow ? nil : product
   }
 }

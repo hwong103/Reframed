@@ -94,7 +94,7 @@ extension SelectionOverlayView {
         let aspect = original.width / original.height
         newRect = constrainToAspect(original, delta: delta, aspect: aspect, handle: handle)
       }
-      selectionRect = newRect
+      selectionRect = confined(newRect.normalized)
       needsDisplay = true
       updateControlsPanel()
       return
@@ -102,12 +102,13 @@ extension SelectionOverlayView {
 
     if handleDragStart != nil, let original = originalRectBeforeResize {
       let delta = CGPoint(x: point.x - handleDragStart!.x, y: point.y - handleDragStart!.y)
-      selectionRect = CGRect(
+      let moved = CGRect(
         x: original.origin.x + delta.x,
         y: original.origin.y + delta.y,
         width: original.width,
         height: original.height
       )
+      selectionRect = confined(moved)
       needsDisplay = true
       updateControlsPanel()
       return
@@ -124,14 +125,19 @@ extension SelectionOverlayView {
     if shift, w > 0, h > 0 {
       h = w * 9.0 / 16.0
     }
-    selectionRect = CGRect(
+    let drawn = CGRect(
       x: point.x >= origin.x ? origin.x : origin.x - w,
       y: point.y >= origin.y ? origin.y : origin.y - h,
       width: w,
       height: h
     )
+    selectionRect = confined(drawn.normalized)
     needsDisplay = true
     updateControlsPanel()
+  }
+
+  private func confined(_ rect: CGRect) -> CGRect {
+    backgroundImage == nil ? rect : rect.clamped(to: bounds)
   }
 
   func handleMouseUp(_ point: CGPoint) {

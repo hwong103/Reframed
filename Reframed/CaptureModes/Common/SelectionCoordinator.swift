@@ -65,7 +65,9 @@ final class SelectionCoordinator {
   private var borderWindow: RecordingBorderWindow?
 
   func beginSelection(request: SelectionRequest) {
-    let pointerDisplayID = request.initialFullScreen ? NSScreen.displayID(for: NSEvent.mouseLocation) : nil
+    let pointer = NSEvent.mouseLocation
+    let pointerQuartz = CGPoint(x: pointer.x, y: NSScreen.primaryScreenHeight - pointer.y)
+    let pointerDisplayID = request.initialFullScreen ? NSScreen.displayID(for: pointerQuartz) : nil
     let hoverProvider = request.hoverTargetsEnabled ? HoverTargetProvider() : nil
     for screen in NSScreen.screens {
       let isInitialActive = request.initialFullScreen && screen.displayID == pointerDisplayID

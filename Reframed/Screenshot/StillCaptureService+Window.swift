@@ -4,6 +4,8 @@ import Foundation
 import ScreenCaptureKit
 
 extension StillCaptureService {
+  static let windowShadowPadding: CGFloat = 32
+
   func captureWindow(_ window: SCWindow, includeShadow: Bool = true) async throws -> ScreenshotResult {
     try assertCapturable(window)
     let filter = SCContentFilter(desktopIndependentWindow: window)
@@ -30,7 +32,7 @@ extension StillCaptureService {
     try assertRealisedSize(realised, contentPixels: contentPixels, includeShadow: includeShadow, window: window)
     return ScreenshotResult(
       image: image,
-      displayID: displayID(for: window),
+      displayID: Self.displayID(for: window),
       pointSize: CGSize(width: realised.width / scale, height: realised.height / scale),
       backingScale: scale
     )
@@ -54,6 +56,15 @@ extension StillCaptureService {
     guard window.isOnScreen else {
       throw ScreenshotCaptureError.windowOffScreen
     }
+  }
+
+  static func frozenWindowSelection(for window: SCWindow, includeShadow: Bool) -> SelectionRect? {
+    let displayID = displayID(for: window)
+    guard NSScreen.screen(for: displayID) != nil else { return nil }
+    let frame = windowFrameInAppKit(window)
+    guard frame.width >= 1, frame.height >= 1 else { return nil }
+    let padding = includeShadow ? windowShadowPadding : 0
+    return SelectionRect(rect: frame.insetBy(dx: -padding, dy: -padding), displayID: displayID)
   }
 
   private func assertRealisedSize(
@@ -88,11 +99,11 @@ extension StillCaptureService {
   }
 
   private func isFullyOnScreen(_ window: SCWindow) -> Bool {
-    let frame = windowFrameInAppKit(window)
+    let frame = Self.windowFrameInAppKit(window)
     return NSScreen.screens.contains { $0.frame.contains(frame) }
   }
 
-  private func windowFrameInAppKit(_ window: SCWindow) -> CGRect {
+  private static func windowFrameInAppKit(_ window: SCWindow) -> CGRect {
     let frame = window.frame
     return CGRect(
       x: frame.origin.x,
@@ -102,7 +113,7 @@ extension StillCaptureService {
     )
   }
 
-  private func displayID(for window: SCWindow) -> CGDirectDisplayID {
+  private static func displayID(for window: SCWindow) -> CGDirectDisplayID {
     let frame = window.frame
     return NSScreen.displayID(for: CGPoint(x: frame.midX, y: frame.midY))
   }
