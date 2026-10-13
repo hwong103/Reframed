@@ -2,7 +2,11 @@ import CoreGraphics
 import Foundation
 
 extension ScrollStitcher {
-  static func stitch(frames: [CGImage], profiles measured: [FrameProfile]? = nil) -> StitchOutcome {
+  static func stitch(
+    frames: [CGImage],
+    profiles measured: [FrameProfile]? = nil,
+    termination: Termination = .userFinish
+  ) -> StitchOutcome {
     guard frames.count >= 2 else { return refused("Scrolling capture needs at least two frames.") }
     let profiles = measured?.count == frames.count ? measured! : frames.compactMap { profile(for: $0) }
     guard !profiles.isEmpty, profiles.count == frames.count else {
@@ -20,7 +24,7 @@ extension ScrollStitcher {
     guard band >= 1, insets.header + insets.footer < height / 2 else {
       return refused("The region did not appear to scroll, so there is nothing to stitch.")
     }
-    var outcome = StitchOutcome(headerRows: insets.header, footerRows: insets.footer)
+    var outcome = StitchOutcome(headerRows: insets.header, footerRows: insets.footer, termination: termination)
     var cumulative = [0]
     for index in 1..<frames.count {
       guard
@@ -39,13 +43,17 @@ extension ScrollStitcher {
         outcome.uncertainJoins.append(index - 1)
       }
     }
+    guard outcome.uncertainJoins.isEmpty else {
+      outcome.message = doubtfulMessage(count: outcome.uncertainJoins.count, joins: frames.count - 1)
+      return outcome
+    }
     let composedHeight = cumulative[cumulative.count - 1] + band
     guard composedHeight > band else {
-      return refused("The page did not scroll, so there is nothing to stitch.")
+      return refused("The page did not scroll, so there is nothing to stitch.", from: outcome)
     }
     let (pixels, overflow) = width.multipliedReportingOverflow(by: composedHeight)
     guard !overflow, pixels <= outputPixelBudget else {
-      return refused("The stitched image would be too large to build.")
+      return refused("The stitched image would be too large to build.", from: outcome)
     }
     guard
       let image = compose(
@@ -56,7 +64,7 @@ extension ScrollStitcher {
         width: width,
         height: composedHeight
       )
-    else { return refused("The stitched image could not be rendered.") }
+    else { return refused("The stitched image could not be rendered.", from: outcome) }
     outcome.image = image
     outcome.message = summary(frames: frames.count, outcome: outcome)
     return outcome
@@ -127,13 +135,56 @@ extension ScrollStitcher {
     if outcome.droppedDuplicates > 0 {
       message += ", \(outcome.droppedDuplicates) duplicate skipped"
     }
-    if !outcome.uncertainJoins.isEmpty {
-      message += ", \(outcome.uncertainJoins.count) doubtful"
+    let stopped: String
+    switch outcome.termination {
+    case .userFinish:
+      stopped = ""
+    case .frameLimit:
+      stopped = "stopped at the frame limit"
+    case .timeLimit:
+      stopped = "stopped at the time limit"
+    case .memoryLimit:
+      stopped = "stopped to stay within the memory limit"
+    case .captureFailures:
+      stopped = "stopped after repeated capture failures"
     }
-    return message
+    return stopped.isEmpty ? message : message + ", " + stopped
   }
 
-  private static func refused(_ message: String) -> StitchOutcome {
-    StitchOutcome(message: message)
+  private static func doubtfulMessage(count: Int, joins: Int) -> String {
+    let verb = count == 1 ? "join was" : "joins were"
+    return
+      "\(count) of \(joins) \(verb) doubtful, so the long capture was refused rather than "
+      + "guessed. Scroll more slowly so each frame overlaps the previous one by at least half."
+  }
+
+  static func meanError(
+    _ previous: [UInt8],
+    _ next: [UInt8],
+    start: Int,
+    width: Int,
+    band: Int,
+    delta: Int
+  ) -> Double {
+    var total = 0
+    previous.withUnsafeBufferPointer { source in
+      next.withUnsafeBufferPointer { target in
+        for row in 0..<band {
+          let left = (start + row) * width
+          let right = (start + row - delta) * width
+          for column in 0..<width {
+            total += abs(Int(source[left + column]) - Int(target[right + column]))
+          }
+        }
+      }
+    }
+    return Double(total) / Double(band * width)
+  }
+
+  private static func refused(_ message: String, from outcome: StitchOutcome? = nil) -> StitchOutcome {
+    var result = outcome ?? StitchOutcome()
+    result.image = nil
+    result.message = message
+    return result
   }
 }

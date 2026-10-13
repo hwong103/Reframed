@@ -17,6 +17,7 @@ final class ScreenshotCoordinator {
   var lastWindowSelection: WindowSetSelection?
   var annotationSavedURL: URL?
   var scrollingSession: ScrollingCaptureSession?
+  var scrollingGeneration = 0
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -58,10 +59,11 @@ final class ScreenshotCoordinator {
   }
 
   func cancel() {
-    if let session = scrollingSession, session.isRunning {
+    if let session = scrollingSession {
+      scrollingSession = nil
+      scrollingGeneration = 0
       session.cancel()
     }
-    scrollingSession = nil
     selectionCoordinator.destroyAll()
     windowSelectionCoordinator?.destroyOverlay()
     windowSelectionCoordinator = nil
@@ -75,7 +77,7 @@ final class ScreenshotCoordinator {
   }
 
   func handleEscape() -> Bool {
-    if let session = scrollingSession, session.isRunning {
+    if let session = scrollingSession, session.isEscapable {
       session.cancel()
       return true
     }

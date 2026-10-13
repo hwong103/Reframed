@@ -79,6 +79,13 @@ final class ScreenshotSession {
     try await service.captureWindow(window, includeShadow: includeShadow)
   }
 
+  func frameImage(
+    _ selection: SelectionRect,
+    excludingApplications: [SCRunningApplication] = []
+  ) async throws -> ScreenshotResult {
+    try await service.capture(selection, excludingApplications: excludingApplications)
+  }
+
   @discardableResult
   func adoptComposedWindow(image: CGImage, displayID: CGDirectDisplayID, scale: CGFloat) -> ScreenshotResult {
     let result = ScreenshotResult(

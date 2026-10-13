@@ -138,16 +138,29 @@ extension ScreenshotCoordinator {
     let session = ScrollingCaptureSession(
       selection: selection,
       captureSession: captureSession,
-      exclusions: exclusions,
-      onFinish: { [weak self] outcome in self?.finishScrollingCapture(outcome, selection: selection) },
-      onCancel: { [weak self] in self?.cancelScrollingCapture() }
+      exclusions: exclusions
+    )
+    session.connect(
+      onFinish: { [weak self, weak session] outcome in
+        guard
+          let self, let session, self.scrollingSession === session,
+          self.scrollingGeneration == session.generation
+        else { return }
+        self.finishScrollingCapture(outcome, selection: selection)
+      },
+      onCancel: { [weak self, weak session] in
+        guard let self, let session, self.scrollingSession === session else { return }
+        self.cancelScrollingCapture()
+      }
     )
     scrollingSession = session
+    scrollingGeneration = session.generation
     session.start()
   }
 
   private func finishScrollingCapture(_ outcome: ScrollStitcher.StitchOutcome, selection: SelectionRect) {
     scrollingSession = nil
+    scrollingGeneration = 0
     guard let image = outcome.image else {
       isCapturing = false
       present(outcome.message)
@@ -157,7 +170,7 @@ extension ScreenshotCoordinator {
     }
     lastWindowSelection = nil
     captureSession.adoptRendered(image: image, selection: selection)
-    if !outcome.uncertainJoins.isEmpty || outcome.droppedDuplicates > 0 {
+    if outcome.termination != .userFinish || outcome.droppedDuplicates > 0 {
       ScreenshotFeedbackWindow.show(outcome.message, near: NSEvent.mouseLocation)
     }
     selectionCoordinator.presentComposedAnnotation(
@@ -169,7 +182,9 @@ extension ScreenshotCoordinator {
   }
 
   private func cancelScrollingCapture() {
+    guard scrollingSession != nil else { return }
     scrollingSession = nil
+    scrollingGeneration = 0
     cancel()
   }
 }

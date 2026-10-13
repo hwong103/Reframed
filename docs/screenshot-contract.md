@@ -198,16 +198,23 @@ and Window therefore behave unchanged.
 R12.3 Frames are the same region at the display's native backing scale, captured serially
 every 200 ms, with Reframed's own chrome excluded exactly as R3.5 requires. A frame whose
 downsampled row profile is identical to the previous frame's is dropped rather than
-padded into the stack.
-R12.4 Every cap refuses with a message instead of crashing: 120 frames, 60 s wall clock,
-and 120 MP of decoded source pixels. The HUD reports the live frame count and the Esc and
-Return keys.
-R12.5 Seam detection correlates a bottom band of a 48-pixel-wide grayscale row profile
-against candidate vertical offsets, and accepts a join only when the mean absolute
-difference is at or below 6.0 and the winner beats the runner-up by at least 2.0.
-Otherwise the join is doubtful and the count of doubtful joins is shown to the user. A
-join is never presented as clean when it is not, and a blank or uninformative band is
-doubtful by construction.
+padded into the stack. Collecting a frame never overwrites the last capture: only a
+completed stitch is adopted.
+R12.4 Every cap ends the capture and is reported, instead of crashing or truncating in
+silence: 120 frames, 60 s wall clock, 120 MP of decoded source pixels, and three
+consecutive capture failures. Each frame is measured against the remaining budget before
+it is kept, so no cap can be exceeded. The partial page is still offered, with the reason
+it stopped named in the outcome message. The HUD reports the live frame count and the Esc
+and Return keys.
+R12.5 Seam detection correlates bands of a 48-pixel-wide grayscale row profile against
+candidate vertical offsets. A candidate taken from the primary (lowest) band is accepted
+only when the mean absolute difference is at or below 6.0, the winner beats the runner-up
+by at least 2.0, and at least one further band spread through the usable overlap agrees on
+the same offset within 2 rows; a band with too little variation does not vote. A duplicate
+is a whole-frame match, never a single-band one, so a frame whose upper content changed
+but whose bottom band did not is kept rather than discarded. Any doubtful join refuses the
+capture rather than fabricating a page, and the message names how many joins were doubtful
+and asks for a slower scroll.
 R12.6 Leading and trailing rows that are identical across the captured frames - a sticky
 header or footer - are detected and excluded from the composed image, so they are not
 repeated down the page.
@@ -215,5 +222,8 @@ R12.7 The composed image is bounded at 120 MP and refuses past it. Fewer than tw
 or frames from a region that did not scroll, refuse with an explanation.
 R12.8 Return finishes and opens the annotation overlay on the stitched image; Escape
 cancels, discards every frame, and returns focus exactly like the other cancel paths.
+Cancellation is honoured in every phase - preparing, collecting and stitching: it drops
+every frame, cancels the in-flight capture and the stitch, and no late result can replace
+the previous capture or reopen the overlay.
 R12.9 No clean stitch is promised on lazy-loaded content: a page that re-renders as it
 scrolls produces a doubtful join rather than a silently wrong image.

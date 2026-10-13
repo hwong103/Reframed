@@ -5,6 +5,14 @@ import ScreenCaptureKit
 
 @MainActor
 final class ScrollingCaptureSession {
+  enum Phase: Equatable {
+    case idle
+    case preparing
+    case collecting
+    case stitching
+    case finished
+  }
+
   struct Limits {
     var maxFrames = 120
     var maxDuration: Duration = .seconds(60)
@@ -13,41 +21,53 @@ final class ScrollingCaptureSession {
     var maxConsecutiveFailures = 3
   }
 
+  private static var issued = 0
+
+  let generation: Int
+  private(set) var phase: Phase = .idle
   private(set) var frameCount = 0
-  private(set) var isRunning = false
+
+  var isEscapable: Bool { phase == .collecting || phase == .stitching }
 
   private let selection: SelectionRect
   private let captureSession: ScreenshotSession
   private let exclusions: [SCRunningApplication]
   private let limits: Limits
-  private let onFinish: (ScrollStitcher.StitchOutcome) -> Void
-  private let onCancel: () -> Void
 
+  private var onFinish: ((ScrollStitcher.StitchOutcome) -> Void)?
+  private var onCancel: (() -> Void)?
   private var frames: [CGImage] = []
   private var profiles: [ScrollStitcher.FrameProfile] = []
   private var sourcePixels = 0
-  private var task: Task<Void, Never>?
+  private var collectTask: Task<Void, Never>?
+  private var stitchTask: Task<Void, Never>?
   private var hud: ScrollingCaptureHUDWindow?
 
   init(
     selection: SelectionRect,
     captureSession: ScreenshotSession,
     exclusions: [SCRunningApplication],
-    limits: Limits = Limits(),
-    onFinish: @escaping (ScrollStitcher.StitchOutcome) -> Void,
-    onCancel: @escaping () -> Void
+    limits: Limits = Limits()
   ) {
+    Self.issued += 1
+    self.generation = Self.issued
     self.selection = selection
     self.captureSession = captureSession
     self.exclusions = exclusions
     self.limits = limits
+  }
+
+  func connect(
+    onFinish: @escaping (ScrollStitcher.StitchOutcome) -> Void,
+    onCancel: @escaping () -> Void
+  ) {
     self.onFinish = onFinish
     self.onCancel = onCancel
   }
 
   func start() {
-    guard !isRunning else { return }
-    isRunning = true
+    guard phase == .idle, onFinish != nil else { return }
+    phase = .preparing
     let hud = ScrollingCaptureHUDWindow(
       displayID: selection.displayID,
       anchor: selection.rect,
@@ -56,77 +76,105 @@ final class ScrollingCaptureSession {
     )
     self.hud = hud
     hud.present()
-    task = Task { [weak self] in await self?.collect() }
+    collectTask = Task { [weak self] in await self?.collect() }
   }
 
-  func finish() {
-    guard isRunning else { return }
-    isRunning = false
-    task?.cancel()
-    task = nil
-    hud?.dismiss()
-    hud = nil
+  func finish(reason: ScrollStitcher.Termination = .userFinish) {
+    guard phase == .collecting || phase == .preparing else { return }
+    phase = .stitching
+    collectTask?.cancel()
+    collectTask = nil
+    dismissHUD()
     let captured = frames
     let measured = profiles
     frames.removeAll()
     profiles.removeAll()
-    Task { [weak self] in
+    let generation = generation
+    stitchTask = Task { [weak self] in
       let outcome = await Task.detached(priority: .userInitiated) {
-        ScrollStitcher.stitch(frames: captured, profiles: measured)
+        ScrollStitcher.stitch(frames: captured, profiles: measured, termination: reason)
       }.value
-      self?.onFinish(outcome)
+      guard let self, !Task.isCancelled, self.generation == generation, self.phase == .stitching else { return }
+      self.deliver(outcome)
     }
   }
 
   func cancel() {
-    guard isRunning else { return }
-    isRunning = false
-    task?.cancel()
-    task = nil
-    hud?.dismiss()
-    hud = nil
+    guard phase != .idle, phase != .finished else { return }
+    phase = .finished
+    collectTask?.cancel()
+    collectTask = nil
+    stitchTask?.cancel()
+    stitchTask = nil
+    dismissHUD()
     frames.removeAll()
     profiles.removeAll()
-    onCancel()
+    let handler = onCancel
+    onFinish = nil
+    onCancel = nil
+    handler?()
   }
 
   private func collect() async {
+    guard phase == .preparing else { return }
+    phase = .collecting
     let clock = ContinuousClock()
     let started = clock.now
     var failures = 0
-    while !Task.isCancelled {
+    while isCollecting {
       if frameCount >= limits.maxFrames {
-        return finish()
+        return finish(reason: .frameLimit)
       }
       if started.duration(to: clock.now) >= limits.maxDuration {
-        return finish()
+        return finish(reason: .timeLimit)
       }
       do {
-        let result = try await captureSession.capture(selection, excludingApplications: exclusions)
+        let result = try await captureSession.frameImage(selection, excludingApplications: exclusions)
+        guard isCollecting else { return }
         failures = 0
-        if let profile = await measure(result.image), profiles.last != profile {
-          frames.append(result.image)
-          profiles.append(profile)
-          sourcePixels += result.image.width * result.image.height
-          frameCount = frames.count
-          hud?.update(count: frameCount)
-          if sourcePixels > limits.maxSourcePixels {
-            return finish()
+        if let profile = await measure(result.image) {
+          guard isCollecting else { return }
+          if profiles.last != profile {
+            let pixels = result.image.width * result.image.height
+            guard sourcePixels + pixels <= limits.maxSourcePixels else {
+              return finish(reason: .memoryLimit)
+            }
+            frames.append(result.image)
+            profiles.append(profile)
+            sourcePixels += pixels
+            frameCount = frames.count
+            hud?.update(count: frameCount)
           }
         }
       } catch {
+        guard isCollecting else { return }
         failures += 1
         if failures >= limits.maxConsecutiveFailures {
-          return finish()
+          return finish(reason: .captureFailures)
         }
       }
       try? await Task.sleep(for: limits.interval)
     }
   }
 
+  private var isCollecting: Bool { !Task.isCancelled && phase == .collecting }
+
   private func measure(_ image: CGImage) async -> ScrollStitcher.FrameProfile? {
     await Task.detached(priority: .utility) {
       ScrollStitcher.profile(for: image)
     }.value
+  }
+
+  private func deliver(_ outcome: ScrollStitcher.StitchOutcome) {
+    phase = .finished
+    let handler = onFinish
+    onFinish = nil
+    onCancel = nil
+    handler?(outcome)
+  }
+
+  private func dismissHUD() {
+    hud?.dismiss()
+    hud = nil
   }
 }

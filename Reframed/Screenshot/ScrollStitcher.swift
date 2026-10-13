@@ -12,7 +12,16 @@ enum ScrollStitcher {
   static let acceptError = 6.0
   static let margin = 2.0
   static let rowTolerance = 2
+  static let validationBands = 3
   static let outputPixelBudget = 120_000_000
+
+  enum Termination: Sendable, Equatable {
+    case userFinish
+    case frameLimit
+    case timeLimit
+    case memoryLimit
+    case captureFailures
+  }
 
   struct FrameProfile: Equatable, Sendable {
     let width: Int
@@ -27,7 +36,14 @@ enum ScrollStitcher {
     var droppedDuplicates = 0
     var headerRows = 0
     var footerRows = 0
+    var termination: Termination = .userFinish
     var message = ""
+  }
+
+  struct BandScan: Sendable {
+    let delta: Int
+    let error: Double
+    let runnerUp: Double
   }
 
   typealias OffsetMatch = (delta: Int, error: Double, runnerUp: Double, isUncertain: Bool, isDuplicate: Bool)
@@ -67,60 +83,105 @@ enum ScrollStitcher {
   ) -> OffsetMatch? {
     let width = previous.width
     guard width > 0, previous.width == next.width, previous.height == next.height else { return nil }
-    let usable = previous.height - topInset - bottomInset
+    let height = previous.height
+    let usable = height - topInset - bottomInset
     guard usable >= minUsable else { return nil }
     let band = min(max(usable / 4, minBand), maxBand)
     let upper = min(maxDelta, usable - band)
     guard upper >= 1 else { return nil }
-    let start = topInset + usable - band
+    let whole = wholeFrameError(previous: previous, next: next)
+    if whole <= duplicateError {
+      return (delta: 0, error: whole, runnerUp: whole, isUncertain: false, isDuplicate: true)
+    }
+    let primaryStart = topInset + usable - band
+    guard
+      let primary = scanDelta(
+        previous: previous,
+        next: next,
+        start: primaryStart,
+        band: band,
+        upper: upper
+      )
+    else { return doubtful() }
+    var votes = 0
+    var agrees = true
+    let starts = validationStarts(delta: primary.delta, low: topInset, high: height - bottomInset, band: band)
+    for start in starts where start != primaryStart {
+      guard
+        let other = scanDelta(previous: previous, next: next, start: start, band: band, upper: upper)
+      else { continue }
+      guard other.error <= acceptError, abs(other.delta - primary.delta) <= rowTolerance else {
+        agrees = false
+        break
+      }
+      votes += 1
+    }
+    let certain =
+      agrees && votes >= 1 && primary.error <= acceptError && primary.runnerUp - primary.error >= margin
+    return (
+      delta: primary.delta,
+      error: primary.error,
+      runnerUp: primary.runnerUp,
+      isUncertain: !certain,
+      isDuplicate: false
+    )
+  }
+
+  static func validationStarts(delta: Int, low: Int, high: Int, band: Int) -> [Int] {
+    let first = max(low, delta)
+    let last = high - band
+    guard last > first, validationBands > 1 else { return [first] }
+    let step = (last - first) / (validationBands - 1)
+    guard step >= 1 else { return [first, last] }
+    return (0..<validationBands).map { first + $0 * step }
+  }
+
+  private static func doubtful() -> OffsetMatch {
+    (delta: 0, error: -1, runnerUp: -1, isUncertain: true, isDuplicate: false)
+  }
+
+  private static func wholeFrameError(previous: FrameProfile, next: FrameProfile) -> Double {
+    let width = previous.width
+    let rows = min(previous.height, next.height)
+    var total = 0
+    previous.samples.withUnsafeBufferPointer { source in
+      next.samples.withUnsafeBufferPointer { target in
+        for index in 0..<(width * rows) {
+          total += abs(Int(source[index]) - Int(target[index]))
+        }
+      }
+    }
+    return Double(total) / Double(max(1, width * rows))
+  }
+
+  private static func scanDelta(
+    previous: FrameProfile,
+    next: FrameProfile,
+    start: Int,
+    band: Int,
+    upper: Int
+  ) -> BandScan? {
+    let width = previous.width
+    guard start >= 0, start + band <= previous.height else { return nil }
     let window = previous.samples[(start * width)..<((start + band) * width)]
     guard
       let low = window.min(),
       let high = window.max(),
       Int(high) - Int(low) >= minVariation
-    else {
-      return (delta: 0, error: -1, runnerUp: -1, isUncertain: true, isDuplicate: false)
-    }
+    else { return nil }
     var errors = [Double](repeating: 0, count: upper + 1)
     for delta in 0...upper {
       errors[delta] = meanError(previous.samples, next.samples, start: start, width: width, band: band, delta: delta)
     }
-    if errors[0] <= duplicateError {
-      return (delta: 0, error: errors[0], runnerUp: errors[0], isUncertain: false, isDuplicate: true)
-    }
-    var best = 1
+    var best = 0
     for delta in 1...upper where errors[delta] < errors[best] {
       best = delta
     }
     var runner = Double.greatestFiniteMagnitude
-    for delta in 1...upper where abs(delta - best) > 2 {
+    for delta in 0...upper where abs(delta - best) > rowTolerance {
       runner = min(runner, errors[delta])
     }
-    let error = errors[best]
-    let certain = error <= acceptError && runner - error >= margin
-    return (delta: best, error: error, runnerUp: runner, isUncertain: !certain, isDuplicate: false)
-  }
-
-  private static func meanError(
-    _ previous: [UInt8],
-    _ next: [UInt8],
-    start: Int,
-    width: Int,
-    band: Int,
-    delta: Int
-  ) -> Double {
-    var total = 0
-    previous.withUnsafeBufferPointer { source in
-      next.withUnsafeBufferPointer { target in
-        for row in 0..<band {
-          let left = (start + row) * width
-          let right = (start + row - delta) * width
-          for column in 0..<width {
-            total += abs(Int(source[left + column]) - Int(target[right + column]))
-          }
-        }
-      }
-    }
-    return Double(total) / Double(band * width)
+    guard runner < Double.greatestFiniteMagnitude else { return nil }
+    return BandScan(delta: best, error: errors[best], runnerUp: runner)
   }
 }
