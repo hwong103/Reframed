@@ -2,12 +2,10 @@ import AppKit
 import CoreGraphics
 
 extension ScreenshotCoordinator {
-  func recognizeText(_ image: CGImage, detailed: Bool) async -> AnnotationTextOutcome {
+  func recognizeText(_ image: CGImage) async -> AnnotationTextOutcome {
     do {
       let result = try await Task.detached(priority: .userInitiated) {
-        detailed
-          ? try OCRService.recognizeAccurately(in: image)
-          : try OCRService.recognizeQuickly(in: image)
+        try OCRService.recognize(in: image)
       }.value
       return result.lines.isEmpty ? .empty : .found(result)
     } catch {
@@ -18,15 +16,10 @@ extension ScreenshotCoordinator {
   func annotationCaptureText(
     _ image: CGImage,
     _ selection: SelectionRect,
-    detailed: Bool,
     completion: @escaping (AnnotationTextOutcome) -> Void
   ) {
     adoptAnnotationRegion(image, selection)
-    let progress = ScreenshotFeedbackWindow.show(
-      detailed ? "Reading text in detail..." : "Reading text...",
-      near: NSEvent.mouseLocation,
-      sticky: true
-    )
+    let progress = ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
     textProgressToken = progress
     let request = scrollingRequest
     Task { @MainActor [weak self] in
@@ -34,7 +27,7 @@ extension ScreenshotCoordinator {
         completion(.failed)
         return
       }
-      let outcome = await self.recognizeText(image, detailed: detailed)
+      let outcome = await self.recognizeText(image)
       guard self.scrollingRequest == request, self.isCapturing else {
         self.textProgressToken = nil
         ScreenshotFeedbackWindow.dismiss(progress)
@@ -48,10 +41,7 @@ extension ScreenshotCoordinator {
         ScreenshotFeedbackWindow.show(self.publishText(result), near: NSEvent.mouseLocation)
         self.finishInlineAnnotation()
       case .empty:
-        ScreenshotFeedbackWindow.show(
-          detailed ? "Still no text found" : "No text found - press O again for a detailed read",
-          near: NSEvent.mouseLocation
-        )
+        ScreenshotFeedbackWindow.show("No text found", near: NSEvent.mouseLocation)
       case .failed:
         ScreenshotFeedbackWindow.dismiss(progress)
         self.present("Text recognition failed. Try a smaller region.")

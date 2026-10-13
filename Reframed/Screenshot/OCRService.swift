@@ -29,26 +29,7 @@ struct OCRResult: Sendable, Equatable {
 }
 
 enum OCRService {
-  private static let fallbackLanguages = ["en-US"]
-
   static func recognize(in image: CGImage) throws -> OCRResult {
-    let quick = try recognizeQuickly(in: image)
-    if !quick.lines.isEmpty {
-      return quick
-    }
-    return try recognizeAccurately(in: image)
-  }
-
-  static func recognizeQuickly(in image: CGImage) throws -> OCRResult {
-    let request = VNRecognizeTextRequest()
-    request.recognitionLevel = .fast
-    request.usesLanguageCorrection = false
-    request.automaticallyDetectsLanguage = false
-    request.recognitionLanguages = recognitionLanguages(level: .fast)
-    return OCRResult(lines: try lines(of: request, in: image))
-  }
-
-  static func recognizeAccurately(in image: CGImage) throws -> OCRResult {
     let request = VNRecognizeTextRequest()
     request.recognitionLevel = .accurate
     request.usesLanguageCorrection = true
@@ -76,45 +57,6 @@ enum OCRService {
       throw OCRError.recognitionFailed(error.localizedDescription)
     }
     return readingOrderedLines(from: request.results ?? [])
-  }
-
-  private static func recognitionLanguages(level: VNRequestTextRecognitionLevel) -> [String] {
-    let supported = supportedLanguages(level: level)
-    var matches: [String] = []
-    for preferred in Locale.preferredLanguages {
-      if supported.contains(preferred) {
-        matches.append(preferred)
-      } else if let match = closest(to: preferred, in: supported) {
-        matches.append(match)
-      }
-    }
-    let unique = matches.reduce(into: [String]()) { result, language in
-      if !result.contains(language) {
-        result.append(language)
-      }
-    }
-    return unique.isEmpty ? fallbackLanguages : Array(unique.prefix(3))
-  }
-
-  private static func supportedLanguages(level: VNRequestTextRecognitionLevel) -> [String] {
-    let probe = VNRecognizeTextRequest()
-    probe.recognitionLevel = level
-    return (try? probe.supportedRecognitionLanguages()) ?? []
-  }
-
-  private static func closest(to preferred: String, in supported: [String]) -> String? {
-    let locale = Locale(identifier: preferred)
-    guard let code = locale.language.languageCode?.identifier else {
-      return nil
-    }
-    let sameLanguage = supported.filter { Locale(identifier: $0).language.languageCode?.identifier == code }
-    guard !sameLanguage.isEmpty else {
-      return nil
-    }
-    guard let script = locale.language.script?.identifier else {
-      return sameLanguage.first
-    }
-    return sameLanguage.first { Locale(identifier: $0).language.script?.identifier == script } ?? sameLanguage.first
   }
 
   private static func readingOrderedLines(from observations: [VNRecognizedTextObservation]) -> [String] {
