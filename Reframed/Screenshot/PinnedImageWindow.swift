@@ -10,9 +10,9 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   var onClose: ((String) -> Void)?
   var onFrameChange: ((String) -> Void)?
 
-  private static let minimumSide: CGFloat = 60
-  private let maxSide: CGFloat = 4096
-  private let aspect: CGFloat
+  static let minimumSide: CGFloat = 60
+  let maxSide: CGFloat = 4096
+  let aspect: CGFloat
 
   init(image: CGImage, pngData: Data, displayID: CGDirectDisplayID, pinID: String) {
     self.pinID = pinID
@@ -70,55 +70,10 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
     onFrameChange?(pinID)
   }
 
-  func present(near point: CGPoint?) {
-    let size = frame.size
-    let anchor = point ?? NSEvent.mouseLocation
-    let visible = (NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
-    let origin = confined(CGPoint(x: anchor.x - size.width / 2, y: anchor.y - size.height / 2), size, on: visible)
-    setFrameOrigin(origin)
-    orderFrontRegardless()
-    onFrameChange?(pinID)
-  }
-
-  private func confined(_ origin: CGPoint, _ size: CGSize, on visible: CGRect?) -> CGPoint {
-    guard let visible else { return origin }
-    let x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
-    let y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
-    return CGPoint(x: x, y: y)
-  }
-
   func requestClose() {
     orderOut(nil)
     contentView = nil
     onClose?(pinID)
-  }
-
-  private func resize(by delta: CGFloat) {
-    var width = min(max(frame.width + delta, Self.minimumSide), maxSide)
-    var height = width / aspect
-    let visible = (screen ?? NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
-    if let visible {
-      let ratio = min(1, min(visible.width * 0.9 / max(width, 1), visible.height * 0.9 / max(height, 1)))
-      width *= ratio
-      height *= ratio
-    }
-    var newFrame = frame
-    newFrame.origin.y += frame.height - height
-    newFrame.size = CGSize(width: width, height: height)
-    newFrame.origin = confined(newFrame.origin, newFrame.size, on: visible)
-    setFrame(newFrame, display: true)
-    onFrameChange?(pinID)
-  }
-  private static func naturalSize(for image: CGImage, displayID: CGDirectDisplayID) -> CGSize {
-    let scale = NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2
-    let width = CGFloat(image.width) / scale
-    let height = CGFloat(image.height) / scale
-    guard width > 0, height > 0 else { return CGSize(width: minimumSide, height: minimumSide) }
-    let floorRatio = max(1, minimumSide / width, minimumSide / height)
-    let size = CGSize(width: width * floorRatio, height: height * floorRatio)
-    guard let limit = NSScreen.screen(for: displayID)?.visibleFrame else { return size }
-    let ratio = min(1, min(limit.width * 0.8 / max(size.width, 1), limit.height * 0.8 / max(size.height, 1)))
-    return CGSize(width: size.width * ratio, height: size.height * ratio)
   }
 }
 

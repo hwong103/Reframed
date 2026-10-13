@@ -41,10 +41,7 @@ final class PinnedImageManager {
         pinID: item.id
       )
       register(window)
-      window.setFrame(
-        NSRect(x: item.x, y: item.y, width: item.width, height: item.height),
-        display: false
-      )
+      window.restoreFrame(NSRect(x: item.x, y: item.y, width: item.width, height: item.height))
       window.orderFrontRegardless()
       survivors.append(item)
     }

@@ -193,6 +193,7 @@
 		AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000042 /* HoverTargetProvider.swift */; };
 		AB5C00000000000000000045 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000044 /* OCRService.swift */; };
 		AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000046 /* PinnedImageWindow.swift */; };
+		AB5C0000000000000000006F /* PinnedImageWindow+Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */; };
 		AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000048 /* PinnedImageManager.swift */; };
 		AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000036 /* WindowSelectionRequest.swift */; };
 		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
@@ -491,6 +492,7 @@
 		AB5C00000000000000000042 /* HoverTargetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverTargetProvider.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000044 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000046 /* PinnedImageWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageWindow.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PinnedImageWindow+Geometry.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000048 /* PinnedImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageManager.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000036 /* WindowSelectionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSelectionRequest.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
@@ -854,6 +856,7 @@
 				AB5C00000000000000000042 /* HoverTargetProvider.swift */,
 				AB5C00000000000000000044 /* OCRService.swift */,
 				AB5C00000000000000000046 /* PinnedImageWindow.swift */,
+				AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */,
 				AB5C00000000000000000048 /* PinnedImageManager.swift */,
 				AB5C0000000000000000004C /* CaptureAnnotationTool.swift */,
 				AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */,
@@ -1422,6 +1425,7 @@
 				AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */,
 				AB5C00000000000000000045 /* OCRService.swift in Sources */,
 				AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */,
+				AB5C0000000000000000006F /* PinnedImageWindow+Geometry.swift in Sources */,
 				AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */,
 				AB5C00000000000000000051 /* CaptureAnnotationTool.swift in Sources */,
 				AB5C00000000000000000052 /* CaptureAnnotationToolbarView.swift in Sources */,
