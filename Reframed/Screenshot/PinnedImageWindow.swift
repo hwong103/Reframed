@@ -101,8 +101,8 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
     }
     var newFrame = frame
     newFrame.origin.y += frame.height - height
-    if let limit {
-      newFrame.origin.y = min(max(newFrame.origin.y, limit.minY + 8), limit.maxY - height - 8)
+    if let visible {
+      newFrame.origin.y = min(max(newFrame.origin.y, visible.minY + 8), visible.maxY - height - 8)
     }
     newFrame.size = CGSize(width: width, height: height)
     setFrame(newFrame, display: true)
