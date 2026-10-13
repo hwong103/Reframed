@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @MainActor
@@ -9,6 +10,17 @@ enum CaptureAnnotationChrome {
   static let delete = Color(red: 0.86, green: 0.18, blue: 0.18)
   static let shadow = Color.black.opacity(0.22)
   static var activeBackground: Color { Color.accentColor.opacity(0.16) }
+}
+
+extension View {
+  func captureArrowCursor() -> some View {
+    pointerStyle(.default)
+      .onHover { hovering in
+        if hovering {
+          NSCursor.arrow.set()
+        }
+      }
+  }
 }
 
 extension CaptureAnnotationToolbarView {
@@ -23,18 +35,19 @@ extension CaptureAnnotationToolbarView {
     var body: some View {
       Button(action: action) {
         Image(systemName: systemImage)
-          .font(.system(size: FontSize.xs, weight: .medium))
+          .font(.system(size: FontSize.sm + 1, weight: .medium))
           .foregroundStyle(isSelected ? CaptureAnnotationChrome.accent : tint)
-          .frame(width: 26, height: 26)
+          .frame(width: 32, height: 32)
           .background(
             isSelected ? CaptureAnnotationChrome.activeBackground : Color.clear,
-            in: RoundedRectangle(cornerRadius: Radius.md)
+            in: RoundedRectangle(cornerRadius: Radius.lg)
           )
-          .contentShape(RoundedRectangle(cornerRadius: Radius.md))
+          .contentShape(RoundedRectangle(cornerRadius: Radius.lg))
           .opacity(isDimmed ? 0.35 : 1)
       }
       .buttonStyle(PlainCustomButtonStyle())
       .help(help)
+      .captureArrowCursor()
     }
   }
 }
@@ -57,8 +70,8 @@ struct AnnotationColorPopover: View {
   ]
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      HStack(spacing: 10) {
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(spacing: 13) {
         currentColor
         divider
         swatchGrid
@@ -67,41 +80,42 @@ struct AnnotationColorPopover: View {
       Button("Set as Default Style", action: onSetDefault)
         .buttonStyle(SecondaryButtonStyle(size: .small, forceLightMode: true))
     }
-    .padding(12)
-    .frame(width: 250)
+    .padding(15)
+    .frame(width: 312)
     .background(CaptureAnnotationChrome.surface, in: RoundedRectangle(cornerRadius: Radius.lg))
     .overlay(RoundedRectangle(cornerRadius: Radius.lg).strokeBorder(CaptureAnnotationChrome.divider))
     .environment(\.colorScheme, .light)
+    .captureArrowCursor()
   }
 
   private var currentColor: some View {
     Circle()
       .fill(Color(cgColor: state.selectedColor.cgColor))
-      .frame(width: 26, height: 26)
+      .frame(width: 33, height: 33)
       .overlay(Circle().strokeBorder(Color.black.opacity(0.6), lineWidth: 2))
   }
 
   private var divider: some View {
     Rectangle()
       .fill(CaptureAnnotationChrome.divider)
-      .frame(width: 1, height: 26)
+      .frame(width: 1, height: 33)
   }
 
   private var swatchGrid: some View {
-    VStack(spacing: 6) {
+    VStack(spacing: 8) {
       swatchRow(Self.swatches[0...3])
       swatchRow(Self.swatches[4...7])
     }
   }
 
   private func swatchRow(_ colors: ArraySlice<CodableColor>) -> some View {
-    HStack(spacing: 6) {
+    HStack(spacing: 8) {
       ForEach(Array(colors.enumerated()), id: \.element.hexString) { _, color in
         SwatchButton(fill: Color(cgColor: color.cgColor), isSelected: color == state.selectedColor) {
           state.selectedColor = color
           onStyleChange()
         }
-        .frame(width: 20, height: 20)
+        .frame(width: 26, height: 26)
       }
     }
   }
@@ -110,7 +124,7 @@ struct AnnotationColorPopover: View {
     VStack(alignment: .leading, spacing: 8) {
       SliderRow(
         label: "Opacity",
-        labelWidth: 58,
+        labelWidth: 72,
         value: $state.opacity,
         range: 0.1...1,
         step: 0.05,
@@ -118,7 +132,7 @@ struct AnnotationColorPopover: View {
       )
       SliderRow(
         label: "Thickness",
-        labelWidth: 58,
+        labelWidth: 72,
         value: $state.thickness,
         range: 1...24,
         step: 1,
@@ -126,7 +140,7 @@ struct AnnotationColorPopover: View {
       )
       SliderRow(
         label: "Size",
-        labelWidth: 58,
+        labelWidth: 72,
         value: $state.size,
         range: 4...96,
         step: 1,

@@ -67,4 +67,29 @@ extension SelectionOverlayView {
     }
     return nil
   }
+
+  func updateCursor() {
+    guard let rect = selectionRect else {
+      NSCursor.crosshair.set()
+      return
+    }
+
+    for handle in ResizeHandle.allCases {
+      let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
+      if hitArea.contains(mouseLocation) {
+        handle.cursor.set()
+        return
+      }
+    }
+
+    if rect.contains(mouseLocation) {
+      if request.annotation != nil, !(annotationSession?.isSelectionToolActive ?? false) {
+        NSCursor.crosshair.set()
+      } else {
+        NSCursor.openHand.set()
+      }
+    } else {
+      NSCursor.arrow.set()
+    }
+  }
 }

@@ -44,7 +44,7 @@ extension SelectionOverlayView {
   }
 
   func updateControlsPanel() {
-    if annotationSession != nil {
+    if request.annotation != nil || annotationSession != nil {
       controlsHost?.isHidden = true
       updateAnnotationLayout()
       return

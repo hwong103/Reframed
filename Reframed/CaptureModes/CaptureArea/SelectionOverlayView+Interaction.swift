@@ -7,6 +7,12 @@ extension SelectionOverlayView {
 
   func handleMouseMoved(_ point: CGPoint) {
     mouseLocation = point
+
+    if annotationHitTest(point) != nil {
+      NSCursor.arrow.set()
+      return
+    }
+
     updateCursor()
 
     if annotationSession != nil {
@@ -137,6 +143,7 @@ extension SelectionOverlayView {
 
     if !didDrag, request.hoverTargetsEnabled, isAutoSelection || hoverSuppressed {
       commitHoveredTarget(at: point)
+      captureImmediately()
       return
     }
 
@@ -144,6 +151,11 @@ extension SelectionOverlayView {
     dragOrigin = nil
 
     if let rect = selectionRect, rect.width < 10 || rect.height < 10 {
+      if request.annotation != nil, annotationSession == nil {
+        commitHoveredTarget(at: point)
+        captureImmediately()
+        return
+      }
       if request.initialFullScreen {
         applyFullDisplaySelection()
       } else {
@@ -156,7 +168,19 @@ extension SelectionOverlayView {
         hoverSuppressed = true
       }
       updateControlsPanel()
+      captureImmediately()
+      return
     }
+
+    if request.annotation != nil, annotationSession == nil {
+      applyFullDisplaySelection()
+      captureImmediately()
+    }
+  }
+
+  private func captureImmediately() {
+    guard request.annotation != nil, annotationSession == nil else { return }
+    confirmSelection()
   }
 
   func applyFullDisplaySelection() {
@@ -166,27 +190,6 @@ extension SelectionOverlayView {
     hoverTarget = nil
     needsDisplay = true
     updateControlsPanel()
-  }
-
-  private func updateCursor() {
-    guard let rect = selectionRect else {
-      NSCursor.crosshair.set()
-      return
-    }
-
-    for handle in ResizeHandle.allCases {
-      let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
-      if hitArea.contains(mouseLocation) {
-        handle.cursor.set()
-        return
-      }
-    }
-
-    if rect.contains(mouseLocation) {
-      NSCursor.openHand.set()
-    } else {
-      NSCursor.arrow.set()
-    }
   }
 
 }

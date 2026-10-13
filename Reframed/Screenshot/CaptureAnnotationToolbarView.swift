@@ -24,19 +24,20 @@ struct CaptureAnnotationToolbarView: View {
   @State private var showsColor = false
 
   var body: some View {
-    HStack(spacing: 4) {
+    HStack(spacing: 5) {
       tools
       divider
       colorControl
       actionsRow
     }
-    .padding(.horizontal, 6)
-    .padding(.vertical, 5)
-    .background(CaptureAnnotationChrome.surface, in: RoundedRectangle(cornerRadius: Radius.lg))
-    .overlay(RoundedRectangle(cornerRadius: Radius.lg).strokeBorder(CaptureAnnotationChrome.divider))
-    .shadow(color: CaptureAnnotationChrome.shadow, radius: 6, y: 2)
+    .padding(.horizontal, 8)
+    .padding(.vertical, 7)
+    .background(CaptureAnnotationChrome.surface, in: RoundedRectangle(cornerRadius: Radius.xl))
+    .overlay(RoundedRectangle(cornerRadius: Radius.xl).strokeBorder(CaptureAnnotationChrome.divider))
+    .shadow(color: CaptureAnnotationChrome.shadow, radius: 8, y: 2)
     .fixedSize()
     .environment(\.colorScheme, .light)
+    .captureArrowCursor()
     .onChange(of: state.opacity) { actions.applyStyle() }
     .onChange(of: state.thickness) { actions.applyStyle() }
     .onChange(of: state.size) { actions.applyStyle() }
@@ -45,11 +46,11 @@ struct CaptureAnnotationToolbarView: View {
   private var divider: some View {
     Rectangle()
       .fill(CaptureAnnotationChrome.divider)
-      .frame(width: 1, height: 20)
+      .frame(width: 1, height: 26)
   }
 
   private var tools: some View {
-    HStack(spacing: 2) {
+    HStack(spacing: 3) {
       ForEach(CaptureAnnotationTool.allCases, id: \.self) { tool in
         IconButton(systemImage: tool.systemImage, isSelected: state.tool == tool, help: tool.tooltip) {
           actions.selectTool(tool)
@@ -64,10 +65,10 @@ struct CaptureAnnotationToolbarView: View {
     } label: {
       Circle()
         .fill(Color(cgColor: state.selectedColor.cgColor))
-        .frame(width: 18, height: 18)
+        .frame(width: 22, height: 22)
         .overlay(Circle().strokeBorder(Color.black.opacity(0.35)))
-        .frame(width: 26, height: 26)
-        .contentShape(RoundedRectangle(cornerRadius: Radius.md))
+        .frame(width: 32, height: 32)
+        .contentShape(RoundedRectangle(cornerRadius: Radius.lg))
     }
     .buttonStyle(PlainCustomButtonStyle())
     .help("Colour, opacity and thickness")
@@ -78,10 +79,11 @@ struct CaptureAnnotationToolbarView: View {
         onSetDefault: { state.setAsDefaultStyle() }
       )
     }
+    .captureArrowCursor()
   }
 
   private var actionsRow: some View {
-    HStack(spacing: 2) {
+    HStack(spacing: 3) {
       IconButton(
         systemImage: "arrow.uturn.backward",
         isDimmed: !state.canUndo,
