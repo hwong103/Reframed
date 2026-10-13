@@ -27,6 +27,18 @@ enum ScreenshotNaming {
     "\(baseName(prefix: prefix)).\(fileExtension)"
   }
 
+  static func fileSafe(_ raw: String) -> String {
+    let separators = CharacterSet(charactersIn: "/\\:\u{0000}")
+    let cleaned =
+      raw
+      .components(separatedBy: separators)
+      .joined(separator: "-")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return cleaned.isEmpty ? defaultPrefix : cleaned
+  }
+
   static func baseName(date: Date = Date(), prefix: String? = nil) -> String {
     "\(resolvedPrefix(prefix))-\(formatTimestamp(date))"
   }
@@ -51,8 +63,6 @@ enum ScreenshotNaming {
   }
 
   private static func resolvedPrefix(_ override: String?) -> String {
-    guard let override else { return prefix }
-    let trimmed = override.trimmingCharacters(in: .whitespacesAndNewlines)
-    return trimmed.isEmpty ? prefix : trimmed
+    fileSafe(override ?? prefix)
   }
 }

@@ -11,7 +11,6 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   var onFrameChange: ((String) -> Void)?
 
   private static let minimumSide: CGFloat = 60
-  private let minSide = PinnedImageWindow.minimumSide
   private let maxSide: CGFloat = 4096
   private let aspect: CGFloat
 
@@ -74,14 +73,15 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   func present(near point: CGPoint?) {
     let size = frame.size
     let anchor = point ?? NSEvent.mouseLocation
-    let origin = confined(CGPoint(x: anchor.x - size.width / 2, y: anchor.y - size.height / 2), size)
+    let visible = (NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
+    let origin = confined(CGPoint(x: anchor.x - size.width / 2, y: anchor.y - size.height / 2), size, on: visible)
     setFrameOrigin(origin)
     orderFrontRegardless()
     onFrameChange?(pinID)
   }
 
-  private func confined(_ origin: CGPoint, _ size: CGSize) -> CGPoint {
-    guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { return origin }
+  private func confined(_ origin: CGPoint, _ size: CGSize, on visible: CGRect?) -> CGPoint {
+    guard let visible else { return origin }
     let x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
     let y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
     return CGPoint(x: x, y: y)
@@ -94,9 +94,10 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   }
 
   private func resize(by delta: CGFloat) {
-    var width = min(max(frame.width + delta, minSide), maxSide)
+    var width = min(max(frame.width + delta, Self.minimumSide), maxSide)
     var height = width / aspect
-    if let visible = (screen ?? NSScreen.main)?.visibleFrame {
+    let visible = (screen ?? NSScreen.screen(for: displayID) ?? NSScreen.main)?.visibleFrame
+    if let visible {
       let ratio = min(1, min(visible.width * 0.9 / max(width, 1), visible.height * 0.9 / max(height, 1)))
       width *= ratio
       height *= ratio
@@ -104,7 +105,7 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
     var newFrame = frame
     newFrame.origin.y += frame.height - height
     newFrame.size = CGSize(width: width, height: height)
-    newFrame.origin = confined(newFrame.origin, newFrame.size)
+    newFrame.origin = confined(newFrame.origin, newFrame.size, on: visible)
     setFrame(newFrame, display: true)
     onFrameChange?(pinID)
   }
