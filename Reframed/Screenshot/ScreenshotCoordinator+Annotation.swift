@@ -39,7 +39,11 @@ extension ScreenshotCoordinator {
   private func annotationCopy(_ image: CGImage, _ selection: SelectionRect) {
     adoptAnnotationRegion(image, selection)
     if captureSession.copyLastToClipboard() {
-      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+      ScreenshotFeedbackWindow.show(
+        "Copied to clipboard",
+        detail: "\(image.width) \u{00d7} \(image.height) px",
+        near: NSEvent.mouseLocation
+      )
     } else {
       present("Could not copy the screenshot to the clipboard.")
     }
@@ -53,7 +57,7 @@ extension ScreenshotCoordinator {
       let copied = !copy || captureSession.copyLastToClipboard()
       ScreenshotFeedbackWindow.show(
         copy && !copied ? "Saved, but the clipboard copy failed" : (copy ? "Saved and copied" : "Screenshot saved"),
-        detail: url.lastPathComponent,
+        detail: "\(image.width) \u{00d7} \(image.height) px - \(url.lastPathComponent)",
         near: NSEvent.mouseLocation
       )
     } catch {
@@ -63,9 +67,12 @@ extension ScreenshotCoordinator {
 
   private func annotationCaptureText(_ image: CGImage, _ selection: SelectionRect) {
     adoptAnnotationRegion(image, selection)
-    ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation)
+    ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
     Task { @MainActor [weak self] in
-      guard let self else { return }
+      guard let self else {
+        ScreenshotFeedbackWindow.dismissCurrent()
+        return
+      }
       let message = await self.copyTextFrom(image)
       ScreenshotFeedbackWindow.show(message, near: NSEvent.mouseLocation)
       guard self.isCapturing else { return }

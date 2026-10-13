@@ -138,14 +138,29 @@ struct AnnotationColorPopover: View {
         step: 1,
         formattedValue: "\(Int(state.thickness))"
       )
-      SliderRow(
-        label: "Size",
-        labelWidth: 72,
-        value: $state.size,
-        range: 4...96,
-        step: 1,
-        formattedValue: "\(Int(state.size))"
-      )
+      if isRedactionTool {
+        SliderRow(
+          label: "Strength",
+          labelWidth: 72,
+          value: $state.redaction,
+          range: 4...40,
+          step: 1,
+          formattedValue: "\(Int(state.redaction))"
+        )
+      } else {
+        SliderRow(
+          label: "Size",
+          labelWidth: 72,
+          value: $state.size,
+          range: 4...96,
+          step: 1,
+          formattedValue: "\(Int(state.size))"
+        )
+      }
     }
+  }
+
+  private var isRedactionTool: Bool {
+    state.tool == .blur || state.tool == .pixelate
   }
 }

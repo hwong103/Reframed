@@ -105,7 +105,7 @@ final class InlineAnnotationSession {
     model.setStrokeColor(CodableColor(r: color.r, g: color.g, b: color.b, a: state.opacity))
     model.setStrokeWidth(state.thickness)
     model.setFontSize(state.size)
-    model.setBlurRadius(max(4, state.size))
+    model.setBlurRadius(max(4, state.redaction))
   }
 
   func refreshState() {

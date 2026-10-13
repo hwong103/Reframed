@@ -3,19 +3,23 @@ import SwiftUI
 
 struct CaptureAnnotationDragSource: NSViewRepresentable {
   let makeItem: () -> NSPasteboardItem?
+  let copy: () -> Void
 
   func makeNSView(context: Context) -> DragView {
     let view = DragView()
     view.makeItem = makeItem
+    view.copy = copy
     return view
   }
 
   func updateNSView(_ view: DragView, context: Context) {
     view.makeItem = makeItem
+    view.copy = copy
   }
 
   final class DragView: NSView, NSDraggingSource {
     var makeItem: (() -> NSPasteboardItem?)?
+    var copy: (() -> Void)?
 
     private var startPoint: NSPoint?
     private var isDragging = false
@@ -89,9 +93,18 @@ struct CaptureAnnotationDragSource: NSViewRepresentable {
       beginDraggingSession(with: [draggingItem], event: event, source: self)
     }
 
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      removeAllToolTips()
+      addToolTip("Drag into another app, or click to copy", owner: self, userData: nil)
+    }
+
     override func mouseUp(with event: NSEvent) {
+      let wasDragging = isDragging
       startPoint = nil
       isDragging = false
+      guard !wasDragging else { return }
+      copy?()
     }
 
     func draggingSession(

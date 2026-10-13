@@ -114,6 +114,7 @@ extension ScreenshotCoordinator {
       frozenDisplays.removeAll()
     }
     do {
+      ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
       let result = try await capturedRegion(selection)
       lastWindowSelection = nil
       let image = result.image
@@ -122,6 +123,7 @@ extension ScreenshotCoordinator {
       }.value
       ScreenshotFeedbackWindow.show(publishText(ocr), near: NSEvent.mouseLocation)
     } catch {
+      ScreenshotFeedbackWindow.dismissCurrent()
       present(error.localizedDescription)
     }
     restoreFocus(previousApplication)

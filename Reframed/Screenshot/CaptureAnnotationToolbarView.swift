@@ -43,6 +43,7 @@ struct CaptureAnnotationToolbarView: View {
     .onChange(of: state.opacity) { actions.applyStyle() }
     .onChange(of: state.thickness) { actions.applyStyle() }
     .onChange(of: state.size) { actions.applyStyle() }
+    .onChange(of: state.redaction) { actions.applyStyle() }
   }
 
   private var divider: some View {
@@ -109,9 +110,8 @@ struct CaptureAnnotationToolbarView: View {
       IconButton(systemImage: "text.viewfinder", help: "Capture Text (O)") { actions.captureText() }
       IconButton(systemImage: "square.and.arrow.down", help: "Save (Command-S)") { actions.save() }
       IconButton(systemImage: "doc.on.doc", help: "Copy to Clipboard (Return)") { actions.copy() }
-      CaptureAnnotationDragSource(makeItem: actions.makeDragItem)
+      CaptureAnnotationDragSource(makeItem: actions.makeDragItem, copy: actions.copy)
         .frame(width: 32, height: 32)
-        .help("Drag the screenshot into another app")
         .captureArrowCursor()
       IconButton(
         systemImage: "arrow.up.and.down.text.horizontal",

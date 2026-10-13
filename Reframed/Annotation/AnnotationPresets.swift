@@ -16,6 +16,7 @@ enum AnnotationPresets {
   static let defaultFontSize: CGFloat = 18
   static let defaultBlurRadius: CGFloat = 12
   static let defaultPixelateBlock: CGFloat = 12
+  static let defaultRedactionStrength: CGFloat = 10
   static let defaultHighlighterOpacity: CGFloat = 0.35
   static let defaultHighlighterWidth: CGFloat = 16
 

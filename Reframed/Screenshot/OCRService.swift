@@ -29,21 +29,19 @@ struct OCRResult: Sendable, Equatable {
 }
 
 enum OCRService {
+  private static let fallbackLanguages = ["en-US"]
+  private static let accurateRetryPixelLimit = 4_000_000
+
   static func recognize(in image: CGImage) throws -> OCRResult {
-    let request = VNRecognizeTextRequest()
-    request.recognitionLevel = .accurate
-    request.usesLanguageCorrection = true
-    request.automaticallyDetectsLanguage = true
-
-    let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
-    do {
-      try handler.perform([request])
-    } catch {
-      throw OCRError.recognitionFailed(error.localizedDescription)
+    let fast = try pass(in: image, level: .fast, correctsLanguage: false)
+    if !fast.lines.isEmpty {
+      return OCRResult(lines: fast.lines)
     }
-
-    let observations = request.results ?? []
-    return OCRResult(lines: readingOrderedLines(from: observations))
+    guard fast.observations > 0, image.width * image.height <= accurateRetryPixelLimit else {
+      return OCRResult(lines: [])
+    }
+    let accurate = try pass(in: image, level: .accurate, correctsLanguage: true)
+    return OCRResult(lines: accurate.lines)
   }
 
   static func recognize(in image: CGImage, region: CGRect) throws -> OCRResult {
@@ -56,6 +54,63 @@ enum OCRService {
       throw OCRError.invalidRegion
     }
     return try recognize(in: cropped)
+  }
+
+  private struct Pass {
+    let lines: [String]
+    let observations: Int
+  }
+
+  private static func pass(
+    in image: CGImage,
+    level: VNRequestTextRecognitionLevel,
+    correctsLanguage: Bool
+  ) throws -> Pass {
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = level
+    request.usesLanguageCorrection = correctsLanguage
+    request.automaticallyDetectsLanguage = false
+    request.recognitionLanguages = recognitionLanguages(level: level)
+
+    let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
+    do {
+      try handler.perform([request])
+    } catch {
+      throw OCRError.recognitionFailed(error.localizedDescription)
+    }
+    let results = request.results ?? []
+    return Pass(lines: readingOrderedLines(from: results), observations: results.count)
+  }
+
+  private static func recognitionLanguages(level: VNRequestTextRecognitionLevel) -> [String] {
+    let supported = supportedLanguages(level: level)
+    var matches: [String] = []
+    for preferred in Locale.preferredLanguages {
+      if supported.contains(preferred) {
+        matches.append(preferred)
+      } else if let match = supported.first(where: { sharesLanguage(with: $0, preferred) }) {
+        matches.append(match)
+      }
+    }
+    let unique = matches.reduce(into: [String]()) { result, language in
+      if !result.contains(language) {
+        result.append(language)
+      }
+    }
+    return unique.isEmpty ? fallbackLanguages : Array(unique.prefix(3))
+  }
+
+  private static func supportedLanguages(level: VNRequestTextRecognitionLevel) -> [String] {
+    let probe = VNRecognizeTextRequest()
+    probe.recognitionLevel = level
+    return (try? probe.supportedRecognitionLanguages()) ?? []
+  }
+
+  private static func sharesLanguage(with identifier: String, _ preferred: String) -> Bool {
+    guard let supported = Locale(identifier: identifier).language.languageCode?.identifier else {
+      return false
+    }
+    return supported == Locale(identifier: preferred).language.languageCode?.identifier
   }
 
   private static func readingOrderedLines(from observations: [VNRecognizedTextObservation]) -> [String] {

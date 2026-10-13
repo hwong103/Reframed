@@ -10,6 +10,7 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
   case arrow
   case freehand
   case pixelate
+  case blur
   case text
   case step
   case highlight
@@ -23,6 +24,7 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .arrow: return "Arrow Tool"
     case .freehand: return "Freehand Tool"
     case .pixelate: return "Pixelate Tool"
+    case .blur: return "Blur Tool"
     case .text: return "Text Tool"
     case .step: return "Step Annotation Tool"
     case .highlight: return "Highlight Tool"
@@ -38,6 +40,7 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .arrow: return "arrow.up.right"
     case .freehand: return "pencil"
     case .pixelate: return "square.grid.2x2"
+    case .blur: return "drop.fill"
     case .text: return "textformat"
     case .step: return "1.circle"
     case .highlight: return "highlighter"
@@ -53,6 +56,7 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .arrow: return "4"
     case .freehand: return "5"
     case .pixelate: return "6"
+    case .blur: return "0"
     case .text: return "7"
     case .step: return "8"
     case .highlight: return "9"
@@ -72,6 +76,7 @@ enum CaptureAnnotationTool: String, CaseIterable, Sendable {
     case .arrow: return .arrow
     case .freehand: return .pen
     case .pixelate: return .pixelate
+    case .blur: return .blur
     case .text: return .text
     case .step: return .text
     case .highlight: return .highlighter
@@ -91,6 +96,7 @@ final class CaptureAnnotationState {
   var opacity: CGFloat = CaptureAnnotationDefaults.opacity
   var thickness: CGFloat = CaptureAnnotationDefaults.thickness
   var size: CGFloat = CaptureAnnotationDefaults.size
+  var redaction: CGFloat = CaptureAnnotationDefaults.redaction
   var aspectLocked = false
   var pointSize: CGSize = .zero
   var dimensionUnit = "pt"
@@ -109,7 +115,8 @@ final class CaptureAnnotationState {
       color: selectedColor,
       opacity: opacity,
       thickness: thickness,
-      size: size
+      size: size,
+      redaction: redaction
     )
   }
 }
@@ -122,9 +129,10 @@ enum CaptureAnnotationDefaults {
   static var opacity: CGFloat { stored?.opacity ?? 1 }
   static var thickness: CGFloat { stored?.thickness ?? AnnotationPresets.defaultStrokeWidth }
   static var size: CGFloat { stored?.size ?? AnnotationPresets.defaultFontSize }
+  static var redaction: CGFloat { stored?.redaction ?? AnnotationPresets.defaultRedactionStrength }
 
-  static func store(color: CodableColor, opacity: CGFloat, thickness: CGFloat, size: CGFloat) {
-    let style = StoredStyle(color: color, opacity: opacity, thickness: thickness, size: size)
+  static func store(color: CodableColor, opacity: CGFloat, thickness: CGFloat, size: CGFloat, redaction: CGFloat) {
+    let style = StoredStyle(color: color, opacity: opacity, thickness: thickness, size: size, redaction: redaction)
     guard let data = try? JSONEncoder().encode(style) else { return }
     UserDefaults.standard.set(data, forKey: storageKey)
   }
@@ -134,6 +142,7 @@ enum CaptureAnnotationDefaults {
     let opacity: CGFloat
     let thickness: CGFloat
     let size: CGFloat
+    var redaction: CGFloat?
   }
 
   private static var stored: StoredStyle? {

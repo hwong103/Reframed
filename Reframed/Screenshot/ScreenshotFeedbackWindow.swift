@@ -7,18 +7,24 @@ final class ScreenshotFeedbackWindow: NSPanel {
   private static var current: ScreenshotFeedbackWindow?
 
   private var dismissTask: Task<Void, Never>?
+  private let sticky: Bool
 
-  static func show(_ message: String, detail: String? = nil, near point: CGPoint) {
+  static func show(_ message: String, detail: String? = nil, near point: CGPoint, sticky: Bool = false) {
     current?.dismissNow()
-    let window = ScreenshotFeedbackWindow(message: message, detail: detail)
+    let window = ScreenshotFeedbackWindow(message: message, detail: detail, sticky: sticky)
     current = window
     window.place(near: point)
     window.orderFrontRegardless()
     window.scheduleDismiss()
   }
 
-  private init(message: String, detail: String?) {
-    let hosting = NSHostingView(rootView: ScreenshotFeedbackView(message: message, detail: detail))
+  static func dismissCurrent() {
+    current?.dismissNow()
+  }
+
+  private init(message: String, detail: String?, sticky: Bool) {
+    self.sticky = sticky
+    let hosting = NSHostingView(rootView: ScreenshotFeedbackView(message: message, detail: detail, sticky: sticky))
     hosting.sizingOptions = [.intrinsicContentSize]
     let size = hosting.fittingSize
 
@@ -67,6 +73,7 @@ final class ScreenshotFeedbackWindow: NSPanel {
   }
 
   private func scheduleDismiss() {
+    guard !sticky else { return }
     dismissTask = Task { [weak self] in
       try? await Task.sleep(for: Self.displayDuration)
       guard !Task.isCancelled else { return }
@@ -88,12 +95,21 @@ final class ScreenshotFeedbackWindow: NSPanel {
 private struct ScreenshotFeedbackView: View {
   let message: String
   let detail: String?
+  let sticky: Bool
 
   var body: some View {
     HStack(spacing: 8) {
-      Image(systemName: "checkmark.circle.fill")
-        .font(.system(size: FontSize.sm, weight: .semibold))
-        .foregroundStyle(.white)
+      if sticky {
+        ProgressView()
+          .controlSize(.small)
+          .progressViewStyle(.circular)
+          .tint(.white)
+          .frame(width: FontSize.sm, height: FontSize.sm)
+      } else {
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: FontSize.sm, weight: .semibold))
+          .foregroundStyle(.white)
+      }
 
       VStack(alignment: .leading, spacing: 1) {
         Text(message)
