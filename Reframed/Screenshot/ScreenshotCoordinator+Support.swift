@@ -69,7 +69,6 @@ extension ScreenshotCoordinator {
 
   func captureTextSnip() {
     guard admit() else { return }
-    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     isTextSnip = true
     Task { [weak self] in
@@ -111,6 +110,7 @@ extension ScreenshotCoordinator {
     }
     do {
       let result = try await capturedRegion(selection)
+      lastWindowSelection = nil
       let image = result.image
       let ocr = try await Task.detached(priority: .userInitiated) {
         try OCRService.recognize(in: image)

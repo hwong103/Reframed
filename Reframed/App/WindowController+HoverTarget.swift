@@ -7,6 +7,34 @@ struct HoverTarget: Equatable {
   let windowID: CGWindowID
 }
 
+enum HoverTargetSnapshot {
+  static func current() -> [HoverTarget] {
+    let myPID = ProcessInfo.processInfo.processIdentifier
+    guard
+      let windowList = CGWindowListCopyWindowInfo(
+        [.optionOnScreenOnly, .excludeDesktopElements],
+        kCGNullWindowID
+      ) as? [[String: Any]]
+    else { return [] }
+
+    return windowList.compactMap { windowDict in
+      guard let pid = windowDict[kCGWindowOwnerPID as String] as? pid_t, pid != myPID,
+        let boundsDict = windowDict[kCGWindowBounds as String],
+        let bounds = CGRect(dictionaryRepresentation: boundsDict as! CFDictionary),
+        bounds.width > 8, bounds.height > 8
+      else { return nil }
+
+      let windowNumber = windowDict[kCGWindowNumber as String] as? Int ?? 0
+      let rawTitle = windowDict[kCGWindowName as String] as? String
+      return HoverTarget(
+        bounds: bounds,
+        title: (rawTitle?.isEmpty == false) ? rawTitle : nil,
+        windowID: CGWindowID(windowNumber)
+      )
+    }
+  }
+}
+
 extension WindowController {
   func findOnScreenTarget(at point: CGPoint) -> HoverTarget? {
     let myPID = ProcessInfo.processInfo.processIdentifier

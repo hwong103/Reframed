@@ -24,7 +24,6 @@ final class ScreenshotCoordinator {
 
   func captureRegion() {
     guard admit() else { return }
-    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     Task { [weak self] in
       guard let self else { return }
@@ -35,7 +34,6 @@ final class ScreenshotCoordinator {
 
   func captureDisplay() {
     guard admit() else { return }
-    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     Task { [weak self] in
       guard let self else { return }
@@ -112,6 +110,7 @@ final class ScreenshotCoordinator {
       backgroundImages: frozenDisplays,
       initialFullScreen: true,
       hoverTargetsEnabled: true,
+      hoverTargets: HoverTargetSnapshot.current(),
       annotation: isTextSnip ? nil : makeAnnotationHandlers(),
       onCountdownStart: {},
       onConfirm: { selection in self.confirmSelection(selection) },
@@ -128,6 +127,7 @@ final class ScreenshotCoordinator {
     }
     do {
       let result = try await capturedRegion(selection)
+      lastWindowSelection = nil
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
       ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
     } catch {

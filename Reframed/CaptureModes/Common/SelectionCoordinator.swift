@@ -26,6 +26,7 @@ struct SelectionRequest {
   let backgroundImages: [CGDirectDisplayID: CGImage]
   let initialFullScreen: Bool
   let hoverTargetsEnabled: Bool
+  let hoverTargets: [HoverTarget]
   let annotation: SelectionAnnotationHandlers?
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
@@ -39,6 +40,7 @@ struct SelectionRequest {
     backgroundImages: [CGDirectDisplayID: CGImage] = [:],
     initialFullScreen: Bool = false,
     hoverTargetsEnabled: Bool = false,
+    hoverTargets: [HoverTarget] = [],
     annotation: SelectionAnnotationHandlers? = nil,
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
@@ -51,6 +53,7 @@ struct SelectionRequest {
     self.backgroundImages = backgroundImages
     self.initialFullScreen = initialFullScreen
     self.hoverTargetsEnabled = hoverTargetsEnabled
+    self.hoverTargets = hoverTargets
     self.annotation = annotation
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
@@ -68,7 +71,7 @@ final class SelectionCoordinator {
     let pointer = NSEvent.mouseLocation
     let pointerQuartz = CGPoint(x: pointer.x, y: NSScreen.primaryScreenHeight - pointer.y)
     let pointerDisplayID = request.initialFullScreen ? NSScreen.displayID(for: pointerQuartz) : nil
-    let hoverProvider = request.hoverTargetsEnabled ? HoverTargetProvider() : nil
+    let hoverProvider = request.hoverTargetsEnabled ? HoverTargetProvider(frozenTargets: request.hoverTargets) : nil
     for screen in NSScreen.screens {
       let isInitialActive = request.initialFullScreen && screen.displayID == pointerDisplayID
       let window = SelectionOverlayWindow(

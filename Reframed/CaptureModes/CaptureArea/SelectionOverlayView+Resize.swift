@@ -7,96 +7,30 @@ extension SelectionOverlayView {
     aspect: CGFloat,
     handle: ResizeHandle
   ) -> CGRect {
-    let dw: CGFloat
-    let dh: CGFloat
+    let ratio = aspect > 0 ? aspect : 1
+    let growsRight = handle == .right || handle == .topRight || handle == .bottomRight
+    let anchoredRight = handle == .left || handle == .topLeft || handle == .bottomLeft
+    let growsUp = handle == .top || handle == .topLeft || handle == .topRight
+    let drivenByWidth = growsRight || anchoredRight
 
-    switch handle {
-    case .right:
-      dw = delta.x
-      dh = dw / aspect
-      return CGRect(
-        x: original.minX,
-        y: original.maxY - (original.height + dh),
-        width: max(original.width + dw, 10),
-        height: max(original.height + dh, 10)
-      )
-    case .left:
-      dw = -delta.x
-      dh = dw / aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.maxX - newW,
-        y: original.maxY - newH,
-        width: newW,
-        height: newH
-      )
-    case .top:
-      dh = delta.y
-      dw = dh * aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.minX,
-        y: original.minY,
-        width: newW,
-        height: newH
-      )
-    case .bottom:
-      dh = -delta.y
-      dw = dh * aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.minX,
-        y: original.maxY - newH,
-        width: newW,
-        height: newH
-      )
-    case .topRight:
-      dw = delta.x
-      dh = dw / aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.minX,
-        y: original.minY,
-        width: newW,
-        height: newH
-      )
-    case .topLeft:
-      dw = -delta.x
-      dh = dw / aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.maxX - newW,
-        y: original.minY,
-        width: newW,
-        height: newH
-      )
-    case .bottomRight:
-      dw = delta.x
-      dh = dw / aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.minX,
-        y: original.maxY - newH,
-        width: newW,
-        height: newH
-      )
-    case .bottomLeft:
-      dw = -delta.x
-      dh = dw / aspect
-      let newW = max(original.width + dw, 10)
-      let newH = max(original.height + dh, 10)
-      return CGRect(
-        x: original.maxX - newW,
-        y: original.maxY - newH,
-        width: newW,
-        height: newH
-      )
+    let raw: CGFloat
+    if drivenByWidth {
+      raw = original.width + (growsRight ? delta.x : -delta.x)
+    } else {
+      raw = original.width + (growsUp ? delta.y : -delta.y) * ratio
     }
+
+    let minimum: CGFloat = 10
+    let width = max(raw, minimum, minimum * ratio)
+    let height = width / ratio
+
+    var rect = CGRect(x: original.minX, y: original.minY, width: width, height: height)
+    if anchoredRight {
+      rect.origin.x = original.maxX - width
+    }
+    if !growsUp {
+      rect.origin.y = original.maxY - height
+    }
+    return rect
   }
 }
