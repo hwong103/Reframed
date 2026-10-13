@@ -22,7 +22,7 @@ openssl pkcs12 -export -out "$WORK/cert.p12" -inkey "$WORK/key.pem" -in "$WORK/c
   -passout "pass:$PASS" -macalg sha1 -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES
 
 security create-keychain -p "$PASS" "$KEYCHAIN_NAME.keychain" 2>/dev/null || true
-security set-keychain-settings -lut 86400 "$KEYCHAIN_NAME.keychain"
+security set-keychain-settings "$KEYCHAIN_NAME.keychain"
 security unlock-keychain -p "$PASS" "$KEYCHAIN_NAME.keychain"
 security import "$WORK/cert.p12" -k "$KEYCHAIN_NAME.keychain" -P "$PASS" \
   -T /usr/bin/codesign -A

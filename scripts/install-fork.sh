@@ -14,6 +14,9 @@ if ! security find-identity -v -p codesigning "$KEYCHAIN" 2>/dev/null | grep -q 
   exit 1
 fi
 
+security unlock-keychain -p "${REFRAMED_SIGNING_PASSWORD:-reframed-local}" \
+  reframed-signing.keychain >/dev/null 2>&1 || true
+
 SOURCE_APP="${1:-}"
 if [ -z "$SOURCE_APP" ]; then
   WORK="$(mktemp -d)"
