@@ -5,13 +5,14 @@ import ScreenCaptureKit
 
 @MainActor
 final class ScreenshotCoordinator {
-  private let captureSession: ScreenshotSession
+  let captureSession: ScreenshotSession
   private let selectionCoordinator = SelectionCoordinator()
   weak var appState: SessionState?
   var exclusions: [SCRunningApplication] = []
   var previousApplication: NSRunningApplication?
   var isCapturing = false
   var frozenDisplays: [CGDirectDisplayID: CGImage] = [:]
+  var windowSelectionCoordinator: WindowSelectionCoordinator?
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -38,10 +39,6 @@ final class ScreenshotCoordinator {
     }
   }
 
-  func captureWindow() {
-    refuse("Window capture is not available yet.")
-  }
-
   func repeatLast() {
     guard admit() else { return }
     previousApplication = NSWorkspace.shared.frontmostApplication
@@ -54,6 +51,8 @@ final class ScreenshotCoordinator {
 
   func cancel() {
     selectionCoordinator.destroyAll()
+    windowSelectionCoordinator?.destroyOverlay()
+    windowSelectionCoordinator = nil
     isCapturing = false
     frozenDisplays.removeAll()
     ScreenshotActionBarWindow.dismiss()
@@ -135,7 +134,7 @@ final class ScreenshotCoordinator {
     return try await captureSession.capture(selection, excludingApplications: exclusions)
   }
 
-  private func showActionBar(near rect: CGRect) {
+  func showActionBar(near rect: CGRect) {
     ScreenshotActionBarWindow.show(
       near: rect,
       onCopy: { [weak self] in self?.captureSession.copyLastToClipboard() },
@@ -181,9 +180,9 @@ final class ScreenshotCoordinator {
   private func finishRepeatCapture() async {
     defer { isCapturing = false }
     do {
-      let result = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
-      ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
+      let outcome = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
+      ImageExporter.copyToPasteboard(outcome.result.image, fileURL: captureSession.lastSavedURL)
+      ScreenshotFeedbackWindow.show(outcome.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
     } catch {
       present(error.localizedDescription)
     }

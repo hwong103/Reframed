@@ -30,6 +30,7 @@ final class ScreenshotActionBarWindow: NSPanel {
     current = window
     window.render(status: "Copied to clipboard")
     window.orderFrontRegardless()
+    window.makeKey()
     window.scheduleDismiss(after: Self.displayDuration)
   }
 
@@ -64,6 +65,7 @@ final class ScreenshotActionBarWindow: NSPanel {
     level = .screenSaver
     sharingType = .none
     animationBehavior = .none
+    appearance = NSAppearance(named: .darkAqua)
     collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
   }
 
@@ -76,11 +78,14 @@ final class ScreenshotActionBarWindow: NSPanel {
   override var canBecomeMain: Bool { false }
 
   override func keyDown(with event: NSEvent) {
-    guard event.keyCode == 53 else {
+    switch event.keyCode {
+    case 53:
+      dismissNow()
+    case 36, 76:
+      annotateNow()
+    default:
       super.keyDown(with: event)
-      return
     }
-    dismissNow()
   }
 
   private func render(status: String) {
@@ -98,8 +103,7 @@ final class ScreenshotActionBarWindow: NSPanel {
       },
       onAnnotate: { [weak self] in
         guard let self else { return }
-        self.dismissNow()
-        self.onAnnotate()
+        self.annotateNow()
       }
     )
     let hosting = NSHostingView(rootView: view)
@@ -110,15 +114,22 @@ final class ScreenshotActionBarWindow: NSPanel {
   }
 
   private func resolvedOrigin(for size: NSSize) -> NSPoint {
-    let anchor = CGPoint(x: captureRect.midX, y: captureRect.minY)
-    let visible = NSScreen.screens.first(where: { $0.frame.contains(anchor) })?.visibleFrame ?? .zero
-    var origin = CGPoint(x: captureRect.midX - size.width / 2, y: captureRect.minY - size.height - 12)
-    if origin.y < visible.minY + 8 {
-      origin.y = captureRect.maxY + 12
+    let anchor = CGPoint(x: captureRect.midX, y: captureRect.midY)
+    let screen = NSScreen.screens.first(where: { $0.frame.contains(anchor) }) ?? NSScreen.main
+    let visible = screen?.visibleFrame ?? NSScreen.screens.first?.visibleFrame ?? captureRect
+    let inset: CGFloat = 16
+    var origin = CGPoint(x: visible.midX - size.width / 2, y: visible.minY + inset)
+    if NSRect(origin: origin, size: size).intersects(captureRect) {
+      origin = CGPoint(x: captureRect.midX - size.width / 2, y: captureRect.maxY + inset)
     }
     origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
     origin.y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
     return origin
+  }
+
+  private func annotateNow() {
+    dismissNow()
+    onAnnotate()
   }
 
   private func scheduleDismiss(after duration: Duration) {

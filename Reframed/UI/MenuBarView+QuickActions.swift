@@ -123,11 +123,11 @@ extension MenuBarView {
             icon: "macwindow.on.rectangle",
             title: "Window",
             hoverId: "action.captureWindow",
-            isEnabled: false
+            isEnabled: screenshotsAvailable
           ) {
             onDismiss()
+            screenshotCoordinator.captureWindow()
           }
-          .help("Window capture is not available yet.")
         }
       }
       .padding(.horizontal, 10)

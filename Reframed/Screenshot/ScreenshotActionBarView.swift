@@ -24,6 +24,7 @@ struct ScreenshotActionBarView: View {
         .fill(Color.white.opacity(0.2))
         .frame(width: 1, height: 18)
 
+      annotateButton
       actionButton(icon: "doc.on.doc", title: "Copy", help: "Copy to clipboard", action: onCopy)
       actionButton(
         icon: "square.and.arrow.down",
@@ -31,7 +32,6 @@ struct ScreenshotActionBarView: View {
         help: "Save a PNG and copy it",
         action: onSaveAndCopy
       )
-      annotateButton
     }
     .padding(.horizontal, 8)
     .padding(.vertical, 6)
@@ -55,12 +55,11 @@ struct ScreenshotActionBarView: View {
   }
 
   private var annotateButton: some View {
-    actionButton(
-      icon: "pencil.tip.crop.circle",
-      title: "Annotate",
-      help: "Annotate the capture",
-      action: onAnnotate
-    )
+    Button(action: onAnnotate) {
+      itemLabel(icon: "pencil.tip.crop.circle", title: "Annotate")
+    }
+    .buttonStyle(PrimaryButtonStyle(size: .small))
+    .help("Annotate the capture")
   }
 
   private func itemLabel(icon: String, title: String) -> some View {

@@ -12,12 +12,18 @@ enum ScreenshotSessionError: LocalizedError {
   }
 }
 
+struct RepeatCapture {
+  let result: ScreenshotResult
+  let notice: String?
+}
+
 @MainActor
 @Observable
 final class ScreenshotSession {
   private(set) var lastResult: ScreenshotResult?
   private(set) var lastSelection: SelectionRect?
   private(set) var lastSavedURL: URL?
+  private(set) var lastWindowID: CGWindowID?
 
   private let service: StillCaptureService
 
@@ -32,6 +38,7 @@ final class ScreenshotSession {
   ) async throws -> ScreenshotResult {
     let result = try await service.capture(selection, excludingApplications: excludingApplications)
     lastSelection = selection
+    lastWindowID = nil
     lastResult = result
     lastSavedURL = nil
     return result
@@ -44,22 +51,55 @@ final class ScreenshotSession {
   ) async throws -> ScreenshotResult {
     let result = try await service.captureDisplay(displayID, excludingApplications: excludingApplications)
     lastSelection = nil
+    lastWindowID = nil
     lastResult = result
     lastSavedURL = nil
     return result
   }
 
   @discardableResult
-  func repeatLastCapture(
+  func captureWindow(
+    _ window: SCWindow,
     excludingApplications: [SCRunningApplication] = []
   ) async throws -> ScreenshotResult {
+    let result = try await service.captureWindow(window)
+    lastSelection = nil
+    lastWindowID = window.windowID
+    lastResult = result
+    lastSavedURL = nil
+    return result
+  }
+
+  func resolveWindow(id: CGWindowID) async throws -> SCWindow {
+    try await service.resolveWindow(id: id)
+  }
+
+  @discardableResult
+  func repeatLastCapture(
+    excludingApplications: [SCRunningApplication] = []
+  ) async throws -> RepeatCapture {
     guard let previous = lastResult else {
       throw ScreenshotSessionError.noPreviousCapture
     }
-    if let selection = lastSelection {
-      return try await capture(selection, excludingApplications: excludingApplications)
+    if let windowID = lastWindowID {
+      do {
+        let window = try await service.resolveWindow(id: windowID)
+        let result = try await captureWindow(window, excludingApplications: excludingApplications)
+        return RepeatCapture(result: result, notice: nil)
+      } catch {
+        return try await repeatFallback(previous, excludingApplications: excludingApplications)
+      }
     }
-    return try await captureDisplay(previous.displayID, excludingApplications: excludingApplications)
+    if let selection = lastSelection {
+      return RepeatCapture(
+        result: try await capture(selection, excludingApplications: excludingApplications),
+        notice: nil
+      )
+    }
+    return RepeatCapture(
+      result: try await captureDisplay(previous.displayID, excludingApplications: excludingApplications),
+      notice: nil
+    )
   }
 
   func freezeScreens(
@@ -72,6 +112,7 @@ final class ScreenshotSession {
   func captureFrozenRegion(_ selection: SelectionRect, from image: CGImage) throws -> ScreenshotResult {
     let result = try service.crop(selection, from: image)
     lastSelection = selection
+    lastWindowID = nil
     lastResult = result
     lastSavedURL = nil
     return result
@@ -93,5 +134,21 @@ final class ScreenshotSession {
     try ImageExporter.writePNG(result.image, to: url)
     lastSavedURL = url
     return url
+  }
+
+  private func repeatFallback(
+    _ previous: ScreenshotResult,
+    excludingApplications: [SCRunningApplication]
+  ) async throws -> RepeatCapture {
+    if let selection = lastSelection {
+      return RepeatCapture(
+        result: try await capture(selection, excludingApplications: excludingApplications),
+        notice: "The previous window is unavailable; captured the last region instead."
+      )
+    }
+    return RepeatCapture(
+      result: try await captureDisplay(previous.displayID, excludingApplications: excludingApplications),
+      notice: "The previous window is unavailable; captured the display instead."
+    )
   }
 }

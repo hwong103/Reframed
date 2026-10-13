@@ -34,6 +34,24 @@ final class WindowSelectionCoordinator {
     startRefreshTimer()
   }
 
+  func beginSelection(request: WindowSelectionRequest) {
+    for screen in NSScreen.screens {
+      let window = WindowSelectionOverlay(
+        screen: screen,
+        request: request,
+        windowController: windowController
+      )
+      overlayWindows.append(window)
+      window.orderFrontRegardless()
+    }
+    overlayWindows.first?.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+
+    Task { await windowController.updateSCWindows() }
+    startTrackingMouse()
+    startRefreshTimer()
+  }
+
   private func startTrackingMouse() {
     eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
       guard let self else { return event }

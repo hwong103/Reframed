@@ -6,6 +6,10 @@ import Foundation
 enum ScreenshotCaptureError: LocalizedError {
   case displayNotFound(CGDirectDisplayID)
   case emptySelection
+  case windowUnavailable
+  case windowOffScreen
+  case ownWindow
+  case windowGeometryMismatch(expected: CGSize, actual: CGSize)
 
   var errorDescription: String? {
     switch self {
@@ -13,6 +17,16 @@ enum ScreenshotCaptureError: LocalizedError {
       return "Could not resolve the display \(displayID) for the screenshot"
     case .emptySelection:
       return "The screenshot selection is empty"
+    case .windowUnavailable:
+      return "That window is no longer available to capture"
+    case .windowOffScreen:
+      return "That window is off screen or minimised and cannot be captured"
+    case .ownWindow:
+      return "Reframed's own windows cannot be captured"
+    case .windowGeometryMismatch(let expected, let actual):
+      let want = "\(Int(expected.width)) \u{00d7} \(Int(expected.height))"
+      let got = "\(Int(actual.width)) \u{00d7} \(Int(actual.height))"
+      return "The window was captured at an unexpected size (expected \(want), got \(got))"
     }
   }
 }
@@ -135,7 +149,7 @@ struct StillCaptureService {
     return display
   }
 
-  private func makeConfiguration() -> SCStreamConfiguration {
+  func makeConfiguration() -> SCStreamConfiguration {
     let configuration = SCStreamConfiguration()
     configuration.colorSpaceName = CGColorSpace.sRGB as CFString
     configuration.pixelFormat = kCVPixelFormatType_32BGRA
@@ -146,7 +160,7 @@ struct StillCaptureService {
     return configuration
   }
 
-  private func pixelLength(_ points: CGFloat, scale: CGFloat) -> Int {
+  func pixelLength(_ points: CGFloat, scale: CGFloat) -> Int {
     max(1, Int((points * scale).rounded()))
   }
 }

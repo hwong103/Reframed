@@ -169,6 +169,10 @@
 		AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001B /* ScreenshotActionBarView.swift */; };
 		AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */; };
 		AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */; };
+		AB5C00000000000000000031 /* StillCaptureService+Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000030 /* StillCaptureService+Window.swift */; };
+		AB5C00000000000000000033 /* ScreenshotWindowSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */; };
+		AB5C00000000000000000035 /* ScreenshotCoordinator+Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */; };
+		AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000036 /* WindowSelectionRequest.swift */; };
 		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
 		AC0000000000000000000022 /* AnnotationDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* AnnotationDocument.swift */; };
 		AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000013 /* AnnotationRenderer.swift */; };
@@ -447,6 +451,10 @@
 		AB5C0000000000000000001B /* ScreenshotActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarView.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarWindow.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Support.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000030 /* StillCaptureService+Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StillCaptureService+Window.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWindowSelectionView.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Window.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000036 /* WindowSelectionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSelectionRequest.swift; sourceTree = "<group>"; };
 		AC0000000000000000000011 /* AnnotationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationItem.swift; sourceTree = "<group>"; };
 		AC0000000000000000000012 /* AnnotationDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationDocument.swift; sourceTree = "<group>"; };
 		AC0000000000000000000013 /* AnnotationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationRenderer.swift; sourceTree = "<group>"; };
@@ -787,11 +795,14 @@
 				AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */,
 				AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */,
 				AB5C00000000000000000016 /* ScreenshotCoordinator.swift */,
+				AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */,
 				AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */,
 				AB5C00000000000000000012 /* ScreenshotNaming.swift */,
 				AB5C00000000000000000013 /* ScreenshotResult.swift */,
 				AB5C00000000000000000014 /* ScreenshotSession.swift */,
+				AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */,
 				AB5C00000000000000000015 /* StillCaptureService.swift */,
+				AB5C00000000000000000030 /* StillCaptureService+Window.swift */,
 			);
 			path = Screenshot;
 			sourceTree = "<group>";
@@ -868,6 +879,7 @@
 				BDB41C1253D94BEF960FD7D2 /* WindowSelectionCoordinator.swift */,
 				A435021272D7425AB77F93DF /* WindowSelectionOverlay.swift */,
 				C4146D517F5E493F943D90D0 /* WindowSelectionView.swift */,
+				AB5C00000000000000000036 /* WindowSelectionRequest.swift */,
 				B2000000000000000000002B /* ResizePopover.swift */,
 			);
 			path = CaptureWindow;
@@ -1324,7 +1336,9 @@
 				AB5C00000000000000000003 /* ScreenshotResult.swift in Sources */,
 				AB5C00000000000000000004 /* ScreenshotSession.swift in Sources */,
 				AB5C00000000000000000005 /* StillCaptureService.swift in Sources */,
+				AB5C00000000000000000031 /* StillCaptureService+Window.swift in Sources */,
 				AB5C00000000000000000006 /* ScreenshotCoordinator.swift in Sources */,
+				AB5C00000000000000000035 /* ScreenshotCoordinator+Window.swift in Sources */,
 				AB5C00000000000000000007 /* MenuBarView+QuickActions.swift in Sources */,
 				AB5C00000000000000000008 /* ShortcutAction.swift in Sources */,
 				AB5C00000000000000000009 /* ScreenshotFeedbackWindow.swift in Sources */,
@@ -1332,6 +1346,8 @@
 				AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */,
 				AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */,
 				AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */,
+				AB5C00000000000000000033 /* ScreenshotWindowSelectionView.swift in Sources */,
+				AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */,
 				AC0000000000000000000021 /* AnnotationItem.swift in Sources */,
 				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,
 				AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */,
