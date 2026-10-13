@@ -101,7 +101,7 @@ extension InlineAnnotationSession {
     }
   }
 
-  private func end(restoringFocus: Bool = true) {
+  func end(restoringFocus: Bool = true) {
     Task { @MainActor [weak self] in
       guard let self else { return }
       restoringFocus ? self.handlers.finish() : self.handlers.finishWithoutRefocus()
