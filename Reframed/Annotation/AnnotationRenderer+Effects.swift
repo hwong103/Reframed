@@ -2,24 +2,14 @@ import CoreGraphics
 import Foundation
 
 extension AnnotationRenderer {
-  static func applyBlur(
-    _ item: AnnotationItem,
-    in context: CGContext,
-    viewport: Viewport,
-    document: AnnotationDocument
-  ) {
+  static func applyBlur(_ item: AnnotationItem, in context: CGContext, viewport: Viewport, document: AnnotationDocument) {
     let radius = max(0, Int(item.style.blurRadius.rounded()))
     transformRegion(item, in: context, viewport: viewport, document: document, padding: radius) { buffer, width, height in
       boxBlur(&buffer, width: width, height: height, radius: radius)
     }
   }
 
-  static func applyPixelate(
-    _ item: AnnotationItem,
-    in context: CGContext,
-    viewport: Viewport,
-    document: AnnotationDocument
-  ) {
+  static func applyPixelate(_ item: AnnotationItem, in context: CGContext, viewport: Viewport, document: AnnotationDocument) {
     let block = Int(item.style.blurRadius.rounded())
     transformRegion(item, in: context, viewport: viewport, document: document, padding: 0) { buffer, width, height in
       pixelate(&buffer, width: width, height: height, block: block)
@@ -39,43 +29,35 @@ extension AnnotationRenderer {
     let inner = item.bounds.standardized.integral.intersection(visible).integral
     let halo = CGFloat(max(0, padding))
     let expanded = inner.insetBy(dx: -halo, dy: -halo).integral.intersection(visible).integral
-    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1 else {
-      return
-    }
+    guard inner.width >= 1, inner.height >= 1, expanded.width >= 1, expanded.height >= 1 else { return }
     let bounds = CGRect(x: 0, y: 0, width: context.width, height: context.height)
     let expandedRect = viewport.rect(expanded).integral.intersection(bounds).integral
-    guard expandedRect.width >= 1, expandedRect.height >= 1,
-      let region = regionBuffer(from: context, rect: expandedRect)
-    else { return }
+    guard expandedRect.width >= 1, expandedRect.height >= 1 else { return }
     let width = Int(expandedRect.width)
     let height = Int(expandedRect.height)
-    var buffer = region
+    guard var buffer = regionBuffer(from: context, rect: expandedRect) else { return }
     transform(&buffer, width, height)
-
     let innerRect = viewport.rect(inner).integral.intersection(bounds).integral
-    let offsetX = Int(innerRect.minX - expandedRect.minX)
-    let offsetY = Int(expandedRect.maxY - innerRect.maxY)
     let innerWidth = Int(innerRect.width)
     let innerHeight = Int(innerRect.height)
+    let offsetX = Int(innerRect.minX - expandedRect.minX)
+    let offsetY = Int(expandedRect.maxY - innerRect.maxY)
     guard innerWidth >= 1, innerHeight >= 1, offsetX >= 0, offsetY >= 0,
       offsetX + innerWidth <= width, offsetY + innerHeight <= height
-    else {
-      return
-    }
-    var innerBuffer = [UInt8](repeating: 0, count: innerWidth * innerHeight * 4)
-    for y in 0..<innerHeight {
-      for x in 0..<innerWidth {
-        let source = ((y + offsetY) * width + (x + offsetX)) * 4
-        let destination = (y * innerWidth + x) * 4
-        innerBuffer[destination] = buffer[source]
-        innerBuffer[destination + 1] = buffer[source + 1]
-        innerBuffer[destination + 2] = buffer[source + 2]
-        innerBuffer[destination + 3] = buffer[source + 3]
+    else { return }
+    let rowBytes = innerWidth * 4
+    let slice = [UInt8](unsafeUninitializedCapacity: rowBytes * innerHeight) { raw, initialized in
+      guard let destination = raw.baseAddress else { return }
+      buffer.withUnsafeBufferPointer { source in
+        guard let base = source.baseAddress else { return }
+        for row in 0..<innerHeight {
+          let start = ((row + offsetY) * width + offsetX) * 4
+          memcpy(destination.advanced(by: row * rowBytes), base.advanced(by: start), rowBytes)
+        }
       }
+      initialized = rowBytes * innerHeight
     }
-    guard let regionImage = image(from: innerBuffer, width: innerWidth, height: innerHeight) else {
-      return
-    }
+    guard let regionImage = image(from: slice, width: innerWidth, height: innerHeight) else { return }
     context.saveGState()
     context.setBlendMode(.copy)
     context.interpolationQuality = .none
@@ -89,27 +71,26 @@ extension AnnotationRenderer {
     let height = Int(rect.height)
     let stride = context.bytesPerRow
     let firstRow = context.height - Int(rect.maxY)
-    guard firstRow >= 0, firstRow + height <= context.height else { return nil }
-    var buffer = [UInt8](repeating: 0, count: width * height * 4)
-    buffer.withUnsafeMutableBytes { raw in
+    guard width > 0, height > 0, firstRow >= 0, firstRow + height <= context.height else { return nil }
+    return [UInt8](unsafeUninitializedCapacity: width * height * 4) { raw, initialized in
       guard let destination = raw.baseAddress else { return }
       for row in 0..<height {
         let source = (firstRow + row) * stride + Int(rect.minX) * 4
         memcpy(destination.advanced(by: row * width * 4), base.advanced(by: source), width * 4)
       }
+      initialized = width * height * 4
     }
-    return buffer
   }
 
   static func boxBlur(_ buffer: inout [UInt8], width: Int, height: Int, radius: Int) {
     let r = max(0, radius)
-    guard r > 0, width > 0, height > 0 else {
-      return
-    }
+    guard r > 0, width > 0, height > 0 else { return }
     let count = 2 * r + 1
+    var quotients = [UInt8](repeating: 0, count: 255 * count + 1)
+    for value in 0...(255 * count) { quotients[value] = UInt8(value / count) }
     var horizontal = buffer
-    blurAxis(&buffer, into: &horizontal, width: width, height: height, radius: r, count: count, horizontal: true)
-    blurAxis(&horizontal, into: &buffer, width: width, height: height, radius: r, count: count, horizontal: false)
+    blurAxis(&buffer, into: &horizontal, width: width, height: height, radius: r, quotients: quotients, horizontal: true)
+    blurAxis(&horizontal, into: &buffer, width: width, height: height, radius: r, quotients: quotients, horizontal: false)
   }
 
   private static func blurAxis(
@@ -118,59 +99,75 @@ extension AnnotationRenderer {
     width: Int,
     height: Int,
     radius: Int,
-    count: Int,
+    quotients: [UInt8],
     horizontal: Bool
   ) {
-    var sums = [0, 0, 0, 0]
     let outer = horizontal ? height : width
     let inner = horizontal ? width : height
-    for line in 0..<outer {
-      sums = [0, 0, 0, 0]
-      for offset in -radius...radius {
-        let index = pixelIndex(line, clamp(offset, inner), width: width, horizontal: horizontal)
-        for channel in 0..<4 { sums[channel] += Int(source[index + channel]) }
-      }
-      for sample in 0..<inner {
-        let out = pixelIndex(line, sample, width: width, horizontal: horizontal)
-        for channel in 0..<4 { destination[out + channel] = UInt8(sums[channel] / count) }
-        let leaving = pixelIndex(line, clamp(sample - radius, inner), width: width, horizontal: horizontal)
-        let entering = pixelIndex(line, clamp(sample + radius + 1, inner), width: width, horizontal: horizontal)
-        for channel in 0..<4 {
-          sums[channel] += Int(source[entering + channel]) - Int(source[leaving + channel])
+    guard inner > 0, outer > 0 else { return }
+    let step = horizontal ? 4 : width * 4
+    let lineStride = horizontal ? width * 4 : 4
+    let last = inner - 1
+    source.withUnsafeBufferPointer { src in
+      destination.withUnsafeMutableBufferPointer { dst in
+        quotients.withUnsafeBufferPointer { table in
+          guard let srcBase = src.baseAddress, let dstBase = dst.baseAddress, let table = table.baseAddress else { return }
+          for line in 0..<outer {
+            let lineBase = line * lineStride
+            var s0 = 0
+            var s1 = 0
+            var s2 = 0
+            var s3 = 0
+            for offset in -radius...radius {
+              let index = lineBase + min(max(offset, 0), last) * step
+              s0 += Int(srcBase[index])
+              s1 += Int(srcBase[index + 1])
+              s2 += Int(srcBase[index + 2])
+              s3 += Int(srcBase[index + 3])
+            }
+            var leaving = lineBase
+            var entering = lineBase + min(radius + 1, last) * step
+            for sample in 0..<inner {
+              let out = lineBase + sample * step
+              dstBase[out] = table[s0]
+              dstBase[out + 1] = table[s1]
+              dstBase[out + 2] = table[s2]
+              dstBase[out + 3] = table[s3]
+              s0 += Int(srcBase[entering]) - Int(srcBase[leaving])
+              s1 += Int(srcBase[entering + 1]) - Int(srcBase[leaving + 1])
+              s2 += Int(srcBase[entering + 2]) - Int(srcBase[leaving + 2])
+              s3 += Int(srcBase[entering + 3]) - Int(srcBase[leaving + 3])
+              if sample + radius + 1 < last { entering += step }
+              if sample >= radius { leaving += step }
+            }
+          }
         }
       }
     }
   }
 
-  private static func pixelIndex(_ line: Int, _ sample: Int, width: Int, horizontal: Bool) -> Int {
-    (horizontal ? line * width + sample : sample * width + line) * 4
-  }
-
-  private static func clamp(_ value: Int, _ limit: Int) -> Int {
-    min(max(value, 0), limit - 1)
-  }
-
   static func pixelate(_ buffer: inout [UInt8], width: Int, height: Int, block: Int) {
     let size = max(2, block)
-    guard width > 0, height > 0 else {
-      return
-    }
-    for blockY in stride(from: 0, to: height, by: size) {
-      for blockX in stride(from: 0, to: width, by: size) {
-        let sampleX = min(blockX, width - 1)
-        let sampleY = min(blockY, height - 1)
-        let source = (sampleY * width + sampleX) * 4
-        let red = buffer[source]
-        let green = buffer[source + 1]
-        let blue = buffer[source + 2]
-        let alpha = buffer[source + 3]
-        for y in blockY..<min(blockY + size, height) {
-          for x in blockX..<min(blockX + size, width) {
-            let index = (y * width + x) * 4
-            buffer[index] = red
-            buffer[index + 1] = green
-            buffer[index + 2] = blue
-            buffer[index + 3] = alpha
+    guard width > 0, height > 0 else { return }
+    buffer.withUnsafeMutableBytes { raw in
+      guard let base = raw.baseAddress else { return }
+      for blockY in stride(from: 0, to: height, by: size) {
+        let yEnd = min(blockY + size, height)
+        for blockX in stride(from: 0, to: width, by: size) {
+          let xEnd = min(blockX + size, width)
+          let run = xEnd - blockX
+          let source = base.advanced(by: (blockY * width + blockX) * 4)
+          var pattern: UInt32 = 0
+          memcpy(&pattern, source, 4)
+          for y in blockY..<yEnd {
+            let row = base.advanced(by: (y * width + blockX) * 4)
+            if run >= 8 {
+              memset_pattern4(row, &pattern, run * 4)
+            } else {
+              for offset in stride(from: 0, to: run * 4, by: 4) {
+                memcpy(row.advanced(by: offset), &pattern, 4)
+              }
+            }
           }
         }
       }

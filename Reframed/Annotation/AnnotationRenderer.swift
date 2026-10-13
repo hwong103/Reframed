@@ -124,10 +124,25 @@ enum AnnotationRenderer {
   }
 
   static func image(from buffer: [UInt8], width: Int, height: Int) -> CGImage? {
-    guard width > 0, height > 0, buffer.count >= width * height * 4 else {
+    let byteCount = width * height * 4
+    guard width > 0, height > 0, buffer.count >= byteCount else {
       return nil
     }
-    guard let provider = CGDataProvider(data: Data(buffer) as CFData) else {
+    guard let raw = malloc(byteCount) else {
+      return nil
+    }
+    buffer.withUnsafeBytes { source in
+      guard let base = source.baseAddress else { return }
+      memcpy(raw, base, byteCount)
+    }
+    let provider = CGDataProvider(
+      dataInfo: nil,
+      data: raw,
+      size: byteCount,
+      releaseData: { _, data, _ in free(UnsafeMutableRawPointer(mutating: data)) }
+    )
+    guard let provider else {
+      free(raw)
       return nil
     }
     return CGImage(
