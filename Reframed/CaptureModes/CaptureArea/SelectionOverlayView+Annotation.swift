@@ -53,14 +53,6 @@ extension SelectionOverlayView {
     let pixel = CGSize(width: image.width, height: image.height)
     guard pixel.width >= 1, pixel.height >= 1 else { return }
 
-    let fit = min(bounds.width / pixel.width, bounds.height / pixel.height)
-    let fitted = CGSize(width: pixel.width * fit, height: pixel.height * fit)
-    let localRect = CGRect(
-      x: bounds.midX - fitted.width / 2,
-      y: bounds.midY - fitted.height / 2,
-      width: fitted.width,
-      height: fitted.height
-    )
     let selection = SelectionRect(
       rect: CGRect(origin: .zero, size: pixel),
       displayID: displayID,
@@ -69,24 +61,24 @@ extension SelectionOverlayView {
       scale: 1
     )
 
-    selectionRect = localRect
+    selectionRect = bounds
     isFullDisplayInitial = false
     committedWindowID = nil
     hoverTarget = nil
     clearWindowSelection()
     controlsHost?.isHidden = true
+    composedViewport = ComposedViewport()
 
     let session = InlineAnnotationSession(
       image: image,
       selection: selection,
-      localRect: localRect,
+      localRect: bounds,
       displaySize: bounds.size,
       handlers: handlers,
       isResizable: false
     )
     annotationSession = session
     session.install(in: self)
-    session.state.pointSize = pixel
     updateAnnotationLayout()
     window?.makeFirstResponder(self)
     needsDisplay = true
@@ -112,47 +104,90 @@ extension SelectionOverlayView {
     guard let session = annotationSession, let rect = selectionRect else {
       return
     }
-    let selection = session.isResizable ? currentSelection() : nil
-    session.update(bounds: bounds, localRect: rect, selection: selection ?? session.selection)
+    guard session.isResizable else {
+      layoutComposedAnnotation(session: session)
+      return
+    }
+    session.update(bounds: bounds, localRect: rect, selection: currentSelection() ?? session.selection)
   }
 
   func handleAnnotationKey(_ event: NSEvent) -> Bool {
+    if handleViewportKey(event) { return true }
     annotationSession?.handleKey(event) ?? false
   }
 
-  func annotationHitTest(_ point: NSPoint) -> NSView? {
-    guard let session = annotationSession else { return nil }
-    for host in [session.closeHost, session.toolbarHost, session.badgeHost] where host.superview != nil {
-      let local = host.convert(point, from: self)
-      if host.bounds.contains(local) {
-        return host
-      }
+  func layoutComposedAnnotation(session: InlineAnnotationSession) {
+    let margin: CGFloat = 24
+    let inset = bounds.insetBy(dx: margin, dy: margin)
+    composedViewport.rect = inset.width >= 2 && inset.height >= 2 ? inset : bounds
+    if !composedViewport.isReady {
+      composedViewport.scale = AnnotationCanvasView.viewportFitScale(
+        viewportWidth: composedViewport.rect.width,
+        imageWidth: session.model.pixelSize.width
+      )
+      composedViewport.isReady = true
+      composedViewport.origin = topAlignedComposedOrigin(session: session)
     }
-    return nil
+    let backing = window?.backingScaleFactor ?? 2
+    let rect = composedViewport.rect
+    let snapped = CGRect(
+      origin: CGPoint(
+        x: (rect.minX * backing).rounded() / backing,
+        y: (rect.minY * backing).rounded() / backing
+      ),
+      size: rect.size
+    )
+    composedViewport.rect = snapped
+    selectionRect = snapped
+    session.localRect = snapped
+    session.state.pointSize = session.model.pixelSize
+    session.clip.frame = snapped
+    session.clip.layer?.contentsScale = backing
+    session.canvas.frame = CGRect(origin: .zero, size: snapped.size)
+    session.canvas.syncContentsScale()
+    session.chrome.isHidden = true
+    applyComposedViewportOrigin(session: session)
+    session.layoutBadge(badgeSize: session.badgeHost.fittingSize, bounds: bounds)
+    session.layoutClose(bounds: bounds)
+    session.layoutToolbar(bounds: bounds)
   }
 
-  func updateCursor() {
-    guard let rect = selectionRect else {
-      NSCursor.crosshair.set()
-      return
-    }
+  func applyComposedViewportOrigin(session: InlineAnnotationSession) {
+    let pixel = session.model.pixelSize
+    let content = CGSize(
+      width: pixel.width * composedViewport.scale,
+      height: pixel.height * composedViewport.scale
+    )
+    composedViewport.origin = AnnotationCanvasView.clampedViewportOrigin(
+      composedViewport.origin,
+      content: content,
+      viewport: composedViewport.rect
+    )
+    session.canvas.explicitLayout = AnnotationCanvasView.Layout(
+      scale: composedViewport.scale,
+      origin: CGPoint(
+        x: composedViewport.origin.x - composedViewport.rect.minX,
+        y: composedViewport.origin.y - composedViewport.rect.minY
+      )
+    )
+    session.canvas.needsDisplay = true
+  }
 
-    for handle in ResizeHandle.allCases {
-      let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
-      if hitArea.contains(mouseLocation), annotationSession?.isResizable ?? true {
-        handle.cursor.set()
-        return
-      }
-    }
+  func topAlignedComposedOrigin(session: InlineAnnotationSession) -> CGPoint {
+    let pixel = session.model.pixelSize
+    return CGPoint(
+      x: composedViewport.rect.midX - pixel.width * composedViewport.scale / 2,
+      y: composedViewport.rect.maxY - pixel.height * composedViewport.scale
+    )
+  }
 
-    if rect.contains(mouseLocation) {
-      if request.annotation != nil, !(annotationSession?.isSelectionToolActive ?? false) {
-        NSCursor.crosshair.set()
-      } else {
-        NSCursor.openHand.set()
-      }
-    } else {
-      NSCursor.arrow.set()
-    }
+  func resetComposedViewport() {
+    guard let session = annotationSession, !session.isResizable else { return }
+    composedViewport.scale = AnnotationCanvasView.viewportFitScale(
+      viewportWidth: composedViewport.rect.width,
+      imageWidth: session.model.pixelSize.width
+    )
+    composedViewport.origin = topAlignedComposedOrigin(session: session)
+    applyComposedViewportOrigin(session: session)
   }
 }

@@ -140,4 +140,40 @@ extension SelectionOverlayView {
       context.strokeEllipse(in: insetRect)
     }
   }
+
+  func annotationHitTest(_ point: NSPoint) -> NSView? {
+    guard let session = annotationSession else { return nil }
+    for host in [session.closeHost, session.toolbarHost, session.badgeHost] where host.superview != nil {
+      let local = host.convert(point, from: self)
+      if host.bounds.contains(local) {
+        return host
+      }
+    }
+    return nil
+  }
+
+  func updateCursor() {
+    guard let rect = selectionRect else {
+      NSCursor.crosshair.set()
+      return
+    }
+
+    for handle in ResizeHandle.allCases {
+      let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
+      if hitArea.contains(mouseLocation), annotationSession?.isResizable ?? true {
+        handle.cursor.set()
+        return
+      }
+    }
+
+    if rect.contains(mouseLocation) {
+      if request.annotation != nil, !(annotationSession?.isSelectionToolActive ?? false) {
+        NSCursor.crosshair.set()
+      } else {
+        NSCursor.openHand.set()
+      }
+    } else {
+      NSCursor.arrow.set()
+    }
+  }
 }

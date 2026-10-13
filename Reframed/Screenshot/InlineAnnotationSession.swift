@@ -18,14 +18,14 @@ final class InlineAnnotationSession {
     view.isInline = true
     return view
   }()
-  private lazy var clip: NSView = {
+  lazy var clip: NSView = {
     let container = NSView(frame: CGRect(origin: .zero, size: displaySize))
     container.wantsLayer = true
     container.layer?.masksToBounds = true
     container.addSubview(canvas)
     return container
   }()
-  private lazy var chrome = SelectionChromeView()
+  lazy var chrome = SelectionChromeView()
   lazy var badgeHost: NSHostingView<CaptureDimensionBadge> = {
     let host = NSHostingView(rootView: CaptureDimensionBadge(state: state))
     host.sizingOptions = [.intrinsicContentSize]

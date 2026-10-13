@@ -41,6 +41,7 @@ final class AnnotationCanvasView: NSView {
   var pendingText: PendingText?
   var isInline = false
   var stepStampProvider: (() -> String?)?
+  var explicitLayout: Layout?
 
   init(model: AnnotationEditorModel) {
     self.model = model
@@ -67,6 +68,7 @@ final class AnnotationCanvasView: NSView {
     drawRenderedImage(in: context)
     drawSelection(in: context)
     drawPendingCrop(in: context)
+    drawViewportHUD(in: context)
   }
 
   override func mouseDown(with event: NSEvent) {

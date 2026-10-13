@@ -27,6 +27,17 @@ final class SelectionOverlayView: NSView {
   var optionsHeld = false
   var handledShiftClick = false
 
+  struct ComposedViewport {
+    var rect: CGRect = .zero
+    var scale: CGFloat = 0
+    var origin: CGPoint = .zero
+    var isReady = false
+  }
+
+  static let minComposedScale: CGFloat = 0.05
+  static let maxComposedScale: CGFloat = 4
+  var composedViewport = ComposedViewport()
+
   override var acceptsFirstResponder: Bool { true }
   override var isFlipped: Bool { false }
 
@@ -117,6 +128,45 @@ final class SelectionOverlayView: NSView {
     default:
       super.keyDown(with: event)
     }
+  }
+
+  override func scrollWheel(with event: NSEvent) {
+    guard annotationSession?.isResizable == false, composedViewport.isReady else {
+      super.scrollWheel(with: event)
+      return
+    }
+    scrollComposedViewport(dx: event.scrollingDeltaX, dy: event.scrollingDeltaY)
+  }
+
+  func handleViewportKey(_ event: NSEvent) -> Bool {
+    guard annotationSession?.isResizable == false, composedViewport.isReady else { return false }
+    let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    guard flags.contains(.command) else { return false }
+    switch event.charactersIgnoringModifiers?.lowercased() ?? "" {
+    case "=", "+":
+      zoomComposedViewport(by: 1.25)
+    case "-":
+      zoomComposedViewport(by: 0.8)
+    case "0":
+      resetComposedViewport()
+    default:
+      return false
+    }
+    return true
+  }
+
+  func scrollComposedViewport(dx: CGFloat, dy: CGFloat) {
+    guard let session = annotationSession, dx != 0 || dy != 0 else { return }
+    composedViewport.origin.x += dx
+    composedViewport.origin.y += dy
+    applyComposedViewportOrigin(session: session)
+  }
+
+  func zoomComposedViewport(by factor: CGFloat) {
+    guard let session = annotationSession, session.isResizable == false else { return }
+    let scale = composedViewport.scale * factor
+    composedViewport.scale = min(max(scale, Self.minComposedScale), Self.maxComposedScale)
+    applyComposedViewportOrigin(session: session)
   }
 
   override func hitTest(_ point: NSPoint) -> NSView? {
