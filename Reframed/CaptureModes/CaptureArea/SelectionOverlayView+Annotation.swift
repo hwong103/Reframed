@@ -141,6 +141,7 @@ extension SelectionOverlayView {
     selectionRect = snapped
     session.localRect = snapped
     session.state.pointSize = session.model.pixelSize
+    session.state.dimensionUnit = "px"
     session.clip.frame = snapped
     session.clip.layer?.contentsScale = backing
     session.canvas.frame = CGRect(origin: .zero, size: snapped.size)

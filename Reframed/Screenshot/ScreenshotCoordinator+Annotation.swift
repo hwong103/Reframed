@@ -11,11 +11,7 @@ extension ScreenshotCoordinator {
       pin: { [weak self] image, selection in self?.annotationPin(image, selection) },
       openInWindow: { [weak self] image, selection in self?.annotationOpenInWindow(image, selection) },
       openInPreview: { [weak self] image, selection in self?.annotationPreviewFile(image, selection) },
-      scrollingCapture: { [weak self] selection in
-        Task { @MainActor in
-          self?.startScrollingCapture(selection)
-        }
-      },
+      scrollingCapture: { [weak self] selection in self?.startScrollingCapture(selection) },
       finish: { [weak self] in self?.finishInlineAnnotation() },
       finishWithoutRefocus: { [weak self] in self?.finishInlineAnnotation(refocus: false) },
       cancel: { [weak self] in self?.cancel() }
@@ -27,6 +23,7 @@ extension ScreenshotCoordinator {
   }
 
   private func teardownInlineAnnotation(refocus: Bool) {
+    scrollingRequest += 1
     selectionCoordinator.destroyAll()
     windowSelectionCoordinator?.destroyOverlay()
     windowSelectionCoordinator = nil

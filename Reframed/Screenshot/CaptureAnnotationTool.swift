@@ -93,6 +93,7 @@ final class CaptureAnnotationState {
   var size: CGFloat = CaptureAnnotationDefaults.size
   var aspectLocked = false
   var pointSize: CGSize = .zero
+  var dimensionUnit = "pt"
   var canUndo = false
   var canRedo = false
   var hasSelection = false

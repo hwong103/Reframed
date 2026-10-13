@@ -6,7 +6,9 @@ struct CaptureDimensionBadge: View {
 
   var body: some View {
     HStack(spacing: 6) {
-      Text("\(Int(state.pointSize.width.rounded())) x \(Int(state.pointSize.height.rounded())) pt")
+      Text(
+        "\(Int(state.pointSize.width.rounded())) x \(Int(state.pointSize.height.rounded())) \(state.dimensionUnit)"
+      )
       lockButton
     }
     .font(.system(size: FontSize.xs, weight: .semibold, design: .monospaced))
