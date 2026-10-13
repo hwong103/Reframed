@@ -43,6 +43,13 @@ final class SelectionOverlayWindow: NSWindow {
   override var canBecomeMain: Bool { true }
 
   override func sendEvent(_ event: NSEvent) {
+    if event.type == .keyDown, let overlay = contentView as? SelectionOverlayView {
+      let responder = firstResponder
+      let isEditingText = responder is NSTextView || responder is NSTextField
+      if !isEditingText, overlay.handleAnnotationKey(event) {
+        return
+      }
+    }
     if event.type == .mouseMoved, !isKeyWindow {
       makeKey()
     }

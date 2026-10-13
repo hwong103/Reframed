@@ -36,7 +36,7 @@ final class ScreenshotCoordinator {
     Task { [weak self] in
       guard let self else { return }
       self.exclusions = await self.resolveExclusions()
-      await self.finishDisplayCapture()
+      await self.freezeThenSelect()
     }
   }
 
@@ -103,6 +103,7 @@ final class ScreenshotCoordinator {
       backgroundImages: frozenDisplays,
       initialFullScreen: true,
       hoverTargetsEnabled: true,
+      annotation: isTextSnip ? nil : makeAnnotationHandlers(),
       onCountdownStart: {},
       onConfirm: { selection in self.confirmSelection(selection) },
       onConfirmWindow: { windowID, rect in self.confirmWindowTarget(windowID, rect: rect) },
@@ -119,7 +120,7 @@ final class ScreenshotCoordinator {
     do {
       let result = try await capturedRegion(selection)
       ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-      showActionBar(near: selection.rect)
+      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
     } catch {
       present(error.localizedDescription)
     }
@@ -132,51 +133,6 @@ final class ScreenshotCoordinator {
       return try captureSession.captureFrozenRegion(selection, from: frozen)
     }
     return try await captureSession.capture(selection, excludingApplications: exclusions)
-  }
-
-  func showActionBar(near rect: CGRect) {
-    ScreenshotActionBarWindow.show(
-      near: rect,
-      onCopy: { [weak self] in self?.captureSession.copyLastToClipboard() },
-      onSaveAndCopy: { [weak self] in self?.savedStatus() ?? "" },
-      onAnnotate: { [weak self] in self?.openAnnotation() },
-      onCopyText: { [weak self] in self?.copyTextFromLast() ?? "No text found" },
-      onPin: { [weak self] in self?.pinLastCapture() }
-    )
-  }
-
-  private func openAnnotation() {
-    guard let result = captureSession.lastResult else { return }
-    let reference = SourceImageReference(
-      identifier: "\(result.displayID)-\(result.createdAt.timeIntervalSince1970)",
-      pixelWidth: result.image.width,
-      pixelHeight: result.image.height
-    )
-    AnnotationEditorWindowController.present(image: result.image, reference: reference)
-  }
-
-  private func savedStatus() -> String {
-    do {
-      let url = try captureSession.saveLast()
-      captureSession.copyLastToClipboard()
-      return "Saved \(url.lastPathComponent)"
-    } catch {
-      return error.localizedDescription
-    }
-  }
-
-  private func finishDisplayCapture() async {
-    defer { isCapturing = false }
-    let displayID = NSScreen.displayID(for: NSEvent.mouseLocation)
-    do {
-      let result = try await captureSession.captureDisplay(displayID, excludingApplications: exclusions)
-      ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL)
-      ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
-    } catch {
-      present(error.localizedDescription)
-    }
-    restoreFocus(previousApplication)
-    previousApplication = nil
   }
 
   private func finishRepeatCapture() async {

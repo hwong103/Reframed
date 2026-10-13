@@ -39,6 +39,8 @@ final class AnnotationCanvasView: NSView {
   let tolerance: CGFloat = 8
   var dragState: DragState = .idle
   var pendingText: PendingText?
+  var isInline = false
+  var stepStampProvider: (() -> String?)?
 
   init(model: AnnotationEditorModel) {
     self.model = model
@@ -73,7 +75,10 @@ final class AnnotationCanvasView: NSView {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    continueInteraction(at: convert(event.locationInWindow, from: nil))
+    continueInteraction(
+      at: convert(event.locationInWindow, from: nil),
+      shiftHeld: event.modifierFlags.contains(.shift)
+    )
   }
 
   override func mouseUp(with event: NSEvent) {

@@ -17,6 +17,11 @@ extension SelectionOverlayView {
       return
     }
 
+    if request.annotation != nil {
+      enterAnnotationMode()
+      return
+    }
+
     guard let window = self.window else {
       request.onCancel()
       return
@@ -39,6 +44,12 @@ extension SelectionOverlayView {
   }
 
   func updateControlsPanel() {
+    if annotationSession != nil {
+      controlsHost?.isHidden = true
+      updateAnnotationLayout()
+      return
+    }
+
     guard let rect = selectionRect else {
       controlsHost?.isHidden = true
       return

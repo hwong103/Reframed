@@ -138,10 +138,7 @@ final class ScreenshotActionBarWindow: NSPanel {
     let screen = NSScreen.screens.first(where: { $0.frame.contains(anchor) }) ?? NSScreen.main
     let visible = screen?.visibleFrame ?? NSScreen.screens.first?.visibleFrame ?? captureRect
     let inset: CGFloat = 16
-    var origin = CGPoint(x: visible.midX - size.width / 2, y: visible.minY + inset)
-    if NSRect(origin: origin, size: size).intersects(captureRect) {
-      origin = CGPoint(x: captureRect.midX - size.width / 2, y: captureRect.maxY + inset)
-    }
+    let origin = CGPoint(x: visible.midX - size.width / 2, y: visible.minY + inset)
     origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
     origin.y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
     return origin

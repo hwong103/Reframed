@@ -9,6 +9,11 @@ extension SelectionOverlayView {
     mouseLocation = point
     updateCursor()
 
+    if annotationSession != nil {
+      needsDisplay = true
+      return
+    }
+
     if request.hoverTargetsEnabled, !isDragging, !hoverSuppressed, activeHandle == nil,
       handleDragStart == nil
     {
@@ -45,6 +50,13 @@ extension SelectionOverlayView {
         }
       }
 
+      if let session = annotationSession, !session.isSelectionToolActive {
+        handleDragStart = point
+        originalRectBeforeResize = rect
+        NSCursor.closedHand.set()
+        return
+      }
+
       if rect.contains(point) {
         activeHandle = nil
         handleDragStart = point
@@ -52,6 +64,10 @@ extension SelectionOverlayView {
         NSCursor.closedHand.set()
         return
       }
+    }
+
+    if annotationSession != nil {
+      return
     }
 
     dragOrigin = point
@@ -62,10 +78,11 @@ extension SelectionOverlayView {
   }
 
   func handleMouseDragged(_ point: CGPoint, shiftHeld: Bool) {
+    let shift = shiftHeld || (annotationSession?.isAspectLocked ?? false)
     if let handle = activeHandle, let start = handleDragStart, let original = originalRectBeforeResize {
       let delta = CGPoint(x: point.x - start.x, y: point.y - start.y)
       var newRect = handle.resize(original: original, delta: delta).normalized
-      if shiftHeld, original.width > 0, original.height > 0 {
+      if shift, original.width > 0, original.height > 0 {
         let aspect = original.width / original.height
         newRect = constrainToAspect(original, delta: delta, aspect: aspect, handle: handle)
       }
@@ -96,7 +113,7 @@ extension SelectionOverlayView {
     hoverTarget = nil
     let w = abs(point.x - origin.x)
     var h = abs(point.y - origin.y)
-    if shiftHeld, w > 0, h > 0 {
+    if shift, w > 0, h > 0 {
       h = w * 9.0 / 16.0
     }
     selectionRect = CGRect(

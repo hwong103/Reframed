@@ -26,6 +26,10 @@ extension AnnotationCanvasView {
       model.setPendingCrop(rectBetween(source, source))
       return
     }
+    if model.tool == .text, let stamp = stepStampProvider?() {
+      placeStepStamp(stamp, at: source)
+      return
+    }
     if model.tool == .text {
       beginTextEditing(at: source)
       return
@@ -39,13 +43,13 @@ extension AnnotationCanvasView {
     beginCreation(kind: model.tool, at: source)
   }
 
-  func continueInteraction(at view: CGPoint) {
+  func continueInteraction(at view: CGPoint, shiftHeld: Bool = false) {
     let source = sourcePoint(view)
     switch dragState {
     case .idle:
       return
     case .creating(let id):
-      updateCreation(id: id, to: source)
+      updateCreation(id: id, to: source, shiftHeld: shiftHeld)
     case .moving(let id, let original, let origin):
       updateMove(id: id, original: original, origin: origin, to: source)
     case .resizing(let id, let handle, let rect, let original):
@@ -130,7 +134,7 @@ extension AnnotationCanvasView {
     model.commit(key: "create-\(item.id.uuidString)") { $0.append(item) }
   }
 
-  func updateCreation(id: UUID, to source: CGPoint) {
+  func updateCreation(id: UUID, to source: CGPoint, shiftHeld: Bool = false) {
     guard var item = model.document.item(id: id) else { return }
     switch item.kind {
     case .pen, .highlighter:
@@ -140,7 +144,7 @@ extension AnnotationCanvasView {
       }
       refreshBounds(&item)
     default:
-      item.end = source
+      item.end = shiftHeld ? constrainedPoint(item.start, source, kind: item.kind) : source
     }
     model.commit(key: "create-\(id.uuidString)") { $0.replace(id: id, with: item) }
   }

@@ -173,6 +173,15 @@
 		AB5C00000000000000000033 /* ScreenshotWindowSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */; };
 		AB5C00000000000000000035 /* ScreenshotCoordinator+Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */; };
 		AB5C00000000000000000041 /* SelectionOverlayView+Interaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000040 /* SelectionOverlayView+Interaction.swift */; };
+		AB5C00000000000000000051 /* CaptureAnnotationTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004C /* CaptureAnnotationTool.swift */; };
+		AB5C00000000000000000052 /* CaptureAnnotationToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */; };
+		AB5C00000000000000000053 /* CaptureDimensionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004E /* CaptureDimensionBadge.swift */; };
+		AB5C00000000000000000054 /* InlineAnnotationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004F /* InlineAnnotationSession.swift */; };
+		AB5C00000000000000000055 /* SelectionOverlayView+Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */; };
+		AB5C00000000000000000058 /* CaptureAnnotationToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */; };
+		AB5C00000000000000000059 /* InlineAnnotationSession+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */; };
+		AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */; };
+		AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005C /* CaptureSelectionChrome.swift */; };
 		AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000042 /* HoverTargetProvider.swift */; };
 		AB5C00000000000000000045 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000044 /* OCRService.swift */; };
 		AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000046 /* PinnedImageWindow.swift */; };
@@ -461,6 +470,15 @@
 		AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWindowSelectionView.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Window.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000040 /* SelectionOverlayView+Interaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Interaction.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000004C /* CaptureAnnotationTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationTool.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationToolbarView.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004E /* CaptureDimensionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDimensionBadge.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004F /* InlineAnnotationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineAnnotationSession.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Annotation.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationToolbarButton.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Output.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Annotation.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000005C /* CaptureSelectionChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSelectionChrome.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000042 /* HoverTargetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverTargetProvider.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000044 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000046 /* PinnedImageWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageWindow.swift; sourceTree = "<group>"; };
@@ -820,6 +838,14 @@
 				AB5C00000000000000000044 /* OCRService.swift */,
 				AB5C00000000000000000046 /* PinnedImageWindow.swift */,
 				AB5C00000000000000000048 /* PinnedImageManager.swift */,
+				AB5C0000000000000000004C /* CaptureAnnotationTool.swift */,
+				AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */,
+				AB5C0000000000000000004E /* CaptureDimensionBadge.swift */,
+				AB5C0000000000000000004F /* InlineAnnotationSession.swift */,
+				AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */,
+				AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */,
+				AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */,
+				AB5C0000000000000000005C /* CaptureSelectionChrome.swift */,
 			);
 			path = Screenshot;
 			sourceTree = "<group>";
@@ -879,6 +905,7 @@
 				7E2B226826676E12A667F53E /* SelectionOverlayView+Drawing.swift */,
 				A204316B5FA59D98E694D332 /* SelectionOverlayView+Resize.swift */,
 				B4B39BCCC031C1D78AE47B52 /* SelectionOverlayView+Controls.swift */,
+				AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */,
 			);
 			path = CaptureArea;
 			sourceTree = "<group>";
@@ -1371,6 +1398,15 @@
 				AB5C00000000000000000045 /* OCRService.swift in Sources */,
 				AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */,
 				AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */,
+				AB5C00000000000000000051 /* CaptureAnnotationTool.swift in Sources */,
+				AB5C00000000000000000052 /* CaptureAnnotationToolbarView.swift in Sources */,
+				AB5C00000000000000000053 /* CaptureDimensionBadge.swift in Sources */,
+				AB5C00000000000000000054 /* InlineAnnotationSession.swift in Sources */,
+				AB5C00000000000000000055 /* SelectionOverlayView+Annotation.swift in Sources */,
+				AB5C00000000000000000058 /* CaptureAnnotationToolbarButton.swift in Sources */,
+				AB5C00000000000000000059 /* InlineAnnotationSession+Output.swift in Sources */,
+				AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */,
+				AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */,
 				AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */,
 				AC0000000000000000000021 /* AnnotationItem.swift in Sources */,
 				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,

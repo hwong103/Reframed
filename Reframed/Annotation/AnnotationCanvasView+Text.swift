@@ -55,6 +55,15 @@ extension AnnotationCanvasView {
     let font = NSFont.systemFont(ofSize: max(1, model.fontSize))
     return (text as NSString).size(withAttributes: [.font: font]).width
   }
+
+  func placeStepStamp(_ text: String, at source: CGPoint) {
+    var item = AnnotationItem(kind: .text, style: model.makeStyle(for: .text), start: source, end: source)
+    item.style.text = text
+    item.end = CGPoint(x: source.x + textWidth(text), y: source.y + model.fontSize)
+    model.commit { $0.append(item) }
+    model.select(item.id)
+    needsDisplay = true
+  }
 }
 
 extension AnnotationCanvasView: NSTextFieldDelegate {

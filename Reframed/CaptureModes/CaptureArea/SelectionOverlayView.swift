@@ -17,6 +17,7 @@ final class SelectionOverlayView: NSView {
   var originalRectBeforeResize: CGRect?
   var mouseLocation: CGPoint = .zero
   var controlsHost: NSHostingView<CaptureAreaView>?
+  var annotationSession: InlineAnnotationSession?
   var isFullDisplayInitial = false
   var hoverSuppressed = false
   var committedWindowID: CGWindowID?
@@ -98,5 +99,28 @@ final class SelectionOverlayView: NSView {
     default:
       super.keyDown(with: event)
     }
+  }
+
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    guard let session = annotationSession else {
+      return super.hitTest(point)
+    }
+    if let chrome = annotationHitTest(point) {
+      return chrome
+    }
+    if session.isSelectionToolActive {
+      return self
+    }
+    guard let rect = selectionRect else {
+      return super.hitTest(point)
+    }
+    let local = convert(point, from: superview)
+    for handle in ResizeHandle.allCases where handle.rect(for: rect).insetBy(dx: -4, dy: -4).contains(local) {
+      return self
+    }
+    if !rect.contains(local) {
+      return self
+    }
+    return super.hitTest(point)
   }
 }

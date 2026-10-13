@@ -62,21 +62,46 @@ capture started.
 R4.4 The still flow does not touch microphone, camera or accessibility permissions;
 Screen Recording alone gates it.
 
-## R9 - post-capture action bar
+## R9 - inline annotation after confirm
 
-The Xnip flow ends in a small bar offering annotate, copy, and save-and-copy. Ours
-matches that shape:
+The Xnip shape: confirming a selection does not tear the overlay down, and there is no
+separate annotation window in the default flow.
 
-R9.1 `Copy` publishes to the clipboard and writes no file. This is the default action
-and the current behaviour.
-R9.2 `Save & Copy` writes the PNG into the configured output folder and publishes the
-same image, plus its file URL, to the clipboard.
-R9.3 `Annotate` opens the annotation canvas (phase P1). Until P1 lands the button is
-either absent or visibly disabled; it is never a no-op.
-R9.4 Escape dismisses the bar and leaves no file and no clipboard change beyond what
-the action already did.
-R9.5 The bar appears near the capture, does not take focus, and is excluded from any
-further capture.
+R9.1 Confirm keeps the frozen overlay on screen: the selected area stays undimmed and
+everything outside it dims. Annotation is drawn in place on that frozen surface, clipped
+to the selection.
+R9.2 The selection stays resizable while annotating. Annotations live in the frozen
+image's pixel space, so enlarging the area reveals more of the frozen screen and keeps
+the marks where they were drawn. Only the crop that Copy and Save apply changes.
+R9.3 Copy/Save/Capture Text/Pin all render the annotations and crop to the current
+selection. The rendered result is what is published, written and pinned.
+R9.4 The toolbar is a light, near-white rounded pill with dark grey icons; the active
+tool is drawn in the accent blue and other tools sit in dark grey. It hangs directly
+below the selection, centred on it; when there is no room below (the full-screen
+default) it drops inside the selection near its bottom edge, clamped to the screen's
+visible frame, and it never jumps to the top of the screen. The toolbar and the frozen
+overlay are both excluded from capture.
+R9.5 A blue capsule badge on the selection's top-left reads `width x height pt` with an
+inline aspect-lock glyph, and a white circular button with a dark cross floats at the
+selection's top-right for cancel. The thin accent-blue outline and the corner handles
+stay visible above the annotation surface.
+R9.6 Tool shortcuts are backtick for Selection, 1-9 for Rectangle, Oval, Line, Arrow,
+Freehand, Pixelate, Text, Step and Highlight; actions are O (Capture Text), T (Pin),
+P (Open in Preview), W (Open in Window), Command-S (Save), Shift-Command-S (Save and
+Copy), Return/Space (Copy), Command-Z (Undo, Shift-Command-Z redo), Delete (remove the
+selected annotation) and Esc (Cancel). Scrolling capture (S) is shown dimmed with a
+tooltip rather than hidden.
+R9.7 `AnnotationEditorWindowController` is not presented by the default flow. W is the
+only opt-in path to a separate window, and it opens the already-rendered result.
+R9.8 `ScreenshotActionBarWindow` is retained but never presented; the feedback HUD stays
+the only transient message surface. If the action bar is ever presented again it belongs
+at the bottom-centre of the capture's screen, above the visible frame's bottom edge and
+clamped on screen, regardless of where the capture sits.
+R9.9 Escape cancels annotation, writes nothing, and returns focus to the app that was
+frontmost before the capture started.
+R9.10 The colour control opens a popover holding the current colour, a two-row swatch
+grid, opacity, thickness and size sliders, and "Set as Default Style", which persists the
+style for the next capture.
 
 ## R5 - output
 
@@ -120,8 +145,8 @@ snapshots retained for undo, and a stated ceiling for future long images.
 ## Non-goals in P0
 
 Annotation, OCR and pinning were P0 non-goals and now have their own sections (R9, R11,
-R10). Still out of scope: scrolling capture, drag-out, beautify, ruler, numbered steps,
-and a capture history list.
+R10). Still out of scope: scrolling capture (present as a disabled toolbar affordance),
+drag-out, beautify, ruler, and a capture history list.
 
 ## R10 - pin to screen
 

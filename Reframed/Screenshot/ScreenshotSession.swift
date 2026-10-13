@@ -119,6 +119,21 @@ final class ScreenshotSession {
   }
 
   @discardableResult
+  func adoptRendered(image: CGImage, selection: SelectionRect) -> ScreenshotResult {
+    let result = ScreenshotResult(
+      image: image,
+      displayID: selection.displayID,
+      pointSize: selection.rect.size,
+      backingScale: selection.backingScaleFactor
+    )
+    lastSelection = selection
+    lastWindowID = nil
+    lastResult = result
+    lastSavedURL = nil
+    return result
+  }
+
+  @discardableResult
   func copyLastToClipboard() -> Bool {
     guard let result = lastResult else { return false }
     ImageExporter.copyToPasteboard(result.image, fileURL: lastSavedURL)

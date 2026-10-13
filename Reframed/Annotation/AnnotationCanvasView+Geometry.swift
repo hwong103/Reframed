@@ -85,6 +85,24 @@ extension AnnotationCanvasView {
     CGRect(x: min(a.x, b.x), y: min(a.y, b.y), width: abs(a.x - b.x), height: abs(a.y - b.y))
   }
 
+  func constrainedPoint(_ start: CGPoint, _ point: CGPoint, kind: AnnotationToolKind) -> CGPoint {
+    let dx = point.x - start.x
+    let dy = point.y - start.y
+    switch kind {
+    case .rectangle, .ellipse, .pixelate:
+      let side = max(abs(dx), abs(dy))
+      return CGPoint(x: start.x + (dx < 0 ? -side : side), y: start.y + (dy < 0 ? -side : side))
+    case .line, .arrow:
+      let length = hypot(dx, dy)
+      guard length > 1 else { return point }
+      let step = CGFloat.pi / 4
+      let angle = (atan2(dy, dx) / step).rounded() * step
+      return CGPoint(x: start.x + cos(angle) * length, y: start.y + sin(angle) * length)
+    default:
+      return point
+    }
+  }
+
   func handleHit(at view: CGPoint) -> Handle? {
     guard let item = model.selectedItem else { return nil }
     let centers = handleCenters(forSource: item.bounds.standardized)

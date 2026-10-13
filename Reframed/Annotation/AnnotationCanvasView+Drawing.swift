@@ -4,6 +4,13 @@ import CoreGraphics
 extension AnnotationCanvasView {
   func currentLayout() -> Layout {
     let size = model.outputSize
+    if isInline {
+      guard size.width > 0, size.height > 0, bounds.width > 0, bounds.height > 0 else {
+        return Layout(scale: 1, origin: CGPoint(x: bounds.midX, y: bounds.midY))
+      }
+      let scale = min(bounds.width / size.width, bounds.height / size.height)
+      return Layout(scale: scale, origin: CGPoint(x: bounds.minX, y: bounds.minY))
+    }
     let inset = bounds.insetBy(dx: 16, dy: 16)
     guard size.width > 0, size.height > 0, inset.width > 0, inset.height > 0 else {
       return Layout(scale: 1, origin: CGPoint(x: bounds.midX, y: bounds.midY))

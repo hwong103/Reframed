@@ -16,6 +16,9 @@ extension SelectionOverlayView {
     }
 
     if let rect = selectionRect {
+      if annotationSession != nil {
+        return
+      }
       context.setStrokeColor(ReframedColors.selectionBorder.cgColor)
       context.setLineWidth(1.0)
       context.setLineDash(phase: 0, lengths: [5, 4])
@@ -24,6 +27,9 @@ extension SelectionOverlayView {
       drawGrid(context: context, rect: rect)
       drawCircularHandles(context: context, rect: rect)
     } else {
+      if annotationSession != nil {
+        return
+      }
       let crossColor = ReframedColors.crosshair
       context.setStrokeColor(crossColor.cgColor)
       context.setLineWidth(0.5)

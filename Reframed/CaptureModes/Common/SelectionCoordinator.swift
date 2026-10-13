@@ -1,5 +1,19 @@
 import AppKit
 
+@MainActor
+struct SelectionAnnotationHandlers {
+  let copy: (CGImage, SelectionRect) -> Void
+  let save: (CGImage, SelectionRect) -> Void
+  let saveAndCopy: (CGImage, SelectionRect) -> Void
+  let captureText: (CGImage, SelectionRect) -> Void
+  let pin: (CGImage, SelectionRect) -> Void
+  let openInWindow: (CGImage, SelectionRect) -> Void
+  let openInPreview: (CGImage, SelectionRect) -> URL?
+  let finish: () -> Void
+  let finishWithoutRefocus: () -> Void
+  let cancel: () -> Void
+}
+
 /// Everything an area-selection overlay needs from its owner.
 ///
 /// Deliberately session-free so a still-capture flow can reuse region
@@ -12,6 +26,7 @@ struct SelectionRequest {
   let backgroundImages: [CGDirectDisplayID: CGImage]
   let initialFullScreen: Bool
   let hoverTargetsEnabled: Bool
+  let annotation: SelectionAnnotationHandlers?
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
   let onConfirmWindow: ((CGWindowID, CGRect) -> Void)?
@@ -24,6 +39,7 @@ struct SelectionRequest {
     backgroundImages: [CGDirectDisplayID: CGImage] = [:],
     initialFullScreen: Bool = false,
     hoverTargetsEnabled: Bool = false,
+    annotation: SelectionAnnotationHandlers? = nil,
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
     onConfirmWindow: ((CGWindowID, CGRect) -> Void)? = nil,
@@ -35,6 +51,7 @@ struct SelectionRequest {
     self.backgroundImages = backgroundImages
     self.initialFullScreen = initialFullScreen
     self.hoverTargetsEnabled = hoverTargetsEnabled
+    self.annotation = annotation
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
     self.onConfirmWindow = onConfirmWindow
