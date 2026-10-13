@@ -37,8 +37,21 @@ extension InlineAnnotationSession {
     end(restoringFocus: false)
     guard let url else { return }
     Task { @MainActor in
-      NSWorkspace.shared.open(url)
+      openInPreviewApplication(url)
     }
+  }
+
+  private func openInPreviewApplication(_ url: URL) {
+    let preview = URL(fileURLWithPath: "/System/Applications/Preview.app")
+    guard FileManager.default.fileExists(atPath: preview.path) else {
+      NSWorkspace.shared.open(url)
+      return
+    }
+    NSWorkspace.shared.open(
+      [url],
+      withApplicationAt: preview,
+      configuration: NSWorkspace.OpenConfiguration()
+    ) { _, _ in }
   }
 
   func undo() {

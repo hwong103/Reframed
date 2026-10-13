@@ -5,6 +5,8 @@ struct SelectionRect: Sendable {
   let displayID: CGDirectDisplayID
   let displayOrigin: CGPoint
   let displayHeight: CGFloat
+  let isScreenRegion: Bool
+  private let scaleOverride: CGFloat?
 
   init(rect: CGRect, displayID: CGDirectDisplayID) {
     self.rect = rect
@@ -12,6 +14,23 @@ struct SelectionRect: Sendable {
     let screen = NSScreen.screen(for: displayID)
     self.displayOrigin = screen?.frame.origin ?? .zero
     self.displayHeight = screen?.frame.height ?? rect.height
+    self.isScreenRegion = true
+    self.scaleOverride = nil
+  }
+
+  init(
+    rect: CGRect,
+    displayID: CGDirectDisplayID,
+    displayOrigin: CGPoint,
+    displayHeight: CGFloat,
+    scale: CGFloat
+  ) {
+    self.rect = rect
+    self.displayID = displayID
+    self.displayOrigin = displayOrigin
+    self.displayHeight = displayHeight
+    self.isScreenRegion = false
+    self.scaleOverride = scale
   }
 
   var screenCaptureKitRect: CGRect {
@@ -42,6 +61,9 @@ struct SelectionRect: Sendable {
   }
 
   var backingScaleFactor: CGFloat {
-    NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2.0
+    if let scaleOverride {
+      return scaleOverride
+    }
+    return NSScreen.screen(for: displayID)?.backingScaleFactor ?? 2.0
   }
 }

@@ -60,9 +60,10 @@ final class ScreenshotSession {
   @discardableResult
   func captureWindow(
     _ window: SCWindow,
+    includeShadow: Bool = true,
     excludingApplications: [SCRunningApplication] = []
   ) async throws -> ScreenshotResult {
-    let result = try await service.captureWindow(window)
+    let result = try await service.captureWindow(window, includeShadow: includeShadow)
     lastSelection = nil
     lastWindowID = window.windowID
     lastResult = result
@@ -126,8 +127,10 @@ final class ScreenshotSession {
       pointSize: selection.rect.size,
       backingScale: selection.backingScaleFactor
     )
-    lastSelection = selection
-    lastWindowID = nil
+    if selection.isScreenRegion {
+      lastSelection = selection
+      lastWindowID = nil
+    }
     lastResult = result
     lastSavedURL = nil
     return result

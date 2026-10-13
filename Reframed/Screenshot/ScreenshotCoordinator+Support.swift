@@ -15,6 +15,7 @@ extension ScreenshotCoordinator {
       return false
     }
     ScreenshotActionBarWindow.dismiss()
+    annotationSavedURL = nil
     isCapturing = true
     return true
   }
@@ -68,6 +69,7 @@ extension ScreenshotCoordinator {
 
   func captureTextSnip() {
     guard admit() else { return }
+    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     isTextSnip = true
     Task { [weak self] in

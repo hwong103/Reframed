@@ -11,6 +11,7 @@ final class InlineAnnotationSession {
   let handlers: SelectionAnnotationHandlers
   var selection: SelectionRect
   var localRect: CGRect
+  let isResizable: Bool
   lazy var model = AnnotationEditorModel(image: image, reference: reference)
   lazy var canvas: AnnotationCanvasView = {
     let view = AnnotationCanvasView(model: model)
@@ -49,13 +50,15 @@ final class InlineAnnotationSession {
     selection: SelectionRect,
     localRect: CGRect,
     displaySize: CGSize,
-    handlers: SelectionAnnotationHandlers
+    handlers: SelectionAnnotationHandlers,
+    isResizable: Bool = true
   ) {
     self.image = image
     self.selection = selection
     self.localRect = localRect
     self.displaySize = displaySize
     self.handlers = handlers
+    self.isResizable = isResizable
     self.reference = SourceImageReference(
       identifier: "inline-\(selection.displayID)-\(Int(selection.rect.minX))-\(Int(selection.rect.minY))",
       pixelWidth: image.width,
@@ -168,6 +171,7 @@ final class InlineAnnotationSession {
     clip.frame = localRect
     canvas.frame = CGRect(origin: CGPoint(x: -localRect.minX, y: -localRect.minY), size: displaySize)
     chrome.frame = bounds
+    chrome.isHidden = !isResizable
     chrome.selectionRect = localRect
     chrome.needsDisplay = true
     let badgeSize = badgeHost.fittingSize

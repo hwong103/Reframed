@@ -2,18 +2,23 @@ import AppKit
 
 extension SelectionOverlayView {
   func drawOverlay(context: CGContext) {
+    let holes = selectionHoles()
     if let backgroundImage {
       context.draw(backgroundImage, in: bounds)
-      drawDimOverlay(context: context, hole: selectionRect)
+      drawDimOverlay(context: context, holes: holes)
     } else {
       context.setFillColor(ReframedColors.overlayBackground.cgColor)
       context.fill(bounds)
-      if let rect = selectionRect {
+      if !holes.isEmpty {
         context.setBlendMode(.clear)
-        context.fill(rect)
+        for hole in holes {
+          context.fill(hole)
+        }
         context.setBlendMode(.normal)
       }
     }
+
+    drawWindowHighlights(context: context)
 
     if let rect = selectionRect {
       if annotationSession != nil {
@@ -45,17 +50,40 @@ extension SelectionOverlayView {
     }
   }
 
-  func drawDimOverlay(context: CGContext, hole rect: CGRect?) {
+  func drawDimOverlay(context: CGContext, holes: [CGRect]) {
     let path = CGMutablePath()
     path.addRect(bounds)
-    if let rect {
-      path.addRect(rect)
+    for hole in holes {
+      path.addRect(hole)
     }
     context.saveGState()
     context.addPath(path)
     context.setFillColor(ReframedColors.overlayBackground.cgColor)
     context.fillPath(using: .evenOdd)
     context.restoreGState()
+  }
+
+  func selectionHoles() -> [CGRect] {
+    var rects: [CGRect] = []
+    if let rect = selectionRect {
+      rects.append(rect)
+    }
+    for rect in selectedWindowRects.values where !rects.contains(rect) {
+      rects.append(rect)
+    }
+    return rects
+  }
+
+  func drawWindowHighlights(context: CGContext) {
+    guard !selectedWindowRects.isEmpty else { return }
+    context.setLineDash(phase: 0, lengths: [])
+    for rect in selectedWindowRects.values {
+      context.setFillColor(NSColor.white.withAlphaComponent(0.12).cgColor)
+      context.fill(rect)
+      context.setStrokeColor(NSColor.controlAccentColor.cgColor)
+      context.setLineWidth(2)
+      context.stroke(rect.insetBy(dx: -1, dy: -1))
+    }
   }
 
   func drawGrid(context: CGContext, rect: CGRect) {

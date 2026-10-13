@@ -46,11 +46,69 @@ extension SelectionOverlayView {
     needsDisplay = true
   }
 
-  func updateAnnotationLayout() {
-    guard let session = annotationSession, let rect = selectionRect, let selection = currentSelection() else {
+  func enterComposedAnnotation(image: CGImage, displayID: CGDirectDisplayID) {
+    guard annotationSession == nil, let handlers = request.annotation else { return }
+    let pixel = CGSize(width: image.width, height: image.height)
+    guard pixel.width >= 1, pixel.height >= 1 else { return }
+
+    let fit = min(bounds.width / pixel.width, bounds.height / pixel.height)
+    let localRect = CGRect(
+      origin: bounds.origin,
+      size: CGSize(width: pixel.width * fit, height: pixel.height * fit)
+    )
+    let selection = SelectionRect(
+      rect: CGRect(origin: .zero, size: pixel),
+      displayID: displayID,
+      displayOrigin: .zero,
+      displayHeight: pixel.height,
+      scale: 1
+    )
+
+    selectionRect = localRect
+    isFullDisplayInitial = false
+    committedWindowID = nil
+    hoverTarget = nil
+    clearWindowSelection()
+    controlsHost?.isHidden = true
+
+    let session = InlineAnnotationSession(
+      image: image,
+      selection: selection,
+      localRect: localRect,
+      displaySize: bounds.size,
+      handlers: handlers,
+      isResizable: false
+    )
+    annotationSession = session
+    session.install(in: self)
+    session.state.pointSize = pixel
+    updateAnnotationLayout()
+    window?.makeFirstResponder(self)
+    needsDisplay = true
+  }
+
+  func confirmAnnotationSelection() {
+    if let onConfirmWindows = request.onConfirmWindows, !selectedWindowIDs.isEmpty {
+      let windowIDs = selectedWindowIDs
+      clearWindowSelection()
+      onConfirmWindows(windowIDs, !NSEvent.modifierFlags.contains(.option))
       return
     }
-    session.update(bounds: bounds, localRect: rect, selection: selection)
+
+    if let onConfirmWindows = request.onConfirmWindows, let windowID = committedWindowID {
+      onConfirmWindows([windowID], !NSEvent.modifierFlags.contains(.option))
+      return
+    }
+
+    enterAnnotationMode()
+  }
+
+  func updateAnnotationLayout() {
+    guard let session = annotationSession, let rect = selectionRect else {
+      return
+    }
+    let selection = session.isResizable ? currentSelection() : nil
+    session.update(bounds: bounds, localRect: rect, selection: selection ?? session.selection)
   }
 
   func handleAnnotationKey(_ event: NSEvent) -> Bool {
@@ -76,7 +134,7 @@ extension SelectionOverlayView {
 
     for handle in ResizeHandle.allCases {
       let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
-      if hitArea.contains(mouseLocation) {
+      if hitArea.contains(mouseLocation), annotationSession?.isResizable ?? true {
         handle.cursor.set()
         return
       }

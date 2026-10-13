@@ -29,7 +29,7 @@ struct SelectionRequest {
   let annotation: SelectionAnnotationHandlers?
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
-  let onConfirmWindow: ((CGWindowID, CGRect) -> Void)?
+  let onConfirmWindows: (([CGWindowID], Bool) -> Void)?
   let onCancel: () -> Void
 
   init(
@@ -42,7 +42,7 @@ struct SelectionRequest {
     annotation: SelectionAnnotationHandlers? = nil,
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
-    onConfirmWindow: ((CGWindowID, CGRect) -> Void)? = nil,
+    onConfirmWindows: (([CGWindowID], Bool) -> Void)? = nil,
     onCancel: @escaping () -> Void
   ) {
     self.timerDelay = timerDelay
@@ -54,7 +54,7 @@ struct SelectionRequest {
     self.annotation = annotation
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
-    self.onConfirmWindow = onConfirmWindow
+    self.onConfirmWindows = onConfirmWindows
     self.onCancel = onCancel
   }
 }
@@ -105,6 +105,18 @@ final class SelectionCoordinator {
     let window = RecordingBorderWindow(screenRect: screenRect)
     borderWindow = window
     window.orderFrontRegardless()
+  }
+
+  func enterComposedAnnotation(image: CGImage, displayID: CGDirectDisplayID) {
+    guard let screen = NSScreen.screen(for: displayID) else { return }
+    guard let target = overlayWindows.first(where: { $0.frame.contains(screen.frame.origin) }) else { return }
+    for window in overlayWindows where window !== target {
+      window.orderOut(nil)
+      window.contentView = nil
+    }
+    overlayWindows = [target]
+    (target.contentView as? SelectionOverlayView)?.enterComposedAnnotation(image: image, displayID: displayID)
+    target.makeKeyAndOrderFront(nil)
   }
 
   func updateRecordingBorder(screenRect: CGRect) {

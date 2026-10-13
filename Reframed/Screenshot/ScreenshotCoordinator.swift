@@ -14,6 +14,8 @@ final class ScreenshotCoordinator {
   var isTextSnip = false
   var frozenDisplays: [CGDirectDisplayID: CGImage] = [:]
   var windowSelectionCoordinator: WindowSelectionCoordinator?
+  var lastWindowSelection: WindowSetSelection?
+  var annotationSavedURL: URL?
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -22,6 +24,7 @@ final class ScreenshotCoordinator {
 
   func captureRegion() {
     guard admit() else { return }
+    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     Task { [weak self] in
       guard let self else { return }
@@ -32,6 +35,7 @@ final class ScreenshotCoordinator {
 
   func captureDisplay() {
     guard admit() else { return }
+    lastWindowSelection = nil
     previousApplication = NSWorkspace.shared.frontmostApplication
     Task { [weak self] in
       guard let self else { return }
@@ -46,7 +50,11 @@ final class ScreenshotCoordinator {
     Task { [weak self] in
       guard let self else { return }
       self.exclusions = await self.resolveExclusions()
-      await self.finishRepeatCapture()
+      if let selection = self.lastWindowSelection {
+        await self.repeatWindowSet(selection)
+      } else {
+        await self.finishRepeatCapture()
+      }
     }
   }
 
@@ -57,6 +65,7 @@ final class ScreenshotCoordinator {
     isCapturing = false
     isTextSnip = false
     frozenDisplays.removeAll()
+    annotationSavedURL = nil
     ScreenshotActionBarWindow.dismiss()
     restoreFocus(previousApplication)
     previousApplication = nil
@@ -99,14 +108,14 @@ final class ScreenshotCoordinator {
     let request = SelectionRequest(
       timerDelay: 0,
       confirmTitle: "Capture",
-      hint: "Move to highlight \u{00b7} Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
+      hint: "Click a window to capture \u{00b7} Shift-click adds windows \u{00b7} Option drops the shadow \u{00b7} Esc to cancel",
       backgroundImages: frozenDisplays,
       initialFullScreen: true,
       hoverTargetsEnabled: true,
       annotation: isTextSnip ? nil : makeAnnotationHandlers(),
       onCountdownStart: {},
       onConfirm: { selection in self.confirmSelection(selection) },
-      onConfirmWindow: { windowID, rect in self.confirmWindowTarget(windowID, rect: rect) },
+      onConfirmWindows: { windowIDs, includeShadow in self.confirmWindowSet(windowIDs, includeShadow: includeShadow) },
       onCancel: { self.cancel() }
     )
     selectionCoordinator.beginSelection(request: request)

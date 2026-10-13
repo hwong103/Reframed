@@ -4,7 +4,7 @@ import Foundation
 import ScreenCaptureKit
 
 extension StillCaptureService {
-  func captureWindow(_ window: SCWindow) async throws -> ScreenshotResult {
+  func captureWindow(_ window: SCWindow, includeShadow: Bool = true) async throws -> ScreenshotResult {
     try assertCapturable(window)
     let filter = SCContentFilter(desktopIndependentWindow: window)
     let geometry = filter.contentRect
@@ -12,25 +12,26 @@ extension StillCaptureService {
     guard geometry.width >= 1, geometry.height >= 1, scale > 0 else {
       throw ScreenshotCaptureError.windowUnavailable
     }
-    let expected = CGSize(
+    let contentPixels = CGSize(
       width: CGFloat(pixelLength(geometry.width, scale: scale)),
       height: CGFloat(pixelLength(geometry.height, scale: scale))
     )
     let configuration = makeConfiguration()
-    configuration.width = Int(expected.width)
-    configuration.height = Int(expected.height)
+    configuration.width = Int(contentPixels.width)
+    configuration.height = Int(contentPixels.height)
     configuration.scalesToFit = false
-    configuration.ignoreShadowsSingleWindow = true
-    configuration.shouldBeOpaque = true
+    configuration.ignoreShadowsSingleWindow = !includeShadow
+    configuration.shouldBeOpaque = !includeShadow
     let image = try await SCScreenshotManager.captureImage(
       contentFilter: filter,
       configuration: configuration
     )
-    try assertRealisedSize(CGSize(width: image.width, height: image.height), expected: expected, window: window)
+    let realised = CGSize(width: image.width, height: image.height)
+    try assertRealisedSize(realised, contentPixels: contentPixels, includeShadow: includeShadow, window: window)
     return ScreenshotResult(
       image: image,
       displayID: displayID(for: window),
-      pointSize: geometry.size,
+      pointSize: CGSize(width: realised.width / scale, height: realised.height / scale),
       backingScale: scale
     )
   }
@@ -55,16 +56,34 @@ extension StillCaptureService {
     }
   }
 
-  private func assertRealisedSize(_ realised: CGSize, expected: CGSize, window: SCWindow) throws {
+  private func assertRealisedSize(
+    _ realised: CGSize,
+    contentPixels: CGSize,
+    includeShadow: Bool,
+    window: SCWindow
+  ) throws {
     guard realised.width >= 1, realised.height >= 1 else {
       throw ScreenshotCaptureError.windowUnavailable
     }
-    let fits = realised.width <= expected.width && realised.height <= expected.height
-    guard fits else {
-      throw ScreenshotCaptureError.windowGeometryMismatch(expected: expected, actual: realised)
+
+    if includeShadow {
+      let lostContent =
+        realised.width < contentPixels.width - 2 || realised.height < contentPixels.height - 2
+      let implausible =
+        realised.width > contentPixels.width * 2 + 2 || realised.height > contentPixels.height * 2 + 2
+      guard !lostContent, !implausible else {
+        throw ScreenshotCaptureError.windowGeometryMismatch(expected: contentPixels, actual: realised)
+      }
+      return
     }
-    if isFullyOnScreen(window), realised != expected {
-      throw ScreenshotCaptureError.windowGeometryMismatch(expected: expected, actual: realised)
+
+    let matches = realised == contentPixels
+    let clipped =
+      !isFullyOnScreen(window)
+      && realised.width <= contentPixels.width
+      && realised.height <= contentPixels.height
+    guard matches || clipped else {
+      throw ScreenshotCaptureError.windowGeometryMismatch(expected: contentPixels, actual: realised)
     }
   }
 

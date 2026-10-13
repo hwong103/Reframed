@@ -1,10 +1,6 @@
 import AppKit
 
 extension SelectionOverlayView {
-  var isAutoSelection: Bool {
-    isFullDisplayInitial || committedWindowID != nil
-  }
-
   func handleMouseMoved(_ point: CGPoint) {
     mouseLocation = point
 
@@ -29,7 +25,7 @@ extension SelectionOverlayView {
     needsDisplay = true
   }
 
-  func handleMouseDown(_ point: CGPoint) {
+  func handleMouseDown(_ point: CGPoint, shiftHeld: Bool) {
     if let hosting = controlsHost, !hosting.isHidden {
       let panelPoint = hosting.convert(point, from: self)
       if hosting.bounds.contains(panelPoint) {
@@ -39,13 +35,19 @@ extension SelectionOverlayView {
 
     didDrag = false
 
+    if shiftHeld, isWindowPickEnabled, isAutoSelection {
+      handledShiftClick = true
+      toggleWindowSelection(at: point)
+      return
+    }
+
     if isAutoSelection {
       dragOrigin = point
       isDragging = false
       return
     }
 
-    if let rect = selectionRect {
+    if annotationSession?.isResizable ?? true, let rect = selectionRect {
       for handle in ResizeHandle.allCases {
         let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
         if hitArea.contains(point) {
@@ -133,6 +135,13 @@ extension SelectionOverlayView {
   }
 
   func handleMouseUp(_ point: CGPoint) {
+    if handledShiftClick {
+      handledShiftClick = false
+      isDragging = false
+      dragOrigin = nil
+      return
+    }
+
     if activeHandle != nil || handleDragStart != nil {
       activeHandle = nil
       handleDragStart = nil
@@ -141,9 +150,8 @@ extension SelectionOverlayView {
       return
     }
 
-    if !didDrag, request.hoverTargetsEnabled, isAutoSelection || hoverSuppressed {
-      commitHoveredTarget(at: point)
-      captureImmediately()
+    if !didDrag, isWindowPickEnabled, isAutoSelection || hoverSuppressed {
+      captureHoveredWindow(at: point)
       return
     }
 
@@ -178,18 +186,8 @@ extension SelectionOverlayView {
     }
   }
 
-  private func captureImmediately() {
+  func captureImmediately() {
     guard request.annotation != nil, annotationSession == nil else { return }
     confirmSelection()
   }
-
-  func applyFullDisplaySelection() {
-    selectionRect = bounds
-    isFullDisplayInitial = true
-    committedWindowID = nil
-    hoverTarget = nil
-    needsDisplay = true
-    updateControlsPanel()
-  }
-
 }

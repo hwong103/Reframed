@@ -22,6 +22,10 @@ final class SelectionOverlayView: NSView {
   var hoverSuppressed = false
   var committedWindowID: CGWindowID?
   var hoverTarget: HoverTarget?
+  var selectedWindowIDs: [CGWindowID] = []
+  var selectedWindowRects: [CGWindowID: CGRect] = [:]
+  var optionsHeld = false
+  var handledShiftClick = false
 
   override var acceptsFirstResponder: Bool { true }
   override var isFlipped: Bool { false }
@@ -68,11 +72,16 @@ final class SelectionOverlayView: NSView {
   }
 
   override func mouseMoved(with event: NSEvent) {
+    optionsHeld = event.modifierFlags.contains(.option)
     handleMouseMoved(convert(event.locationInWindow, from: nil))
   }
 
   override func mouseDown(with event: NSEvent) {
-    handleMouseDown(convert(event.locationInWindow, from: nil))
+    optionsHeld = event.modifierFlags.contains(.option)
+    handleMouseDown(
+      convert(event.locationInWindow, from: nil),
+      shiftHeld: event.modifierFlags.contains(.shift)
+    )
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -83,7 +92,16 @@ final class SelectionOverlayView: NSView {
   }
 
   override func mouseUp(with event: NSEvent) {
+    optionsHeld = event.modifierFlags.contains(.option)
     handleMouseUp(convert(event.locationInWindow, from: nil))
+  }
+
+  override func flagsChanged(with event: NSEvent) {
+    optionsHeld = event.modifierFlags.contains(.option)
+    if annotationSession == nil, selectionRect != nil {
+      updateControlsPanel()
+    }
+    super.flagsChanged(with: event)
   }
 
   override func keyDown(with event: NSEvent) {

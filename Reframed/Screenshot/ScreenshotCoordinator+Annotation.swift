@@ -44,6 +44,7 @@ extension ScreenshotCoordinator {
     captureSession.adoptRendered(image: image, selection: selection)
     do {
       let url = try captureSession.saveLast()
+      annotationSavedURL = url
       if copy {
         captureSession.copyLastToClipboard()
       }
@@ -80,11 +81,12 @@ extension ScreenshotCoordinator {
 
   private func annotationPreviewFile(_ image: CGImage, _ selection: SelectionRect) -> URL? {
     captureSession.adoptRendered(image: image, selection: selection)
-    let url = FileManager.default.temporaryDirectory
-      .appendingPathComponent(ScreenshotNaming.baseName())
-      .appendingPathExtension(ScreenshotNaming.fileExtension)
+    if let saved = annotationSavedURL, FileManager.default.fileExists(atPath: saved.path) {
+      return saved
+    }
     do {
-      try ImageExporter.writePNG(image, to: url)
+      let url = try captureSession.saveLast()
+      annotationSavedURL = url
       return url
     } catch {
       present(error.localizedDescription)

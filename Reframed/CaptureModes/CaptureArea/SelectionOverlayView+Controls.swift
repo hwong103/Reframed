@@ -18,19 +18,12 @@ extension SelectionOverlayView {
     }
 
     if request.annotation != nil {
-      enterAnnotationMode()
+      confirmAnnotationSelection()
       return
     }
 
     guard let window = self.window else {
       request.onCancel()
-      return
-    }
-
-    if let windowID = committedWindowID, let onConfirmWindow = request.onConfirmWindow {
-      let windowRect = convert(rect, to: nil)
-      let screenRect = window.convertToScreen(windowRect)
-      onConfirmWindow(windowID, screenRect)
       return
     }
 
