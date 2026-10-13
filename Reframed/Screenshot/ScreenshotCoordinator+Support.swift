@@ -81,7 +81,8 @@ extension ScreenshotCoordinator {
   func confirmSelection(_ selection: SelectionRect) {
     selectionCoordinator.destroyAll()
     if isTextSnip {
-      Task { await finishTextSnip(selection) }
+      let request = scrollingRequest
+      Task { await finishTextSnip(selection, request: request) }
     } else {
       Task { await finishRegionCapture(selection) }
     }
@@ -96,29 +97,42 @@ extension ScreenshotCoordinator {
     ScreenshotFeedbackWindow.show("Pinned to screen", near: NSEvent.mouseLocation)
   }
 
-  private func finishTextSnip(_ selection: SelectionRect) async {
-    let request = scrollingRequest
+  private func finishTextSnip(_ selection: SelectionRect, request: Int) async {
+    guard scrollingRequest == request else { return }
     let progress = ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
+    var owned = true
+    defer {
+      if owned {
+        isCapturing = false
+        isTextSnip = false
+        frozenDisplays.removeAll()
+      }
+      ScreenshotFeedbackWindow.dismiss(progress)
+    }
     do {
       let result = try await capturedRegion(selection)
+      guard scrollingRequest == request else {
+        owned = false
+        return
+      }
       lastWindowSelection = nil
       let image = result.image
       let ocr = try await Task.detached(priority: .userInitiated) {
         try OCRService.recognize(in: image)
       }.value
       guard scrollingRequest == request else {
+        owned = false
         return
       }
       ScreenshotFeedbackWindow.show(publishText(ocr), near: NSEvent.mouseLocation)
     } catch {
-      guard scrollingRequest == request else { return }
-      ScreenshotFeedbackWindow.dismiss(progress)
+      guard scrollingRequest == request else {
+        owned = false
+        return
+      }
       present(error.localizedDescription)
     }
-    guard scrollingRequest == request else { return }
-    isCapturing = false
-    isTextSnip = false
-    frozenDisplays.removeAll()
+    guard owned else { return }
     restoreFocus(previousApplication)
     previousApplication = nil
   }

@@ -36,6 +36,7 @@ extension ScreenshotCoordinator {
       let outcome = await self.recognizeText(image, detailed: detailed)
       guard self.scrollingRequest == request, self.isCapturing else {
         ScreenshotFeedbackWindow.dismiss(progress)
+        completion(.failed)
         return
       }
       completion(outcome)
