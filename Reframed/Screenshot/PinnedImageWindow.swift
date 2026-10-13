@@ -74,15 +74,17 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   func present(near point: CGPoint?) {
     let size = frame.size
     let anchor = point ?? NSEvent.mouseLocation
-    var origin = CGPoint(x: anchor.x - size.width / 2, y: anchor.y - size.height / 2)
-    if let screen = NSScreen.screen(for: displayID) ?? NSScreen.main {
-      let visible = screen.visibleFrame
-      origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
-      origin.y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
-    }
+    let origin = confined(CGPoint(x: anchor.x - size.width / 2, y: anchor.y - size.height / 2), size)
     setFrameOrigin(origin)
     orderFrontRegardless()
     onFrameChange?(pinID)
+  }
+
+  private func confined(_ origin: CGPoint, _ size: CGSize) -> CGPoint {
+    guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { return origin }
+    let x = min(max(origin.x, visible.minX + 8), visible.maxX - size.width - 8)
+    let y = min(max(origin.y, visible.minY + 8), visible.maxY - size.height - 8)
+    return CGPoint(x: x, y: y)
   }
 
   func requestClose() {
@@ -94,17 +96,15 @@ final class PinnedImageWindow: NSPanel, NSWindowDelegate {
   private func resize(by delta: CGFloat) {
     var width = min(max(frame.width + delta, minSide), maxSide)
     var height = width / aspect
-    let visible = (screen ?? NSScreen.main)?.visibleFrame
-    if let visible, height > visible.height * 0.9 {
-      height = visible.height * 0.9
-      width = height * aspect
+    if let visible = (screen ?? NSScreen.main)?.visibleFrame {
+      let ratio = min(1, min(visible.width * 0.9 / max(width, 1), visible.height * 0.9 / max(height, 1)))
+      width *= ratio
+      height *= ratio
     }
     var newFrame = frame
     newFrame.origin.y += frame.height - height
-    if let visible {
-      newFrame.origin.y = min(max(newFrame.origin.y, visible.minY + 8), visible.maxY - height - 8)
-    }
     newFrame.size = CGSize(width: width, height: height)
+    newFrame.origin = confined(newFrame.origin, newFrame.size)
     setFrame(newFrame, display: true)
     onFrameChange?(pinID)
   }

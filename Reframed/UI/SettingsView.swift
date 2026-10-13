@@ -5,6 +5,7 @@ private enum SettingsTab: String, CaseIterable {
   case general = "General"
   case recording = "Recording"
   case devices = "Devices"
+  case screenshots = "Screenshots"
   case shortcuts = "Shortcuts"
   case about = "About"
 
@@ -55,6 +56,8 @@ struct SettingsView: View {
             recordingContent
           case .devices:
             devicesContent
+          case .screenshots:
+            SettingsScreenshotsTab()
           case .shortcuts:
             shortcutsContent
           case .about:

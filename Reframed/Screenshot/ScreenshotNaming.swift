@@ -14,6 +14,19 @@ enum ScreenshotNaming {
     return trimmed.isEmpty ? defaultPrefix : trimmed
   }
 
+  static var storedPrefix: String {
+    get { UserDefaults.standard.string(forKey: prefixDefaultsKey) ?? defaultPrefix }
+    set { UserDefaults.standard.set(newValue, forKey: prefixDefaultsKey) }
+  }
+
+  static func resetPrefix() {
+    UserDefaults.standard.removeObject(forKey: prefixDefaultsKey)
+  }
+
+  static func previewName(prefix: String? = nil) -> String {
+    "\(baseName(prefix: prefix)).\(fileExtension)"
+  }
+
   static func baseName(date: Date = Date(), prefix: String? = nil) -> String {
     "\(resolvedPrefix(prefix))-\(formatTimestamp(date))"
   }
