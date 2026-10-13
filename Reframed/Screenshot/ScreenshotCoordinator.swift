@@ -16,6 +16,7 @@ final class ScreenshotCoordinator {
   var windowSelectionCoordinator: WindowSelectionCoordinator?
   var lastWindowSelection: WindowSetSelection?
   var annotationSavedURL: URL?
+  var lastTextSelectionSignature: String?
   var scrollingSession: ScrollingCaptureSession?
   var scrollingGeneration = 0
   var scrollingRequest = 0

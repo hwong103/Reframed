@@ -65,21 +65,6 @@ extension ScreenshotCoordinator {
     }
   }
 
-  private func annotationCaptureText(_ image: CGImage, _ selection: SelectionRect) {
-    adoptAnnotationRegion(image, selection)
-    ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
-    Task { @MainActor [weak self] in
-      guard let self else {
-        ScreenshotFeedbackWindow.dismissCurrent()
-        return
-      }
-      let message = await self.copyTextFrom(image)
-      ScreenshotFeedbackWindow.show(message, near: NSEvent.mouseLocation)
-      guard self.isCapturing else { return }
-      self.finishInlineAnnotation()
-    }
-  }
-
   private func annotationPin(_ image: CGImage, _ selection: SelectionRect) {
     adoptAnnotationRegion(image, selection)
     PinnedImageManager.shared.pin(image, displayID: selection.displayID)
@@ -111,7 +96,7 @@ extension ScreenshotCoordinator {
     }
   }
 
-  private func adoptAnnotationRegion(_ image: CGImage, _ selection: SelectionRect) {
+  func adoptAnnotationRegion(_ image: CGImage, _ selection: SelectionRect) {
     scrollingRequest += 1
     if selection.isScreenRegion {
       lastWindowSelection = nil

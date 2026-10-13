@@ -87,17 +87,6 @@ extension ScreenshotCoordinator {
     }
   }
 
-  func copyTextFrom(_ image: CGImage) async -> String {
-    do {
-      let result = try await Task.detached(priority: .userInitiated) {
-        try OCRService.recognize(in: image)
-      }.value
-      return publishText(result)
-    } catch {
-      return "No text found"
-    }
-  }
-
   func pinLastCapture() {
     guard let result = captureSession.lastResult else {
       refuse("There is no screenshot to pin yet.")
@@ -113,6 +102,7 @@ extension ScreenshotCoordinator {
       isTextSnip = false
       frozenDisplays.removeAll()
     }
+    let request = scrollingRequest
     do {
       ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation, sticky: true)
       let result = try await capturedRegion(selection)
@@ -121,6 +111,10 @@ extension ScreenshotCoordinator {
       let ocr = try await Task.detached(priority: .userInitiated) {
         try OCRService.recognize(in: image)
       }.value
+      guard scrollingRequest == request else {
+        ScreenshotFeedbackWindow.dismissCurrent()
+        return
+      }
       ScreenshotFeedbackWindow.show(publishText(ocr), near: NSEvent.mouseLocation)
     } catch {
       ScreenshotFeedbackWindow.dismissCurrent()
@@ -131,7 +125,7 @@ extension ScreenshotCoordinator {
   }
 
   @discardableResult
-  private func publishText(_ result: OCRResult) -> String {
+  func publishText(_ result: OCRResult) -> String {
     guard !result.text.isEmpty else { return "No text found" }
     let pasteboard = NSPasteboard.general
     pasteboard.clearContents()
