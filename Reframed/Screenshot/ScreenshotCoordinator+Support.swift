@@ -65,4 +65,68 @@ extension ScreenshotCoordinator {
     guard application.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
     application.activate()
   }
+
+  func captureTextSnip() {
+    guard admit() else { return }
+    previousApplication = NSWorkspace.shared.frontmostApplication
+    isTextSnip = true
+    Task { [weak self] in
+      guard let self else { return }
+      self.exclusions = await self.resolveExclusions()
+      await self.freezeThenSelect()
+    }
+  }
+
+  func confirmSelection(_ selection: SelectionRect) {
+    selectionCoordinator.destroyAll()
+    if isTextSnip {
+      Task { await finishTextSnip(selection) }
+    } else {
+      Task { await finishRegionCapture(selection) }
+    }
+  }
+
+  func copyTextFromLast() -> String {
+    guard let image = captureSession.lastResult?.image else { return "No text found" }
+    guard let result = try? OCRService.recognize(in: image) else { return "No text found" }
+    return publishText(result)
+  }
+
+  func pinLastCapture() {
+    guard let result = captureSession.lastResult else {
+      refuse("There is no screenshot to pin yet.")
+      return
+    }
+    PinnedImageManager.shared.pin(result.image, displayID: result.displayID)
+    ScreenshotFeedbackWindow.show("Pinned to screen", near: NSEvent.mouseLocation)
+  }
+
+  private func finishTextSnip(_ selection: SelectionRect) async {
+    defer {
+      isCapturing = false
+      isTextSnip = false
+      frozenDisplays.removeAll()
+    }
+    do {
+      let result = try await capturedRegion(selection)
+      let image = result.image
+      let ocr = try await Task.detached(priority: .userInitiated) {
+        try OCRService.recognize(in: image)
+      }.value
+      ScreenshotFeedbackWindow.show(publishText(ocr), near: NSEvent.mouseLocation)
+    } catch {
+      present(error.localizedDescription)
+    }
+    restoreFocus(previousApplication)
+    previousApplication = nil
+  }
+
+  @discardableResult
+  private func publishText(_ result: OCRResult) -> String {
+    guard !result.text.isEmpty else { return "No text found" }
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents()
+    pasteboard.setString(result.text, forType: .string)
+    return "Copied \(result.characterCount) characters"
+  }
 }

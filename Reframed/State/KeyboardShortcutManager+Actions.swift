@@ -58,6 +58,12 @@ extension KeyboardShortcutManager {
     case .saveLastScreenshot:
       screenshotCoordinator.saveLastCapture()
 
+    case .textSnip:
+      screenshotCoordinator.captureTextSnip()
+
+    case .pinLastScreenshot:
+      screenshotCoordinator.pinLastCapture()
+
     case .editorUndo, .editorRedo:
       return
     }
@@ -74,8 +80,10 @@ extension KeyboardShortcutManager {
       }
     case .captureRegion, .captureWindow, .captureDisplay, .repeatLastCapture:
       return true
-    case .saveLastScreenshot:
+    case .saveLastScreenshot, .pinLastScreenshot:
       return screenshotCoordinator.hasLastCapture
+    case .textSnip:
+      return true
     default:
       return false
     }

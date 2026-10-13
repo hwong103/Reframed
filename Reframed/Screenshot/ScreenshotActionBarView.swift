@@ -5,6 +5,8 @@ struct ScreenshotActionBarView: View {
   let onCopy: () -> Void
   let onSaveAndCopy: () -> Void
   let onAnnotate: () -> Void
+  let onCopyText: () -> Void
+  let onPin: () -> Void
 
   var body: some View {
     HStack(spacing: 6) {
@@ -31,6 +33,18 @@ struct ScreenshotActionBarView: View {
         title: "Save & Copy",
         help: "Save a PNG and copy it",
         action: onSaveAndCopy
+      )
+      actionButton(
+        icon: "doc.text",
+        title: "Copy Text",
+        help: "Recognise text and copy it",
+        action: onCopyText
+      )
+      actionButton(
+        icon: "pin",
+        title: "Pin",
+        help: "Pin to screen",
+        action: onPin
       )
     }
     .padding(.horizontal, 8)

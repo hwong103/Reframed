@@ -10,8 +10,11 @@ struct SelectionRequest {
   let confirmTitle: String?
   let hint: String
   let backgroundImages: [CGDirectDisplayID: CGImage]
+  let initialFullScreen: Bool
+  let hoverTargetsEnabled: Bool
   let onCountdownStart: () -> Void
   let onConfirm: (SelectionRect) -> Void
+  let onConfirmWindow: ((CGWindowID, CGRect) -> Void)?
   let onCancel: () -> Void
 
   init(
@@ -19,16 +22,22 @@ struct SelectionRequest {
     confirmTitle: String? = nil,
     hint: String = "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to start",
     backgroundImages: [CGDirectDisplayID: CGImage] = [:],
+    initialFullScreen: Bool = false,
+    hoverTargetsEnabled: Bool = false,
     onCountdownStart: @escaping () -> Void,
     onConfirm: @escaping (SelectionRect) -> Void,
+    onConfirmWindow: ((CGWindowID, CGRect) -> Void)? = nil,
     onCancel: @escaping () -> Void
   ) {
     self.timerDelay = timerDelay
     self.confirmTitle = confirmTitle
     self.hint = hint
     self.backgroundImages = backgroundImages
+    self.initialFullScreen = initialFullScreen
+    self.hoverTargetsEnabled = hoverTargetsEnabled
     self.onCountdownStart = onCountdownStart
     self.onConfirm = onConfirm
+    self.onConfirmWindow = onConfirmWindow
     self.onCancel = onCancel
   }
 }
@@ -39,8 +48,16 @@ final class SelectionCoordinator {
   private var borderWindow: RecordingBorderWindow?
 
   func beginSelection(request: SelectionRequest) {
+    let pointerDisplayID = request.initialFullScreen ? NSScreen.displayID(for: NSEvent.mouseLocation) : nil
+    let hoverProvider = request.hoverTargetsEnabled ? HoverTargetProvider() : nil
     for screen in NSScreen.screens {
-      let window = SelectionOverlayWindow(screen: screen, request: request)
+      let isInitialActive = request.initialFullScreen && screen.displayID == pointerDisplayID
+      let window = SelectionOverlayWindow(
+        screen: screen,
+        request: request,
+        isInitialActive: isInitialActive,
+        hoverProvider: hoverProvider
+      )
       overlayWindows.append(window)
       window.orderFrontRegardless()
     }

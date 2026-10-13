@@ -6,11 +6,12 @@ import ScreenCaptureKit
 @MainActor
 final class ScreenshotCoordinator {
   let captureSession: ScreenshotSession
-  private let selectionCoordinator = SelectionCoordinator()
+  let selectionCoordinator = SelectionCoordinator()
   weak var appState: SessionState?
   var exclusions: [SCRunningApplication] = []
   var previousApplication: NSRunningApplication?
   var isCapturing = false
+  var isTextSnip = false
   var frozenDisplays: [CGDirectDisplayID: CGImage] = [:]
   var windowSelectionCoordinator: WindowSelectionCoordinator?
 
@@ -54,6 +55,7 @@ final class ScreenshotCoordinator {
     windowSelectionCoordinator?.destroyOverlay()
     windowSelectionCoordinator = nil
     isCapturing = false
+    isTextSnip = false
     frozenDisplays.removeAll()
     ScreenshotActionBarWindow.dismiss()
     restoreFocus(previousApplication)
@@ -84,12 +86,7 @@ final class ScreenshotCoordinator {
     }
   }
 
-  private func confirmRegion(_ selection: SelectionRect) {
-    selectionCoordinator.destroyAll()
-    Task { await finishRegionCapture(selection) }
-  }
-
-  private func freezeThenSelect() async {
+  func freezeThenSelect() async {
     do {
       frozenDisplays = try await captureSession.freezeScreens(excludingApplications: exclusions)
     } catch {
@@ -102,16 +99,19 @@ final class ScreenshotCoordinator {
     let request = SelectionRequest(
       timerDelay: 0,
       confirmTitle: "Capture",
-      hint: "Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
+      hint: "Move to highlight \u{00b7} Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to capture",
       backgroundImages: frozenDisplays,
+      initialFullScreen: true,
+      hoverTargetsEnabled: true,
       onCountdownStart: {},
-      onConfirm: { selection in self.confirmRegion(selection) },
+      onConfirm: { selection in self.confirmSelection(selection) },
+      onConfirmWindow: { windowID, rect in self.confirmWindowTarget(windowID, rect: rect) },
       onCancel: { self.cancel() }
     )
     selectionCoordinator.beginSelection(request: request)
   }
 
-  private func finishRegionCapture(_ selection: SelectionRect) async {
+  func finishRegionCapture(_ selection: SelectionRect) async {
     defer {
       isCapturing = false
       frozenDisplays.removeAll()
@@ -127,7 +127,7 @@ final class ScreenshotCoordinator {
     previousApplication = nil
   }
 
-  private func capturedRegion(_ selection: SelectionRect) async throws -> ScreenshotResult {
+  func capturedRegion(_ selection: SelectionRect) async throws -> ScreenshotResult {
     if let frozen = frozenDisplays[selection.displayID] {
       return try captureSession.captureFrozenRegion(selection, from: frozen)
     }
@@ -139,7 +139,9 @@ final class ScreenshotCoordinator {
       near: rect,
       onCopy: { [weak self] in self?.captureSession.copyLastToClipboard() },
       onSaveAndCopy: { [weak self] in self?.savedStatus() ?? "" },
-      onAnnotate: { [weak self] in self?.openAnnotation() }
+      onAnnotate: { [weak self] in self?.openAnnotation() },
+      onCopyText: { [weak self] in self?.copyTextFromLast() ?? "No text found" },
+      onPin: { [weak self] in self?.pinLastCapture() }
     )
   }
 

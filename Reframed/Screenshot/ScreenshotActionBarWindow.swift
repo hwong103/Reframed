@@ -10,6 +10,8 @@ final class ScreenshotActionBarWindow: NSPanel {
   private let onCopy: () -> Void
   private let onSaveAndCopy: () -> String
   private let onAnnotate: () -> Void
+  private let onCopyText: () -> String
+  private let onPin: () -> Void
   private var dismissTask: Task<Void, Never>?
 
   static var isVisible: Bool { current != nil }
@@ -18,14 +20,18 @@ final class ScreenshotActionBarWindow: NSPanel {
     near rect: CGRect,
     onCopy: @escaping () -> Void,
     onSaveAndCopy: @escaping () -> String,
-    onAnnotate: @escaping () -> Void
+    onAnnotate: @escaping () -> Void,
+    onCopyText: @escaping () -> String,
+    onPin: @escaping () -> Void
   ) {
     current?.dismissNow()
     let window = ScreenshotActionBarWindow(
       captureRect: rect,
       onCopy: onCopy,
       onSaveAndCopy: onSaveAndCopy,
-      onAnnotate: onAnnotate
+      onAnnotate: onAnnotate,
+      onCopyText: onCopyText,
+      onPin: onPin
     )
     current = window
     window.render(status: "Copied to clipboard")
@@ -42,12 +48,16 @@ final class ScreenshotActionBarWindow: NSPanel {
     captureRect: CGRect,
     onCopy: @escaping () -> Void,
     onSaveAndCopy: @escaping () -> String,
-    onAnnotate: @escaping () -> Void
+    onAnnotate: @escaping () -> Void,
+    onCopyText: @escaping () -> String,
+    onPin: @escaping () -> Void
   ) {
     self.captureRect = captureRect
     self.onCopy = onCopy
     self.onSaveAndCopy = onSaveAndCopy
     self.onAnnotate = onAnnotate
+    self.onCopyText = onCopyText
+    self.onPin = onPin
 
     super.init(
       contentRect: .zero,
@@ -104,6 +114,16 @@ final class ScreenshotActionBarWindow: NSPanel {
       onAnnotate: { [weak self] in
         guard let self else { return }
         self.annotateNow()
+      },
+      onCopyText: { [weak self] in
+        guard let self else { return }
+        self.render(status: self.onCopyText())
+        self.scheduleDismiss(after: .seconds(2.4))
+      },
+      onPin: { [weak self] in
+        guard let self else { return }
+        self.onPin()
+        self.dismissNow()
       }
     )
     let hosting = NSHostingView(rootView: view)

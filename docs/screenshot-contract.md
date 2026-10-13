@@ -119,5 +119,29 @@ snapshots retained for undo, and a stated ceiling for future long images.
 
 ## Non-goals in P0
 
-Annotation, OCR, pinning, scrolling capture, drag-out, beautify, ruler, numbered steps,
+Annotation, OCR and pinning were P0 non-goals and now have their own sections (R9, R11,
+R10). Still out of scope: scrolling capture, drag-out, beautify, ruler, numbered steps,
 and a capture history list.
+
+## R10 - pin to screen
+
+R10.1 A pin is a borderless, non-activating `NSPanel` at level `.floating`: above ordinary
+app windows and full-screen content, but below Reframed's transient action bar and
+feedback HUD (`.screenSaver`), so those are never obstructed.
+R10.2 A pin joins all Spaces and full-screen apps through
+`[.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]`.
+R10.3 Multiple pins coexist; each one is independent.
+R10.4 A pin is movable by dragging its image, and resizes by scroll with the aspect ratio
+preserved and bounded min/max sides. Escape and a hover close affordance both dismiss it.
+R10.5 Each pin's position and size persist through `StateService` and are restored on
+launch. If a pin's display is absent at launch, that pin is dropped rather than
+mis-placed.
+R10.6 Every pin sets `sharingType = .none`, so a pin never appears inside a later capture.
+
+## R11 - OCR scope
+
+R11.1 Text recognition uses `VNRecognizeTextRequest` at `.accurate` with automatic
+language detection, restricted to plain text only: no translation.
+R11.2 Reading order (top-to-bottom, left-to-right) is a heuristic over Vision
+observations; multi-column layouts can reorder.
+R11.3 An image with no text returns an empty result, never an error.

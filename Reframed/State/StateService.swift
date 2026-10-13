@@ -109,6 +109,11 @@ final class StateService {
     }
   }
 
+  var pinnedImages: [PinnedImageData] {
+    get { data.pinnedImages }
+    set { data.pinnedImages = newValue; save() }
+  }
+
   private init() {
     let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".reframed", isDirectory: true)
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -156,4 +161,15 @@ private struct StateData: Codable {
   var recordingPreviewPosition: PointData? = nil
   var recordingPreviewHeight: CGFloat? = nil
   var editorWindowFrame: RectData? = nil
+  var pinnedImages: [PinnedImageData] = []
+}
+
+struct PinnedImageData: Codable {
+  var id: String
+  var displayID: UInt32
+  var x: Double
+  var y: Double
+  var width: Double
+  var height: Double
+  var png: Data
 }

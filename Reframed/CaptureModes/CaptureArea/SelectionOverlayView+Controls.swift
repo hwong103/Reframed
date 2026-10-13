@@ -4,6 +4,9 @@ import SwiftUI
 extension SelectionOverlayView {
   func applyExternalRect(_ newRect: CGRect) {
     selectionRect = newRect.clamped(to: bounds)
+    isFullDisplayInitial = false
+    committedWindowID = nil
+    hoverTarget = nil
     needsDisplay = true
     updateControlsPanel()
   }
@@ -16,6 +19,13 @@ extension SelectionOverlayView {
 
     guard let window = self.window else {
       request.onCancel()
+      return
+    }
+
+    if let windowID = committedWindowID, let onConfirmWindow = request.onConfirmWindow {
+      let windowRect = convert(rect, to: nil)
+      let screenRect = window.convertToScreen(windowRect)
+      onConfirmWindow(windowID, screenRect)
       return
     }
 
@@ -60,6 +70,8 @@ extension SelectionOverlayView {
       NotificationCenter.default.post(name: .selectionRectChanged, object: NSValue(rect: rect))
     }
 
+    postTargetInfo(for: rect)
+
     let panelSize = hosting.intrinsicContentSize
     hosting.setFrameSize(panelSize)
 
@@ -75,5 +87,90 @@ extension SelectionOverlayView {
 
     hosting.frame.origin = CGPoint(x: panelX, y: panelY)
     hosting.isHidden = false
+  }
+
+  private func postTargetInfo(for rect: CGRect) {
+    let scale = window?.backingScaleFactor ?? 2
+    let info = SelectionTargetInfo(
+      title: hoverTarget?.title,
+      pixelWidth: Int((rect.width * scale).rounded()),
+      pixelHeight: Int((rect.height * scale).rounded())
+    )
+    NotificationCenter.default.post(name: .selectionTargetChanged, object: SelectionTargetInfoBox(info))
+  }
+
+  func commitHoveredTarget(at point: CGPoint) {
+    if let target = hoverProvider?.target(at: cgPoint(from: point)), let local = localRect(for: target) {
+      hoverTarget = target
+      committedWindowID = target.windowID
+      selectionRect = local
+      isFullDisplayInitial = false
+    } else {
+      applyFullDisplaySelection()
+    }
+    hoverSuppressed = false
+    isDragging = false
+    dragOrigin = nil
+    needsDisplay = true
+    updateControlsPanel()
+  }
+
+  func updateHover(at point: CGPoint) {
+    guard let provider = hoverProvider else { return }
+    let target = provider.target(at: cgPoint(from: point))
+
+    if let target, let local = localRect(for: target) {
+      guard hoverTarget != target else { return }
+      hoverTarget = target
+      committedWindowID = target.windowID
+      selectionRect = local
+      isFullDisplayInitial = false
+      needsDisplay = true
+      updateControlsPanel()
+      return
+    }
+
+    if hoverTarget != nil || !isFullDisplayInitial {
+      hoverTarget = nil
+      committedWindowID = nil
+      applyFullDisplaySelection()
+    }
+  }
+
+  func cgPoint(from local: CGPoint) -> CGPoint {
+    let origin = window?.frame.origin ?? .zero
+    return CGPoint(x: origin.x + local.x, y: NSScreen.primaryScreenHeight - (origin.y + local.y))
+  }
+
+  func localRect(for target: HoverTarget) -> CGRect? {
+    let origin = window?.frame.origin ?? .zero
+    let appKit = CGRect(
+      x: target.bounds.origin.x,
+      y: NSScreen.primaryScreenHeight - target.bounds.maxY,
+      width: target.bounds.width,
+      height: target.bounds.height
+    )
+    let local = CGRect(
+      x: appKit.origin.x - origin.x,
+      y: appKit.origin.y - origin.y,
+      width: appKit.width,
+      height: appKit.height
+    )
+    let clipped = local.intersection(bounds)
+    return clipped.isNull || clipped.width < 1 || clipped.height < 1 ? nil : clipped
+  }
+}
+
+struct SelectionTargetInfo {
+  let title: String?
+  let pixelWidth: Int
+  let pixelHeight: Int
+}
+
+final class SelectionTargetInfoBox: NSObject {
+  let info: SelectionTargetInfo
+
+  init(_ info: SelectionTargetInfo) {
+    self.info = info
   }
 }

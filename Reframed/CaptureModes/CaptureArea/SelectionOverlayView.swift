@@ -5,22 +5,37 @@ import SwiftUI
 final class SelectionOverlayView: NSView {
   let request: SelectionRequest
   let backgroundImage: CGImage?
+  let isInitialActive: Bool
+  let hoverProvider: HoverTargetProvider?
 
   var selectionRect: CGRect?
   var dragOrigin: CGPoint?
   var isDragging = false
+  var didDrag = false
   var activeHandle: ResizeHandle?
   var handleDragStart: CGPoint?
   var originalRectBeforeResize: CGRect?
   var mouseLocation: CGPoint = .zero
   var controlsHost: NSHostingView<CaptureAreaView>?
+  var isFullDisplayInitial = false
+  var hoverSuppressed = false
+  var committedWindowID: CGWindowID?
+  var hoverTarget: HoverTarget?
 
   override var acceptsFirstResponder: Bool { true }
   override var isFlipped: Bool { false }
 
-  init(frame: NSRect, request: SelectionRequest, backgroundImage: CGImage? = nil) {
+  init(
+    frame: NSRect,
+    request: SelectionRequest,
+    backgroundImage: CGImage? = nil,
+    isInitialActive: Bool = false,
+    hoverProvider: HoverTargetProvider? = nil
+  ) {
     self.request = request
     self.backgroundImage = backgroundImage
+    self.isInitialActive = isInitialActive
+    self.hoverProvider = hoverProvider
     super.init(frame: frame)
   }
 
@@ -39,6 +54,11 @@ final class SelectionOverlayView: NSView {
         userInfo: nil
       )
     )
+    if isInitialActive, request.initialFullScreen, selectionRect == nil {
+      selectionRect = bounds
+      isFullDisplayInitial = true
+      updateControlsPanel()
+    }
   }
 
   override func draw(_ dirtyRect: NSRect) {
@@ -47,129 +67,22 @@ final class SelectionOverlayView: NSView {
   }
 
   override func mouseMoved(with event: NSEvent) {
-    mouseLocation = convert(event.locationInWindow, from: nil)
-
-    if let rect = selectionRect {
-      var found = false
-      for handle in ResizeHandle.allCases {
-        let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
-        if hitArea.contains(mouseLocation) {
-          handle.cursor.set()
-          found = true
-          break
-        }
-      }
-      if !found {
-        if rect.contains(mouseLocation) {
-          NSCursor.openHand.set()
-        } else {
-          NSCursor.arrow.set()
-        }
-      }
-    } else {
-      NSCursor.crosshair.set()
-    }
-
-    needsDisplay = true
+    handleMouseMoved(convert(event.locationInWindow, from: nil))
   }
 
   override func mouseDown(with event: NSEvent) {
-    let point = convert(event.locationInWindow, from: nil)
-
-    if let hosting = controlsHost, !hosting.isHidden {
-      let panelPoint = hosting.convert(point, from: self)
-      if hosting.bounds.contains(panelPoint) {
-        return
-      }
-    }
-
-    if let rect = selectionRect {
-      for handle in ResizeHandle.allCases {
-        let hitArea = handle.rect(for: rect).insetBy(dx: -4, dy: -4)
-        if hitArea.contains(point) {
-          activeHandle = handle
-          handleDragStart = point
-          originalRectBeforeResize = rect
-          return
-        }
-      }
-
-      if rect.contains(point) {
-        activeHandle = nil
-        handleDragStart = point
-        originalRectBeforeResize = rect
-        NSCursor.closedHand.set()
-        return
-      }
-    }
-
-    dragOrigin = point
-    selectionRect = nil
-    isDragging = true
-    controlsHost?.isHidden = true
-    needsDisplay = true
+    handleMouseDown(convert(event.locationInWindow, from: nil))
   }
 
   override func mouseDragged(with event: NSEvent) {
-    let point = convert(event.locationInWindow, from: nil)
-    let shiftHeld = event.modifierFlags.contains(.shift)
-
-    if let handle = activeHandle, let start = handleDragStart, let original = originalRectBeforeResize {
-      let delta = CGPoint(x: point.x - start.x, y: point.y - start.y)
-      var newRect = handle.resize(original: original, delta: delta).normalized
-      if shiftHeld, original.width > 0, original.height > 0 {
-        let aspect = original.width / original.height
-        newRect = constrainToAspect(original, delta: delta, aspect: aspect, handle: handle)
-      }
-      selectionRect = newRect
-      needsDisplay = true
-      updateControlsPanel()
-    } else if handleDragStart != nil, let original = originalRectBeforeResize {
-      let delta = CGPoint(x: point.x - handleDragStart!.x, y: point.y - handleDragStart!.y)
-      selectionRect = CGRect(
-        x: original.origin.x + delta.x,
-        y: original.origin.y + delta.y,
-        width: original.width,
-        height: original.height
-      )
-      needsDisplay = true
-      updateControlsPanel()
-    } else if let origin = dragOrigin {
-      let w = abs(point.x - origin.x)
-      var h = abs(point.y - origin.y)
-      if shiftHeld, w > 0, h > 0 {
-        h = w * 9.0 / 16.0
-      }
-      selectionRect = CGRect(
-        x: point.x >= origin.x ? origin.x : origin.x - w,
-        y: point.y >= origin.y ? origin.y : origin.y - h,
-        width: w,
-        height: h
-      )
-      needsDisplay = true
-      updateControlsPanel()
-    }
+    handleMouseDragged(
+      convert(event.locationInWindow, from: nil),
+      shiftHeld: event.modifierFlags.contains(.shift)
+    )
   }
 
   override func mouseUp(with event: NSEvent) {
-    if activeHandle != nil || handleDragStart != nil {
-      activeHandle = nil
-      handleDragStart = nil
-      originalRectBeforeResize = nil
-      updateControlsPanel()
-      return
-    }
-
-    isDragging = false
-    dragOrigin = nil
-
-    if let rect = selectionRect, rect.width < 10 || rect.height < 10 {
-      selectionRect = nil
-      controlsHost?.isHidden = true
-      needsDisplay = true
-    } else if selectionRect != nil {
-      updateControlsPanel()
-    }
+    handleMouseUp(convert(event.locationInWindow, from: nil))
   }
 
   override func keyDown(with event: NSEvent) {

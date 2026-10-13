@@ -128,6 +128,27 @@ extension MenuBarView {
             onDismiss()
             screenshotCoordinator.captureWindow()
           }
+
+          ActionGridItem(
+            icon: "text.viewfinder",
+            title: "Text Snip",
+            hoverId: "action.textSnip",
+            isEnabled: screenshotsAvailable
+          ) {
+            onDismiss()
+            screenshotCoordinator.captureTextSnip()
+          }
+
+          ActionGridItem(
+            icon: "pin",
+            title: "Pin",
+            hoverId: "action.pinLastScreenshot",
+            isEnabled: screenshotCoordinator.hasLastCapture
+          ) {
+            onDismiss()
+            screenshotCoordinator.pinLastCapture()
+          }
+          .help("Pin Last Screenshot")
         }
       }
       .padding(.horizontal, 10)

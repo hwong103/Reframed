@@ -13,6 +13,8 @@ enum ShortcutAction: String, CaseIterable, Codable, Sendable {
   case captureDisplay
   case repeatLastCapture
   case saveLastScreenshot
+  case textSnip
+  case pinLastScreenshot
   case editorUndo
   case editorRedo
 
@@ -29,6 +31,8 @@ enum ShortcutAction: String, CaseIterable, Codable, Sendable {
     case .captureDisplay: return "Capture Display"
     case .repeatLastCapture: return "Repeat Last Capture"
     case .saveLastScreenshot: return "Save Last Screenshot"
+    case .textSnip: return "Text Snip"
+    case .pinLastScreenshot: return "Pin Last Screenshot"
     case .editorUndo: return "Undo"
     case .editorRedo: return "Redo"
     }
@@ -52,6 +56,8 @@ enum ShortcutAction: String, CaseIterable, Codable, Sendable {
     case .captureRegion, .captureWindow, .captureDisplay, .repeatLastCapture:
       return true
     case .saveLastScreenshot:
+      return true
+    case .textSnip, .pinLastScreenshot:
       return true
     case .editorUndo, .editorRedo:
       return false
@@ -87,6 +93,10 @@ enum ShortcutAction: String, CaseIterable, Codable, Sendable {
       return KeyboardShortcut(keyCode: 15, modifierFlags: optionShift)
     case .saveLastScreenshot:
       return KeyboardShortcut(keyCode: 1, modifierFlags: optionShift)
+    case .textSnip:
+      return KeyboardShortcut(keyCode: 17, modifierFlags: optionShift)
+    case .pinLastScreenshot:
+      return KeyboardShortcut(keyCode: 35, modifierFlags: optionShift)
     case .editorUndo:
       return KeyboardShortcut(keyCode: 6, modifierFlags: cmd)
     case .editorRedo:

@@ -15,6 +15,8 @@ struct CaptureAreaView: View {
   @State private var isEditing = false
   @State private var showPresets = false
   @State private var triggerStart = false
+  @State private var targetTitle: String?
+  @State private var targetPixel: CGSize?
 
   private let textColor = Color.black
   private let secondaryTextColor = Color.black.opacity(0.6)
@@ -31,6 +33,16 @@ struct CaptureAreaView: View {
 
   var body: some View {
     VStack(spacing: 16) {
+      if let targetPixel {
+        VStack(spacing: 2) {
+          if let targetTitle {
+            Text(targetTitle).font(.system(size: FontSize.xs, weight: .semibold))
+              .foregroundStyle(textColor).lineLimit(1).truncationMode(.middle)
+          }
+          Text("\(Int(targetPixel.width)) \u{00d7} \(Int(targetPixel.height)) px")
+            .font(.system(size: FontSize.xxs, design: .monospaced)).foregroundStyle(secondaryTextColor)
+        }.frame(maxWidth: 320)
+      }
       HStack(spacing: 12) {
         fieldGroup("Size") {
           HStack(spacing: 6) {
@@ -111,6 +123,11 @@ struct CaptureAreaView: View {
     .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { _ in
       triggerStart = true
     }
+    .onReceive(NotificationCenter.default.publisher(for: .selectionTargetChanged)) { notification in
+      guard let box = notification.object as? SelectionTargetInfoBox else { return }
+      targetTitle = box.info.title
+      targetPixel = CGSize(width: box.info.pixelWidth, height: box.info.pixelHeight)
+    }
   }
 
   private func stillConfirmButton(title: String) -> some View {
@@ -178,4 +195,5 @@ struct CaptureAreaView: View {
 extension Notification.Name {
   static let selectionRectChanged = Notification.Name("selectionRectChanged")
   static let areaSelectionConfirmRequested = Notification.Name("areaSelectionConfirmRequested")
+  static let selectionTargetChanged = Notification.Name("selectionTargetChanged")
 }

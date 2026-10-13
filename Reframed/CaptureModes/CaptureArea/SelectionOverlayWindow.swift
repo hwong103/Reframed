@@ -2,7 +2,12 @@ import AppKit
 
 @MainActor
 final class SelectionOverlayWindow: NSWindow {
-  init(screen: NSScreen, request: SelectionRequest) {
+  init(
+    screen: NSScreen,
+    request: SelectionRequest,
+    isInitialActive: Bool = false,
+    hoverProvider: HoverTargetProvider? = nil
+  ) {
     super.init(
       contentRect: screen.frame,
       styleMask: .borderless,
@@ -22,7 +27,13 @@ final class SelectionOverlayWindow: NSWindow {
 
     let localFrame = CGRect(origin: .zero, size: screen.frame.size)
     let background = request.backgroundImages[screen.displayID]
-    let overlayView = SelectionOverlayView(frame: localFrame, request: request, backgroundImage: background)
+    let overlayView = SelectionOverlayView(
+      frame: localFrame,
+      request: request,
+      backgroundImage: background,
+      isInitialActive: isInitialActive,
+      hoverProvider: hoverProvider
+    )
     contentView = overlayView
 
     setFrame(screen.frame, display: true)

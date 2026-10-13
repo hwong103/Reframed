@@ -59,6 +59,8 @@ final class KeyboardShortcutManager {
       }
       return event
     }
+
+    PinnedImageManager.shared.restoreIfNeeded()
   }
 
   nonisolated private static let eventTapCallback: CGEventTapCallBack = {

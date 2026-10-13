@@ -54,6 +54,11 @@ enum ImageExporter {
     NSBitmapImageRep(cgImage: image).representation(using: .tiff, properties: [:])
   }
 
+  static func cgImage(fromPNG data: Data) -> CGImage? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    return CGImageSourceCreateImageAtIndex(source, 0, nil)
+  }
+
   private static func data(from image: CGImage, type: UTType, quality: CGFloat?) throws -> Data {
     let output = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(output, type.identifier as CFString, 1, nil) else {
