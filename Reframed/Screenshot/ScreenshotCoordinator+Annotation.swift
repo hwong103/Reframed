@@ -60,7 +60,14 @@ extension ScreenshotCoordinator {
 
   private func annotationCaptureText(_ image: CGImage, _ selection: SelectionRect) {
     adoptAnnotationRegion(image, selection)
-    ScreenshotFeedbackWindow.show(copyTextFromLast(), near: NSEvent.mouseLocation)
+    ScreenshotFeedbackWindow.show("Reading text...", near: NSEvent.mouseLocation)
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      let message = await self.copyTextFrom(image)
+      ScreenshotFeedbackWindow.show(message, near: NSEvent.mouseLocation)
+      guard self.isCapturing else { return }
+      self.finishInlineAnnotation()
+    }
   }
 
   private func annotationPin(_ image: CGImage, _ selection: SelectionRect) {

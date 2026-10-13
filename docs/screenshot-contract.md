@@ -176,3 +176,11 @@ language detection, restricted to plain text only: no translation.
 R11.2 Reading order (top-to-bottom, left-to-right) is a heuristic over Vision
 observations; multi-column layouts can reorder.
 R11.3 An image with no text returns an empty result, never an error.
+R11.4 Text capture from the annotate toolbar recognises off the main actor and holds the
+overlay open until the result is ready, then tears down exactly once. The overlay is drawn
+at 1:1 device pixels, so the canvas layer's `contentsScale` is pinned to the display
+backing scale and the canvas offset is snapped to the device-pixel grid; the visible crop
+therefore matches what Copy and Save export. The renderer's `.none` interpolation is load
+bearing for the on-screen downscale and must stay `.none`; `AnnotationRenderer.makeImage`
+renders at document pixel size and is unaffected. Cancelling while recognition is in
+flight wins, and the late result is dropped.

@@ -116,6 +116,19 @@ final class AnnotationCanvasView: NSView {
 
   override func viewDidChangeBackingProperties() {
     super.viewDidChangeBackingProperties()
+    syncContentsScale()
+    needsDisplay = true
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    syncContentsScale()
+  }
+
+  func syncContentsScale() {
+    guard let scale = window?.backingScaleFactor, scale > 0 else { return }
+    guard layer?.contentsScale != scale else { return }
+    layer?.contentsScale = scale
     needsDisplay = true
   }
 }

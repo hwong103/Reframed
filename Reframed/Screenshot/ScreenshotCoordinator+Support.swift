@@ -87,10 +87,15 @@ extension ScreenshotCoordinator {
     }
   }
 
-  func copyTextFromLast() -> String {
-    guard let image = captureSession.lastResult?.image else { return "No text found" }
-    guard let result = try? OCRService.recognize(in: image) else { return "No text found" }
-    return publishText(result)
+  func copyTextFrom(_ image: CGImage) async -> String {
+    do {
+      let result = try await Task.detached(priority: .userInitiated) {
+        try OCRService.recognize(in: image)
+      }.value
+      return publishText(result)
+    } catch {
+      return "No text found"
+    }
   }
 
   func pinLastCapture() {

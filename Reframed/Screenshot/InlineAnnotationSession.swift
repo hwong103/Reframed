@@ -44,6 +44,11 @@ final class InlineAnnotationSession {
 
   var isSelectionToolActive: Bool { state.tool == .selection }
   var isAspectLocked: Bool { state.aspectLocked }
+  var isReadingText = false
+
+  private var displayScale: CGFloat {
+    selection.backingScaleFactor > 0 ? selection.backingScaleFactor : 2
+  }
 
   init(
     image: CGImage,
@@ -84,7 +89,6 @@ final class InlineAnnotationSession {
   func update(bounds: CGRect, localRect: CGRect, selection: SelectionRect) {
     self.localRect = localRect
     self.selection = selection
-    state.pointSize = localRect.size
     layout(bounds: bounds)
   }
 
@@ -168,8 +172,17 @@ final class InlineAnnotationSession {
   }
 
   private func layout(bounds: CGRect) {
+    let scale = displayScale
+    let origin = CGPoint(
+      x: (localRect.minX * scale).rounded() / scale,
+      y: (localRect.minY * scale).rounded() / scale
+    )
+    localRect = CGRect(origin: origin, size: localRect.size)
+    state.pointSize = localRect.size
     clip.frame = localRect
-    canvas.frame = CGRect(origin: CGPoint(x: -localRect.minX, y: -localRect.minY), size: displaySize)
+    clip.layer?.contentsScale = scale
+    canvas.frame = CGRect(origin: CGPoint(x: -origin.x, y: -origin.y), size: displaySize)
+    canvas.syncContentsScale()
     chrome.frame = bounds
     chrome.isHidden = !isResizable
     chrome.selectionRect = localRect

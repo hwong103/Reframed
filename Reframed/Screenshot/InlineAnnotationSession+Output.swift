@@ -43,8 +43,10 @@ extension InlineAnnotationSession {
   }
 
   func captureText() {
-    apply(handlers.captureText)
-    end()
+    guard !isReadingText else { return }
+    guard let rendered = renderedSelection() else { return end() }
+    isReadingText = true
+    handlers.captureText(rendered, selection)
   }
 
   func pin() {
