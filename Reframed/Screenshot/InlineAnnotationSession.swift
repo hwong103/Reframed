@@ -183,7 +183,8 @@ final class InlineAnnotationSession {
     state.pointSize = localRect.size
     clip.frame = localRect
     clip.layer?.contentsScale = scale
-    canvas.frame = CGRect(origin: CGPoint(x: -origin.x, y: -origin.y), size: displaySize)
+    let canvasOrigin = isResizable ? CGPoint(x: -origin.x, y: -origin.y) : .zero
+    canvas.frame = CGRect(origin: canvasOrigin, size: displaySize)
     canvas.syncContentsScale()
     chrome.frame = bounds
     chrome.isHidden = !isResizable
