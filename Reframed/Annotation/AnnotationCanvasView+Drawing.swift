@@ -151,15 +151,22 @@ extension AnnotationCanvasView {
   }
 
   private func drawDocument(in context: CGContext, layout: Layout) {
+    let deviceScale = layout.scale * (window?.backingScaleFactor ?? 1)
+    let interpolation: CGInterpolationQuality = deviceScale < 1 ? .high : .none
     context.saveGState()
     context.translateBy(x: layout.origin.x, y: layout.origin.y)
     context.scaleBy(x: layout.scale, y: layout.scale)
     context.clip(to: CGRect(origin: .zero, size: model.outputSize))
     if let composite = dragCompositeImage() {
-      context.interpolationQuality = .none
+      context.interpolationQuality = interpolation
       context.draw(composite, in: CGRect(origin: .zero, size: model.outputSize))
     } else {
-      AnnotationRenderer.render(model.document, image: model.image, into: context)
+      AnnotationRenderer.render(
+        model.document,
+        image: model.image,
+        into: context,
+        interpolation: interpolation
+      )
     }
     context.restoreGState()
   }
