@@ -58,7 +58,11 @@ final class ScreenshotSession {
     includeShadow: Bool = true,
     excludingApplications: [SCRunningApplication] = []
   ) async throws -> ScreenshotResult {
-    let result = try await service.captureWindow(window, includeShadow: includeShadow)
+    let result = try await service.captureWindow(
+      window,
+      includeShadow: includeShadow,
+      excludingApplications: excludingApplications
+    )
     lastSelection = nil
     lastWindowID = window.windowID
     lastResult = result

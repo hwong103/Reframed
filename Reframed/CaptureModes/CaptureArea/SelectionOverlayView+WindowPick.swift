@@ -56,7 +56,7 @@ extension SelectionOverlayView {
 
   var windowStatus: String? {
     guard committedWindowID != nil else { return nil }
-    return optionsHeld ? "No shadow (Option held)" : "Shadow on"
+    return optionsHeld ? "No shadow (Option held)" : "Sharp \u{00b7} shadow if occluded"
   }
 
   var windowSelectionNote: String? {

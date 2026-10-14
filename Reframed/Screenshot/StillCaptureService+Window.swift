@@ -10,8 +10,13 @@ extension StillCaptureService {
     excludingApplications: [SCRunningApplication] = []
   ) async throws -> ScreenshotResult {
     try assertCapturable(window)
-    if isFullyOnScreen(window), !isCovered(window) {
-      return try await captureWindowFromScreen(window, excludingApplications: excludingApplications)
+    if isFullyOnScreen(window), !isCovered(window),
+      let fromScreen = try await captureWindowFromScreen(
+        window,
+        excludingApplications: excludingApplications
+      )
+    {
+      return fromScreen
     }
     let filter = SCContentFilter(desktopIndependentWindow: window)
     let geometry = filter.contentRect
@@ -48,9 +53,10 @@ extension StillCaptureService {
   func captureWindowFromScreen(
     _ window: SCWindow,
     excludingApplications: [SCRunningApplication]
-  ) async throws -> ScreenshotResult {
+  ) async throws -> ScreenshotResult? {
     let displayID = displayID(for: window)
     let display = try await captureDisplay(displayID, excludingApplications: excludingApplications)
+    guard isFullyOnScreen(window), !isCovered(window) else { return nil }
     let selection = SelectionRect(rect: windowFrameInAppKit(window), displayID: displayID)
     return try crop(selection, from: display.image)
   }
@@ -71,10 +77,6 @@ extension StillCaptureService {
       }
       let owner = entry[kCGWindowOwnerPID as String] as? pid_t ?? 0
       if owner == ownPID {
-        continue
-      }
-      let layer = entry[kCGWindowLayer as String] as? Int ?? 0
-      if layer != 0 {
         continue
       }
       let alpha = entry[kCGWindowAlpha as String] as? Double ?? 1
