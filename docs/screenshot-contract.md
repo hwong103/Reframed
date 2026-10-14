@@ -34,6 +34,19 @@ R2.4 Capture is at the display's native backing scale, SDR sRGB, with colour met
 embedded in the written file.
 R2.5 Cross-display selections are not supported in P0; the selection is clamped to the
 display containing its midpoint, and the behaviour is stated in the UI.
+R2.6 Verified on 2026-10-14 against the owner's three live displays - 1512x982 at 2x,
+3440x1440 at 1x with a negative origin, and 1440x2560 at 2x rotated portrait. Origin,
+far-corner, odd-size and near-full selections all cropped to the exact expected pixels
+with no offset and no rescale, and a live ScreenCaptureKit A/B of a cropped display grab
+against a direct region capture differed by zero pixels on all three. Odd selections
+keep their odd width on the 1x display, so R2.2 holds; note that
+`screenCaptureKitRect`, the video path, does truncate to even pixels and is expected to
+differ.
+R2.7 Known latent, not reachable today: the scale-override initialiser used by the
+window and annotation paths can gain one pixel at a fractional scale such as 1.5 or 2.5,
+because `crop` takes `CGRect.integral`, which rounds outward. macOS reports a backing
+scale of 1 or 2, so this is unexercised. If a fractional scale ever appears, build the
+pixel rect from the already-snapped edges instead of `.integral`.
 
 ## R3 - window capture
 
