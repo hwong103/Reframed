@@ -92,7 +92,7 @@ final class CaptureAnnotationState {
   var thickness: CGFloat = CaptureAnnotationDefaults.thickness
   var size: CGFloat = CaptureAnnotationDefaults.size
   var redaction: CGFloat = CaptureAnnotationDefaults.redaction
-  var beautifyEnabled = false
+  var beautifyEnabled = CaptureAnnotationDefaults.beautifyEnabled
   var aspectLocked = false
   var pointSize: CGSize = .zero
   var dimensionUnit = "pt"
@@ -120,12 +120,18 @@ final class CaptureAnnotationState {
 @MainActor
 enum CaptureAnnotationDefaults {
   private static let storageKey = "captureAnnotationDefaultStyle"
+  private static let beautifyStorageKey = "captureAnnotationBeautify"
 
   static var color: CodableColor { stored?.color ?? AnnotationPresets.defaultColor }
   static var opacity: CGFloat { stored?.opacity ?? 1 }
   static var thickness: CGFloat { stored?.thickness ?? AnnotationPresets.defaultStrokeWidth }
   static var size: CGFloat { stored?.size ?? AnnotationPresets.defaultFontSize }
   static var redaction: CGFloat { stored?.redaction ?? AnnotationPresets.defaultRedactionStrength }
+
+  static var beautifyEnabled: Bool {
+    get { UserDefaults.standard.bool(forKey: beautifyStorageKey) }
+    set { UserDefaults.standard.set(newValue, forKey: beautifyStorageKey) }
+  }
 
   static func store(color: CodableColor, opacity: CGFloat, thickness: CGFloat, size: CGFloat, redaction: CGFloat) {
     let style = StoredStyle(color: color, opacity: opacity, thickness: thickness, size: size, redaction: redaction)

@@ -9,6 +9,7 @@ extension InlineAnnotationSession {
 
   func toggleBeautify() {
     state.beautifyEnabled.toggle()
+    CaptureAnnotationDefaults.beautifyEnabled = state.beautifyEnabled
     applyBeautify()
     onBeautifyChange?()
   }
