@@ -5,6 +5,7 @@ import SwiftUI
 struct RecentCaptureStrip: View {
   let captures: [RecentCaptureData]
   let onCopy: (RecentCaptureData) -> Void
+  let onSave: (RecentCaptureData) -> Void
   let onReveal: (RecentCaptureData) -> Void
   let onClear: () -> Void
 
@@ -28,6 +29,7 @@ struct RecentCaptureStrip: View {
               RecentCaptureRow(
                 capture: capture,
                 onCopy: { onCopy(capture) },
+                onSave: { onSave(capture) },
                 onReveal: { onReveal(capture) }
               )
               .hoverEffect(id: "recent.\(capture.id)")
@@ -81,6 +83,7 @@ struct RecentCaptureStrip: View {
 private struct RecentCaptureRow: View {
   let capture: RecentCaptureData
   let onCopy: () -> Void
+  let onSave: () -> Void
   let onReveal: () -> Void
 
   @Environment(\.colorScheme) private var colorScheme
@@ -99,6 +102,11 @@ private struct RecentCaptureRow: View {
       }
       .buttonStyle(PlainCustomButtonStyle())
       .help("Copy to clipboard")
+
+      IconButton(systemName: "square.and.arrow.down", color: ReframedColors.secondaryText) {
+        onSave()
+      }
+      .help("Save to the screenshots folder")
 
       IconButton(systemName: "folder", color: ReframedColors.secondaryText) {
         onReveal()

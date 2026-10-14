@@ -1,4 +1,5 @@
 import AVFoundation
+import AppKit
 import SwiftUI
 
 struct MenuBarView: View {
@@ -138,8 +139,22 @@ struct MenuBarView: View {
     RecentCaptureStrip(
       captures: recentCaptures,
       onCopy: { capture in
+        let copied = RecentCaptureStore.shared.copyToClipboard(capture)
         onDismiss()
-        RecentCaptureStore.shared.copyToClipboard(capture)
+        ScreenshotFeedbackWindow.show(
+          copied ? "Copied to clipboard" : "Could not copy that capture",
+          detail: copied ? "\(capture.width) \u{00d7} \(capture.height) px" : capture.filename,
+          near: NSEvent.mouseLocation
+        )
+      },
+      onSave: { capture in
+        let saved = RecentCaptureStore.shared.save(capture)
+        onDismiss()
+        ScreenshotFeedbackWindow.show(
+          saved == nil ? "Could not save that capture" : "Screenshot saved",
+          detail: saved?.lastPathComponent ?? capture.filename,
+          near: NSEvent.mouseLocation
+        )
       },
       onReveal: { capture in
         onDismiss()

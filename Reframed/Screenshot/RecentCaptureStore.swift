@@ -107,6 +107,15 @@ final class RecentCaptureStore {
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 
+  @discardableResult
+  func save(_ item: RecentCaptureData) -> URL? {
+    let url = ScreenshotNaming.destinationURL()
+    guard (try? FileManager.default.copyItem(at: fileURL(for: item.id), to: url)) != nil else {
+      return nil
+    }
+    return url
+  }
+
   func clear() {
     let cleared = persistence.recentCaptures
     guard persistence.commitCaptureList([]) else { return }
