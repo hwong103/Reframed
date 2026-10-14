@@ -18,6 +18,7 @@ protocol RecentCapturePersisting: AnyObject {
 @MainActor
 final class RecentCaptureStore {
   static let limit = 20
+  static let defaultByteLimit = 200 * 1024 * 1024
   static let folderName = "RecentCaptures"
 
   static let shared = RecentCaptureStore(
@@ -36,10 +37,16 @@ final class RecentCaptureStore {
 
   private let persistence: RecentCapturePersisting
   private let directory: URL
+  private let byteLimit: Int
 
-  init(persistence: RecentCapturePersisting, directory: URL) {
+  init(
+    persistence: RecentCapturePersisting,
+    directory: URL,
+    byteLimit: Int = RecentCaptureStore.defaultByteLimit
+  ) {
     self.persistence = persistence
     self.directory = directory
+    self.byteLimit = byteLimit
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     pruneMissingFiles()
   }
@@ -70,7 +77,7 @@ final class RecentCaptureStore {
     var items = persistence.recentCaptures
     items.insert(item, at: 0)
     var evicted: [RecentCaptureData] = []
-    while items.count > Self.limit {
+    while items.count > 1, items.count > Self.limit || byteSize(of: items) > byteLimit {
       evicted.append(items.removeLast())
     }
     persistence.recentCaptures = items
@@ -104,6 +111,13 @@ final class RecentCaptureStore {
   private func removeFiles(for items: [RecentCaptureData]) {
     for item in items {
       try? FileManager.default.removeItem(at: fileURL(for: item.id))
+    }
+  }
+
+  private func byteSize(of items: [RecentCaptureData]) -> Int {
+    items.reduce(0) { total, item in
+      let values = try? fileURL(for: item.id).resourceValues(forKeys: [.fileSizeKey])
+      return total + (values?.fileSize ?? 0)
     }
   }
 }
