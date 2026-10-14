@@ -223,7 +223,8 @@ extension AnnotationCanvasView {
 
   func drawViewportHUD(in context: CGContext) {
     guard explicitLayout != nil, bounds.width > 140, bounds.height > 80 else { return }
-    let text = "\(Int((currentLayout().scale * 100).rounded()))%"
+    let magnification = currentLayout().scale * (window?.backingScaleFactor ?? 1)
+    let text = "\(Int((magnification * 100).rounded()))%"
     let attributes: [NSAttributedString.Key: Any] = [
       .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
       .foregroundColor: NSColor.white,

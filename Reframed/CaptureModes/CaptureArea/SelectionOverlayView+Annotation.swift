@@ -192,4 +192,13 @@ extension SelectionOverlayView {
     composedViewport.origin = topAlignedComposedOrigin(session: session)
     applyComposedViewportOrigin(session: session)
   }
+
+  func showActualPixels() {
+    guard let session = annotationSession, !session.isResizable else { return }
+    let backing = window?.backingScaleFactor ?? 1
+    let scale = min(max(1 / max(backing, 1), Self.minComposedScale), Self.maxComposedScale)
+    composedViewport.scale = scale
+    composedViewport.origin = topAlignedComposedOrigin(session: session)
+    applyComposedViewportOrigin(session: session)
+  }
 }

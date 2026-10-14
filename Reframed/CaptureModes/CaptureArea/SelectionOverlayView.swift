@@ -147,6 +147,8 @@ final class SelectionOverlayView: NSView {
       zoomComposedViewport(by: 1.25)
     case "-":
       zoomComposedViewport(by: 0.8)
+    case "1":
+      showActualPixels()
     case "0":
       resetComposedViewport()
     default:
