@@ -77,6 +77,7 @@ extension SelectionOverlayView {
       handlers: handlers,
       isResizable: false
     )
+    session.onBeautifyChange = { [weak self] in self?.resetComposedViewport() }
     annotationSession = session
     session.install(in: self)
     updateAnnotationLayout()

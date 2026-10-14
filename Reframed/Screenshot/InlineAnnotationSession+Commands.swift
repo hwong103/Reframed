@@ -10,6 +10,7 @@ extension InlineAnnotationSession {
   func toggleBeautify() {
     state.beautifyEnabled.toggle()
     applyBeautify()
+    onBeautifyChange?()
   }
 
   func handleKey(_ event: NSEvent) -> Bool {
