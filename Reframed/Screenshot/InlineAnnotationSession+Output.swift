@@ -117,6 +117,7 @@ extension InlineAnnotationSession {
       save: { [weak self] in self?.save() },
       saveAndCopy: { [weak self] in self?.saveAndCopy() },
       captureText: { [weak self] in self?.captureText() },
+      beautify: { [weak self] in self?.toggleBeautify() },
       pin: { [weak self] in self?.pin() },
       openInWindow: { [weak self] in self?.openInWindow() },
       openInPreview: { [weak self] in self?.openInPreview() },
@@ -182,7 +183,8 @@ extension InlineAnnotationSession {
     let imageBounds = CGRect(x: 0, y: 0, width: full.width, height: full.height)
     let cropped = pixelRect.intersection(imageBounds)
     guard cropped.width >= 1, cropped.height >= 1 else { return nil }
-    return full.cropping(to: cropped)
+    guard let region = full.cropping(to: cropped) else { return nil }
+    return AnnotationRenderer.beautified(region, style: canvas.beautifyStyle, scale: scale)
   }
 
   private func clamp(_ value: CGFloat, min lower: CGFloat, max upper: CGFloat) -> CGFloat {

@@ -3,27 +3,58 @@ import CoreGraphics
 
 extension AnnotationCanvasView {
   func currentLayout() -> Layout {
+    let size = contentSize
+    let inset = beautifyInset
     if let explicitLayout {
-      return explicitLayout
+      return Layout(
+        scale: explicitLayout.scale,
+        origin: CGPoint(
+          x: explicitLayout.origin.x + inset * explicitLayout.scale,
+          y: explicitLayout.origin.y + inset * explicitLayout.scale
+        )
+      )
     }
-    let size = model.outputSize
     if isInline {
       guard size.width > 0, size.height > 0, bounds.width > 0, bounds.height > 0 else {
         return Layout(scale: 1, origin: CGPoint(x: bounds.midX, y: bounds.midY))
       }
       let scale = min(bounds.width / size.width, bounds.height / size.height)
-      return Layout(scale: scale, origin: CGPoint(x: bounds.minX, y: bounds.minY))
+      return Layout(
+        scale: scale,
+        origin: CGPoint(x: bounds.minX + inset * scale, y: bounds.minY + inset * scale)
+      )
     }
-    let inset = bounds.insetBy(dx: 16, dy: 16)
-    guard size.width > 0, size.height > 0, inset.width > 0, inset.height > 0 else {
+    let area = bounds.insetBy(dx: 16, dy: 16)
+    guard size.width > 0, size.height > 0, area.width > 0, area.height > 0 else {
       return Layout(scale: 1, origin: CGPoint(x: bounds.midX, y: bounds.midY))
     }
-    let scale = min(inset.width / size.width, inset.height / size.height)
+    let scale = min(area.width / size.width, area.height / size.height)
     let scaled = CGSize(width: size.width * scale, height: size.height * scale)
     return Layout(
       scale: scale,
-      origin: CGPoint(x: inset.midX - scaled.width / 2, y: inset.midY - scaled.height / 2)
+      origin: CGPoint(
+        x: area.midX - scaled.width / 2 + inset * scale,
+        y: area.midY - scaled.height / 2 + inset * scale
+      )
     )
+  }
+
+  var contentSize: CGSize {
+    let inset = beautifyInset
+    guard inset > 0 else { return model.outputSize }
+    return CGSize(
+      width: model.outputSize.width + inset * 2,
+      height: model.outputSize.height + inset * 2
+    )
+  }
+
+  var beautifyInset: CGFloat {
+    guard beautifyStyle.isActive else { return 0 }
+    let density = max(beautifyScale, 1)
+    let padding = (beautifyStyle.padding * density).rounded()
+    guard beautifyStyle.shadowOpacity > 0 else { return padding }
+    let bleed = ((beautifyStyle.shadowRadius + beautifyStyle.shadowOffset) * density).rounded()
+    return padding + bleed
   }
 
   var displayRect: CGRect {
@@ -86,6 +117,40 @@ extension AnnotationCanvasView {
   func drawRenderedImage(in context: CGContext) {
     let layout = currentLayout()
     guard layout.scale > 0 else { return }
+    guard beautifyStyle.isActive else {
+      drawDocument(in: context, layout: layout)
+      return
+    }
+    let viewScale = max(beautifyScale, 1) * layout.scale
+    let frame = displayRect
+    let inset = beautifyInset * layout.scale
+    AnnotationRenderer.drawBeautifyBackground(
+      beautifyStyle.background,
+      in: context,
+      canvas: frame.insetBy(dx: -inset, dy: -inset)
+    )
+    let radius = beautifyStyle.cornerRadius * viewScale
+    let path = CGPath(roundedRect: frame, cornerWidth: radius, cornerHeight: radius, transform: nil)
+    if beautifyStyle.shadowOpacity > 0 {
+      context.saveGState()
+      context.addPath(path)
+      context.setFillColor(NSColor.black.withAlphaComponent(1).cgColor)
+      context.setShadow(
+        offset: CGSize(width: 0, height: -beautifyStyle.shadowOffset * viewScale),
+        blur: beautifyStyle.shadowRadius * viewScale,
+        color: NSColor.black.withAlphaComponent(beautifyStyle.shadowOpacity).cgColor
+      )
+      context.fillPath()
+      context.restoreGState()
+    }
+    context.saveGState()
+    context.addPath(path)
+    context.clip()
+    drawDocument(in: context, layout: layout)
+    context.restoreGState()
+  }
+
+  private func drawDocument(in context: CGContext, layout: Layout) {
     context.saveGState()
     context.translateBy(x: layout.origin.x, y: layout.origin.y)
     context.scaleBy(x: layout.scale, y: layout.scale)

@@ -92,6 +92,7 @@ final class CaptureAnnotationState {
   var thickness: CGFloat = CaptureAnnotationDefaults.thickness
   var size: CGFloat = CaptureAnnotationDefaults.size
   var redaction: CGFloat = CaptureAnnotationDefaults.redaction
+  var beautifyEnabled = false
   var aspectLocked = false
   var pointSize: CGSize = .zero
   var dimensionUnit = "pt"

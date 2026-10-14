@@ -83,12 +83,14 @@ final class InlineAnnotationSession {
     }
     selectTool(state.tool)
     applyStyle()
+    applyBeautify()
     refreshState()
   }
 
   func update(bounds: CGRect, localRect: CGRect, selection: SelectionRect) {
     self.localRect = localRect
     self.selection = selection
+    applyBeautify()
     layout(bounds: bounds)
   }
 
@@ -112,61 +114,6 @@ final class InlineAnnotationSession {
     state.canUndo = model.canUndo
     state.canRedo = model.canRedo
     state.hasSelection = model.selectionID != nil
-  }
-
-  func handleKey(_ event: NSEvent) -> Bool {
-    let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-    let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
-
-    if flags.contains(.command) {
-      switch key {
-      case "s":
-        flags.contains(.shift) ? saveAndCopy() : save()
-        return true
-      case "z":
-        flags.contains(.shift) ? redo() : undo()
-        return true
-      default:
-        return false
-      }
-    }
-
-    guard flags.isEmpty else { return false }
-
-    switch event.keyCode {
-    case 53:
-      cancel()
-      return true
-    case 36, 49, 76:
-      copy()
-      return true
-    case 51, 117:
-      deleteSelected()
-      return true
-    default:
-      break
-    }
-
-    if let tool = CaptureAnnotationTool.tool(forKey: key) {
-      selectTool(tool)
-      return true
-    }
-
-    switch key {
-    case "o":
-      captureText()
-    case "t":
-      pin()
-    case "w":
-      openInWindow()
-    case "p":
-      openInPreview()
-    case "s":
-      scrollingCapture()
-    default:
-      return false
-    }
-    return true
   }
 
   func cancel() {

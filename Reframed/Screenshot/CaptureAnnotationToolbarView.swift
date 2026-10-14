@@ -9,6 +9,7 @@ struct CaptureAnnotationToolbarActions {
   let save: () -> Void
   let saveAndCopy: () -> Void
   let captureText: () -> Void
+  let beautify: () -> Void
   let pin: () -> Void
   let openInWindow: () -> Void
   let openInPreview: () -> Void
@@ -105,6 +106,13 @@ struct CaptureAnnotationToolbarView: View {
       }
       .disabled(!state.hasSelection)
       IconButton(systemImage: "pin", help: "Pin (T)") { actions.pin() }
+      IconButton(
+        systemImage: "sparkles",
+        isSelected: state.beautifyEnabled,
+        help: "Beautify (B)"
+      ) {
+        actions.beautify()
+      }
       IconButton(systemImage: "macwindow", help: "Open in Window (W)") { actions.openInWindow() }
       IconButton(systemImage: "eye", help: "Open in Preview (P)") { actions.openInPreview() }
       IconButton(systemImage: "text.viewfinder", help: "Capture Text (O)") { actions.captureText() }

@@ -123,7 +123,7 @@ extension SelectionOverlayView {
     if !composedViewport.isReady {
       composedViewport.scale = AnnotationCanvasView.viewportFitScale(
         viewportWidth: composedViewport.rect.width,
-        imageWidth: session.model.pixelSize.width
+        imageWidth: session.canvas.contentSize.width
       )
       composedViewport.isReady = true
       composedViewport.origin = topAlignedComposedOrigin(session: session)
@@ -154,7 +154,7 @@ extension SelectionOverlayView {
   }
 
   func applyComposedViewportOrigin(session: InlineAnnotationSession) {
-    let pixel = session.model.pixelSize
+    let pixel = session.canvas.contentSize
     let content = CGSize(
       width: pixel.width * composedViewport.scale,
       height: pixel.height * composedViewport.scale
@@ -175,7 +175,7 @@ extension SelectionOverlayView {
   }
 
   func topAlignedComposedOrigin(session: InlineAnnotationSession) -> CGPoint {
-    let pixel = session.model.pixelSize
+    let pixel = session.canvas.contentSize
     return CGPoint(
       x: composedViewport.rect.midX - pixel.width * composedViewport.scale / 2,
       y: composedViewport.rect.maxY - pixel.height * composedViewport.scale
@@ -186,7 +186,7 @@ extension SelectionOverlayView {
     guard let session = annotationSession, !session.isResizable else { return }
     composedViewport.scale = AnnotationCanvasView.viewportFitScale(
       viewportWidth: composedViewport.rect.width,
-      imageWidth: session.model.pixelSize.width
+      imageWidth: session.canvas.contentSize.width
     )
     composedViewport.origin = topAlignedComposedOrigin(session: session)
     applyComposedViewportOrigin(session: session)

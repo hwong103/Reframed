@@ -53,6 +53,8 @@ final class AnnotationCanvasView: NSView {
   var isInline = false
   var stepStampProvider: (() -> String?)?
   var explicitLayout: Layout?
+  var beautifyStyle: BeautifyStyle = .off
+  var beautifyScale: CGFloat = 1
   var dragComposition: DragComposition?
 
   var draggingItemID: UUID? {

@@ -17,7 +17,7 @@ extension AnnotationRenderer {
       return nil
     }
     let canvas = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
-    drawBackground(style.background, in: context, canvas: canvas)
+    drawBeautifyBackground(style.background, in: context, canvas: canvas)
     let frame = CGRect(
       x: bleed + padding,
       y: bleed + padding,
@@ -50,7 +50,7 @@ extension AnnotationRenderer {
     CGColor(colorSpace: colorSpace, components: [0, 0, 0, alpha]) ?? CGColor(gray: 0, alpha: alpha)
   }
 
-  private static func drawBackground(_ style: BackgroundStyle, in context: CGContext, canvas: CGRect) {
+  static func drawBeautifyBackground(_ style: BackgroundStyle, in context: CGContext, canvas: CGRect) {
     switch style {
     case .none, .image:
       return
