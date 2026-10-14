@@ -174,7 +174,8 @@ multiple pins and display changes. Acceptance: OCR against named fixtures with e
 text; a pin survives app switching and full-screen apps and restores its position.
 
 P3 - polish. About a week. Padding, shadow, background and rounded border reusing the
-video background styles, colour picker, ruler, recent captures strip.
+video background styles, and a recent captures strip. The colour picker already exists in
+the annotation toolbar; the ruler is dropped (see the decisions below).
 
 P4 - scrolling capture, as a spike after P1 (decided). Several days to a feasibility
 spike, then decide from measured seam quality rather than from the spike finishing. The
@@ -226,10 +227,11 @@ Settled by the owner on 2026-10-13:
 6. Xnip is retired when the named daily workflows pass end to end, not at a phase
    boundary.
 
-Still open:
+Settled by the owner on 2026-10-14:
 
-1. The numbered step tool and the ruler: confirm they are wanted before building them
-   in P3 rather than adding them by default.
+1. The numbered step tool is wanted, and it already ships in the capture toolbar as
+   auto-numbered text stamps on key 8. The ruler is dropped rather than built in P3 - the
+   owner has never used one.
 
 ## Risks
 
