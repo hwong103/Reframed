@@ -44,7 +44,7 @@ final class AnnotationCanvasView: NSView {
 
   let model: AnnotationEditorModel
   let textField = NSTextField()
-  let canvasBackground = NSColor(white: 0.5, alpha: 1)
+  var canvasBackground = NSColor(white: 0.5, alpha: 1)
   let handleSize: CGFloat = 8
   let handleHitRadius: CGFloat = 7
   let tolerance: CGFloat = 8

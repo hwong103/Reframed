@@ -64,6 +64,7 @@ extension SelectionOverlayView {
   }
 
   func selectionHoles() -> [CGRect] {
+    guard annotationSession?.isResizable ?? true else { return [] }
     var rects: [CGRect] = []
     if let rect = selectionRect {
       rects.append(rect)

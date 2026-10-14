@@ -77,7 +77,10 @@ extension AnnotationRenderer {
         x: canvas.minX + canvas.width * preset.cgEndPoint.x,
         y: canvas.minY + canvas.height * preset.cgEndPoint.y
       )
+      context.saveGState()
+      context.clip(to: canvas)
       context.drawLinearGradient(gradient, start: start, end: end, options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+      context.restoreGState()
     }
   }
 }

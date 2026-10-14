@@ -16,6 +16,9 @@ final class InlineAnnotationSession {
   lazy var canvas: AnnotationCanvasView = {
     let view = AnnotationCanvasView(model: model)
     view.isInline = true
+    if !isResizable {
+      view.canvasBackground = .clear
+    }
     return view
   }()
   lazy var clip: NSView = {
