@@ -203,6 +203,7 @@
 		AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000078 /* BeautifyStyle.swift */; };
 		AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */; };
 		AB5C0000000000000000007F /* InlineAnnotationSession+Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */; };
+		AB5C00000000000000000081 /* OCRService+Ordering.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000080 /* OCRService+Ordering.swift */; };
 		AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */; };
 		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
 		AC0000000000000000000022 /* AnnotationDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* AnnotationDocument.swift */; };
@@ -511,6 +512,7 @@
 		AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Beautify.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotSession+Repeat.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Commands.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000080 /* OCRService+Ordering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OCRService+Ordering.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+WindowPick.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationDragSource.swift; sourceTree = "<group>"; };
@@ -883,6 +885,7 @@
 				AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */,
 				AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */,
 				AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */,
+				AB5C00000000000000000080 /* OCRService+Ordering.swift */,
 				AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */,
 				AB5C00000000000000000061 /* ScrollStitcher.swift */,
 				AB5C00000000000000000067 /* ScrollStitcher+Stitch.swift */,
@@ -1461,6 +1464,7 @@
 				AB5C00000000000000000059 /* InlineAnnotationSession+Output.swift in Sources */,
 				AB5C00000000000000000077 /* InlineAnnotationSession+Text.swift in Sources */,
 				AB5C0000000000000000007F /* InlineAnnotationSession+Commands.swift in Sources */,
+				AB5C00000000000000000081 /* OCRService+Ordering.swift in Sources */,
 				AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */,
 				AB5C00000000000000000075 /* ScreenshotCoordinator+Text.swift in Sources */,
 				AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */,

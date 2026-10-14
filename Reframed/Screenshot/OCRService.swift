@@ -72,17 +72,11 @@ enum OCRService {
   }
 
   private static func readingOrderedLines(from observations: [VNRecognizedTextObservation]) -> [String] {
-    let candidates = observations.compactMap { observation -> (CGRect, String)? in
+    let candidates = observations.compactMap { observation -> Candidate? in
       guard let text = observation.topCandidates(1).first?.string else { return nil }
-      return (observation.boundingBox, text)
+      return (rect: observation.boundingBox, text: text)
     }
-    let ordered = candidates.sorted { lhs, rhs in
-      if abs(lhs.0.midY - rhs.0.midY) > 0.02 {
-        return lhs.0.midY > rhs.0.midY
-      }
-      return lhs.0.minX < rhs.0.minX
-    }
-    return ordered.map(\.1)
+    return orderedLines(from: candidates)
   }
 
   private static func sampleImage() -> CGImage? {
