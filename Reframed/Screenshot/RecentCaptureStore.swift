@@ -49,6 +49,7 @@ final class RecentCaptureStore {
     self.byteLimit = byteLimit
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     pruneMissingFiles()
+    removeOrphans()
   }
 
   var captures: [RecentCaptureData] {
@@ -87,7 +88,7 @@ final class RecentCaptureStore {
   @discardableResult
   func copyToClipboard(_ item: RecentCaptureData) -> Bool {
     guard let image = image(for: item) else { return false }
-    return ImageExporter.copyToPasteboard(image, fileURL: fileURL(for: item.id))
+    return ImageExporter.copyToPasteboard(image, fileURL: clipboardURL(for: item))
   }
 
   func reveal(_ item: RecentCaptureData) {
@@ -111,6 +112,23 @@ final class RecentCaptureStore {
   private func removeFiles(for items: [RecentCaptureData]) {
     for item in items {
       try? FileManager.default.removeItem(at: fileURL(for: item.id))
+    }
+  }
+
+  private func clipboardURL(for item: RecentCaptureData) -> URL? {
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("Reframed-\(item.id).png")
+    guard (try? FileManager.default.copyItem(at: fileURL(for: item.id), to: url)) != nil else {
+      return nil
+    }
+    return url
+  }
+
+  private func removeOrphans() {
+    let known = Set(persistence.recentCaptures.map { "\($0.id).png" })
+    let files = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    for name in files where name.hasSuffix(".png") && !known.contains(name) {
+      try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
     }
   }
 

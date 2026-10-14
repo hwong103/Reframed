@@ -97,6 +97,7 @@ extension ScreenshotCoordinator {
     do {
       let url = try captureSession.saveLast()
       annotationSavedURL = url
+      RecentCaptureStore.shared.record(image: image, filename: url.lastPathComponent)
       return url
     } catch {
       present(error.localizedDescription)

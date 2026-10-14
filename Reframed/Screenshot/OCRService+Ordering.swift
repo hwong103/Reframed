@@ -24,8 +24,11 @@ extension OCRService {
       let inside = kept.filter { covers(candidate.rect, $0.rect) }
       let covered = inside.reduce(CGFloat.zero) { $0 + $1.rect.width * $1.rect.height }
       let largest = inside.reduce(CGFloat.zero) { max($0, $1.rect.width * $1.rect.height) }
-      let duplicate = covered >= 0.9 * area
-      let container = covered >= 0.6 * area && largest < 0.5 * area
+      let duplicate = covered >= 0.9 * area && inside.contains { restates(candidate.text, $0.text) }
+      let container =
+        covered >= 0.6 * area
+        && largest < 0.5 * area
+        && coversText(candidate.text, inside)
       if duplicate || container { continue }
       kept.append(candidate)
     }
@@ -51,11 +54,13 @@ extension OCRService {
     var reach: CGFloat = 0
     for fragment in row.fragments.sorted(by: leftToRight) {
       if let last = buffer.last, fragment.rect.minX < last.rect.maxX {
-        if fragment.text.count > last.text.count {
-          buffer[buffer.count - 1] = fragment
-          reach = max(reach, fragment.rect.maxX)
+        if restates(fragment.text, last.text) {
+          if fragment.text.count > last.text.count {
+            buffer[buffer.count - 1] = fragment
+            reach = max(reach, fragment.rect.maxX)
+          }
+          continue
         }
-        continue
       }
       let gapLimit = max(row.frame.height, fragment.rect.height)
       if !buffer.isEmpty, fragment.rect.minX - reach > gapLimit {
@@ -83,6 +88,25 @@ extension OCRService {
   private static func covers(_ outer: CGRect, _ inner: CGRect) -> Bool {
     let slack = 0.15 * min(outer.height, inner.height)
     return outer.insetBy(dx: -slack, dy: -slack).contains(inner)
+  }
+
+  private static func restates(_ lhs: String, _ rhs: String) -> Bool {
+    let left = Set(words(of: lhs))
+    let right = Set(words(of: rhs))
+    guard !left.isEmpty, !right.isEmpty else { return false }
+    return left.isSubset(of: right) || right.isSubset(of: left)
+  }
+
+  private static func coversText(_ text: String, _ children: [Candidate]) -> Bool {
+    let parent = Set(words(of: text))
+    guard !parent.isEmpty else { return false }
+    return parent.isSubset(of: Set(children.flatMap { words(of: $0.text) }))
+  }
+
+  private static func words(of text: String) -> [String] {
+    text.lowercased()
+      .components(separatedBy: CharacterSet.alphanumerics.inverted)
+      .filter { !$0.isEmpty }
   }
 
   private static func byArea(_ lhs: Candidate, _ rhs: Candidate) -> Bool {

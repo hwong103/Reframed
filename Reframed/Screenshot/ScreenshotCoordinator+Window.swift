@@ -56,6 +56,7 @@ extension ScreenshotCoordinator {
       return
     }
     if ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL) {
+      RecentCaptureStore.shared.record(image: result.image, filename: ScreenshotNaming.previewName())
       ScreenshotFeedbackWindow.show(captured.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
     } else {
       present("Could not copy the screenshot to the clipboard.")

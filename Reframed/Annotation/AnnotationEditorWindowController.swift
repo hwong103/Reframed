@@ -118,6 +118,7 @@ final class AnnotationEditorWindowController: NSObject, NSWindowDelegate {
   private func copyRendered() {
     guard let image = model.renderedImage() else { return }
     if ImageExporter.copyToPasteboard(image) {
+      RecentCaptureStore.shared.record(image: image, filename: ScreenshotNaming.previewName())
       ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
     } else {
       present("Could not copy the screenshot to the clipboard.")
@@ -129,6 +130,7 @@ final class AnnotationEditorWindowController: NSObject, NSWindowDelegate {
     let url = ScreenshotNaming.destinationURL()
     do {
       try ImageExporter.writePNG(image, to: url)
+      RecentCaptureStore.shared.record(image: image, filename: url.lastPathComponent)
       let copied = ImageExporter.copyToPasteboard(image, fileURL: url)
       ScreenshotFeedbackWindow.show(
         copied ? "Saved" : "Saved, but the clipboard copy failed",

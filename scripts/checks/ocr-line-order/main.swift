@@ -86,6 +86,29 @@ check(
   "\(OCRService.orderedLines(from: overlapping))"
 )
 
+// Two different words whose boxes overlap by a hair are two words, not a duplicate.
+let abutting: [OCRService.Candidate] = [
+  candidate(0.10, 0.900, 0.30, 0.030, "Alpha"),
+  candidate(0.39, 0.900, 0.30, 0.030, "Beta"),
+]
+check(
+  OCRService.orderedLines(from: abutting) == ["Alpha Beta"],
+  "a slight overlap does not delete a word",
+  "\(OCRService.orderedLines(from: abutting))"
+)
+
+// A parent box is only a duplicate when its children actually carry all of its words.
+let partialParent: [OCRService.Candidate] = [
+  candidate(0.10, 0.240, 0.80, 0.030, "left middle right"),
+  candidate(0.10, 0.240, 0.32, 0.030, "left"),
+  candidate(0.58, 0.240, 0.32, 0.030, "right"),
+]
+check(
+  OCRService.orderedLines(from: partialParent) == ["left middle right"],
+  "a parent keeps words its children do not cover",
+  "\(OCRService.orderedLines(from: partialParent))"
+)
+
 check(
   OCRService.orderedLines(from: [
     candidate(0.10, 0.700, 0.50, 0.030, "duplicated"),
