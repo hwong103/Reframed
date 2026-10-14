@@ -146,6 +146,7 @@ private struct RecentCaptureRow: View {
   }
 }
 
+@MainActor
 private enum RecentCaptureThumbnail {
   static func image(for capture: RecentCaptureData) -> NSImage? {
     let url = RecentCaptureStore.shared.fileURL(for: capture.id)
