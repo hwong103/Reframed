@@ -37,16 +37,31 @@ display containing its midpoint, and the behaviour is stated in the UI.
 
 ## R3 - window capture
 
-R3.1 Window capture uses the content filter's geometry with the window's own scale, and
-the realised output size is asserted rather than assumed.
-R3.2 Shadow is off and alpha is opaque by default. Both are recorded here so the result
-is reproducible, not accidental.
-R3.3 Child sheets and popovers belonging to the window are included; content clipped by
+R3.1 There are two window paths, and sharpness picks between them. When the target is
+fully on screen and nothing overlaps it, the window is cropped out of the display
+framebuffer, which is a 1:1 copy with no resampling. Otherwise the isolated
+content-filter path runs, using the filter's geometry and the window's own scale. The
+realised output size is asserted in both cases rather than assumed.
+R3.2 Coverage is re-checked after the asynchronous display grab, not only before it. A
+window that moved, or an occluder that appeared, falls through to the isolated path
+rather than cropping background pixels into the result.
+R3.3 Coverage is tested against every on-screen window above the target, including
+non-zero layers, excluding only the applications explicitly excluded from the capture.
+Floating panels, menus, tooltips and notifications therefore cannot be baked in.
+R3.4 The framebuffer path never carries a shadow - a shadow there would be the desktop
+the window sits on, not the window. The isolated path honours the shadow option, which
+the window picker toggles with Option. So the default window capture is sharp and
+shadowless, and a shadow is added deliberately rather than inherited. Beautify supplies
+a frame shadow for outputs that want one.
+R3.5 Child sheets and popovers belonging to the window are included; content clipped by
 the display edge is clipped, not rescaled.
-R3.4 Unsupported in P0 and surfaced as such: windows on other Spaces, minimised
+R3.6 Unsupported in P0 and surfaced as such: windows on other Spaces, minimised
 windows, and Reframed's own windows.
-R3.5 Our own chrome - selection overlays, pinned panels, webcam preview, capture
+R3.7 Our own chrome - selection overlays, pinned panels, webcam preview, capture
 toolbar - is excluded from every capture.
+R3.8 Accepted residual of the framebuffer path: transparent window regions and rounded
+corners carry through the desktop behind them, because that is genuinely what the
+display shows there. The isolated path does not have this property.
 
 ## R4 - activation and focus
 
@@ -62,11 +77,11 @@ capture started.
 R4.4 The still flow does not touch microphone, camera or accessibility permissions;
 Screen Recording alone gates it.
 R4.5 R4.2 governs region capture. Window capture is a separate, live contract: the
-frozen backdrop is used only to choose the target window, and the window itself is
-re-rendered in isolation when the selection is confirmed, so the result keeps the
-window's own transparency, corner rounding and shadow, and never includes an
-overlapping window. An animation inside a captured window can therefore differ from
-the frozen preview; that is accepted in exchange for an isolated, composited window.
+frozen backdrop chooses the target window, and the window is then re-read at the moment
+of confirmation - a sharp framebuffer crop when it is uncovered, an isolated composite
+when it is not, per R3. An animation inside a captured window can therefore differ from
+the frozen preview, and that is accepted in exchange for a result that never includes
+an overlapping window.
 
 ## R9 - inline annotation after confirm
 
