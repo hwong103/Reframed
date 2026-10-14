@@ -202,6 +202,7 @@
 		AB5C00000000000000000077 /* InlineAnnotationSession+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */; };
 		AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000078 /* BeautifyStyle.swift */; };
 		AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */; };
+		AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */; };
 		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
 		AC0000000000000000000022 /* AnnotationDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* AnnotationDocument.swift */; };
 		AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000013 /* AnnotationRenderer.swift */; };
@@ -507,6 +508,7 @@
 		AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Text.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000078 /* BeautifyStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeautifyStyle.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Beautify.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotSession+Repeat.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
 		AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+WindowPick.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationDragSource.swift; sourceTree = "<group>"; };
@@ -862,6 +864,7 @@
 				AB5C00000000000000000012 /* ScreenshotNaming.swift */,
 				AB5C00000000000000000013 /* ScreenshotResult.swift */,
 				AB5C00000000000000000014 /* ScreenshotSession.swift */,
+				AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */,
 				AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */,
 				AB5C00000000000000000015 /* StillCaptureService.swift */,
 				AB5C00000000000000000030 /* StillCaptureService+Window.swift */,
@@ -1428,6 +1431,7 @@
 				AB5C00000000000000000002 /* ScreenshotNaming.swift in Sources */,
 				AB5C00000000000000000003 /* ScreenshotResult.swift in Sources */,
 				AB5C00000000000000000004 /* ScreenshotSession.swift in Sources */,
+				AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */,
 				AB5C00000000000000000005 /* StillCaptureService.swift in Sources */,
 				AB5C00000000000000000031 /* StillCaptureService+Window.swift in Sources */,
 				AB5C00000000000000000006 /* ScreenshotCoordinator.swift in Sources */,

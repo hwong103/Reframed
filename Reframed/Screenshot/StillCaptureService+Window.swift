@@ -4,8 +4,15 @@ import Foundation
 import ScreenCaptureKit
 
 extension StillCaptureService {
-  func captureWindow(_ window: SCWindow, includeShadow: Bool = true) async throws -> ScreenshotResult {
+  func captureWindow(
+    _ window: SCWindow,
+    includeShadow: Bool = true,
+    excludingApplications: [SCRunningApplication] = []
+  ) async throws -> ScreenshotResult {
     try assertCapturable(window)
+    if isFullyOnScreen(window), !isCovered(window) {
+      return try await captureWindowFromScreen(window, excludingApplications: excludingApplications)
+    }
     let filter = SCContentFilter(desktopIndependentWindow: window)
     let geometry = filter.contentRect
     let scale = CGFloat(filter.pointPixelScale)
@@ -36,6 +43,54 @@ extension StillCaptureService {
       pointSize: CGSize(width: realised.width / scale, height: realised.height / scale),
       backingScale: scale
     )
+  }
+
+  func captureWindowFromScreen(
+    _ window: SCWindow,
+    excludingApplications: [SCRunningApplication]
+  ) async throws -> ScreenshotResult {
+    let displayID = displayID(for: window)
+    let display = try await captureDisplay(displayID, excludingApplications: excludingApplications)
+    let selection = SelectionRect(rect: windowFrameInAppKit(window), displayID: displayID)
+    return try crop(selection, from: display.image)
+  }
+
+  private func isCovered(_ window: SCWindow) -> Bool {
+    guard
+      let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+        as? [[String: Any]]
+    else {
+      return true
+    }
+    let ownPID = ProcessInfo.processInfo.processIdentifier
+    let target = window.frame
+    for entry in list {
+      let number = entry[kCGWindowNumber as String] as? CGWindowID ?? 0
+      if number == window.windowID {
+        return false
+      }
+      let owner = entry[kCGWindowOwnerPID as String] as? pid_t ?? 0
+      if owner == ownPID {
+        continue
+      }
+      let layer = entry[kCGWindowLayer as String] as? Int ?? 0
+      if layer != 0 {
+        continue
+      }
+      let alpha = entry[kCGWindowAlpha as String] as? Double ?? 1
+      if alpha <= 0.01 {
+        continue
+      }
+      guard let bounds = entry[kCGWindowBounds as String] as? CFDictionary,
+        let frame = CGRect(dictionaryRepresentation: bounds)
+      else {
+        continue
+      }
+      if frame.intersects(target) {
+        return true
+      }
+    }
+    return true
   }
 
   private func normalised(_ image: CGImage, to size: CGSize) -> CGImage {

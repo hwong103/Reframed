@@ -71,7 +71,13 @@ extension ScreenshotCoordinator {
     for windowID in windowIDs {
       do {
         let window = try await captureSession.resolveWindow(id: windowID)
-        results.append(try await captureSession.windowImage(window, includeShadow: includeShadow))
+        results.append(
+          try await captureSession.windowImage(
+            window,
+            includeShadow: includeShadow,
+            excludingApplications: exclusions
+          )
+        )
         capturedIDs.append(windowID)
       } catch {
         skipped += 1
