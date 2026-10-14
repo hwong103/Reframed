@@ -81,11 +81,15 @@ extension StillCaptureService {
       if alpha <= 0.01 {
         continue
       }
-      guard let bounds = entry[kCGWindowBounds as String] as? CFDictionary,
-        let frame = CGRect(dictionaryRepresentation: bounds)
+      guard let raw = entry[kCGWindowBounds as String] as? [String: Any],
+        let x = (raw["X"] as? NSNumber)?.doubleValue,
+        let y = (raw["Y"] as? NSNumber)?.doubleValue,
+        let width = (raw["Width"] as? NSNumber)?.doubleValue,
+        let height = (raw["Height"] as? NSNumber)?.doubleValue
       else {
         continue
       }
+      let frame = CGRect(x: x, y: y, width: width, height: height)
       if frame.intersects(target) {
         return true
       }
