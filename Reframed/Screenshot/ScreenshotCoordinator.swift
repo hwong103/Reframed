@@ -99,12 +99,13 @@ final class ScreenshotCoordinator {
   }
 
   func saveLastCapture() {
-    guard captureSession.lastResult != nil else {
+    guard let result = captureSession.lastResult else {
       refuse("There is no screenshot to save yet.")
       return
     }
     do {
       let url = try captureSession.saveLast()
+      RecentCaptureStore.shared.record(image: result.image, filename: url.lastPathComponent)
       let copied = captureSession.copyLastToClipboard()
       ScreenshotFeedbackWindow.show(
         copied ? "Screenshot saved" : "Saved, but the clipboard copy failed",
@@ -153,6 +154,7 @@ final class ScreenshotCoordinator {
       let result = try await capturedRegion(selection)
       lastWindowSelection = nil
       if ImageExporter.copyToPasteboard(result.image, fileURL: captureSession.lastSavedURL) {
+        RecentCaptureStore.shared.record(image: result.image, filename: ScreenshotNaming.previewName())
         ScreenshotFeedbackWindow.show("Copied to clipboard", near: NSEvent.mouseLocation)
       } else {
         present("Could not copy the screenshot to the clipboard.")
@@ -176,22 +178,6 @@ final class ScreenshotCoordinator {
       return try frameService.crop(selection, from: frozen)
     }
     return try await captureSession.frameImage(selection, excludingApplications: exclusions)
-  }
-
-  private func finishRepeatCapture() async {
-    defer { isCapturing = false }
-    do {
-      let outcome = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
-      if ImageExporter.copyToPasteboard(outcome.result.image, fileURL: captureSession.lastSavedURL) {
-        ScreenshotFeedbackWindow.show(outcome.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
-      } else {
-        present("Could not copy the screenshot to the clipboard.")
-      }
-    } catch {
-      present(error.localizedDescription)
-    }
-    restoreFocus(previousApplication)
-    previousApplication = nil
   }
 
 }

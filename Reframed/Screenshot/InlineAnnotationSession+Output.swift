@@ -29,6 +29,7 @@ extension InlineAnnotationSession {
     let item = NSPasteboardItem()
     var published = false
     if (try? ImageExporter.writePNG(image, to: url)) != nil {
+      RecentCaptureStore.shared.record(image: image, filename: url.lastPathComponent)
       published = item.setString(url.absoluteString, forType: .fileURL) || published
     }
     if let png = try? ImageExporter.pngData(from: image) {

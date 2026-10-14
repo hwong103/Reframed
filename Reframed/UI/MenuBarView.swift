@@ -8,6 +8,7 @@ struct MenuBarView: View {
   let onShowPermissions: () -> Void
 
   @State var recentProjects: [RecentProject] = []
+  @State var recentCaptures: [RecentCaptureData] = []
   @State var totalProjectCount: Int = 0
   @State var permissionsGranted = Permissions.allPermissionsGranted
   @Environment(\.colorScheme) private var colorScheme
@@ -73,6 +74,12 @@ struct MenuBarView: View {
 
       MenuBarDivider()
 
+      if !recentCaptures.isEmpty {
+        recentCapturesSection
+
+        MenuBarDivider()
+      }
+
       HoverEffectScope {
         HStack(spacing: 0) {
           Button {
@@ -119,8 +126,29 @@ struct MenuBarView: View {
     .task {
       await loadRecentProjects()
     }
+    .onAppear {
+      recentCaptures = RecentCaptureStore.shared.captures
+    }
     .onReceive(permissionTimer) { _ in
       permissionsGranted = Permissions.allPermissionsGranted
     }
+  }
+
+  private var recentCapturesSection: some View {
+    RecentCaptureStrip(
+      captures: recentCaptures,
+      onCopy: { capture in
+        onDismiss()
+        RecentCaptureStore.shared.copyToClipboard(capture)
+      },
+      onReveal: { capture in
+        onDismiss()
+        RecentCaptureStore.shared.reveal(capture)
+      },
+      onClear: {
+        RecentCaptureStore.shared.clear()
+        recentCaptures = []
+      }
+    )
   }
 }

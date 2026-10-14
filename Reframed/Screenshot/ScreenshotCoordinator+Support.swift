@@ -78,6 +78,23 @@ extension ScreenshotCoordinator {
     }
   }
 
+  func finishRepeatCapture() async {
+    defer { isCapturing = false }
+    do {
+      let outcome = try await captureSession.repeatLastCapture(excludingApplications: exclusions)
+      if ImageExporter.copyToPasteboard(outcome.result.image, fileURL: captureSession.lastSavedURL) {
+        RecentCaptureStore.shared.record(image: outcome.result.image, filename: ScreenshotNaming.previewName())
+        ScreenshotFeedbackWindow.show(outcome.notice ?? "Copied to clipboard", near: NSEvent.mouseLocation)
+      } else {
+        present("Could not copy the screenshot to the clipboard.")
+      }
+    } catch {
+      present(error.localizedDescription)
+    }
+    restoreFocus(previousApplication)
+    previousApplication = nil
+  }
+
   func confirmSelection(_ selection: SelectionRect) {
     selectionCoordinator.destroyAll()
     if isTextSnip {

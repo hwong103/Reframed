@@ -202,6 +202,8 @@
 		AB5C00000000000000000077 /* InlineAnnotationSession+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */; };
 		AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000078 /* BeautifyStyle.swift */; };
 		AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */; };
+		AB5C00000000000000000083 /* RecentCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000082 /* RecentCaptureStore.swift */; };
+		AB5C00000000000000000085 /* RecentCaptureStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000084 /* RecentCaptureStrip.swift */; };
 		AB5C0000000000000000007F /* InlineAnnotationSession+Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */; };
 		AB5C00000000000000000081 /* OCRService+Ordering.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000080 /* OCRService+Ordering.swift */; };
 		AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */; };
@@ -510,6 +512,8 @@
 		AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Text.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000078 /* BeautifyStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeautifyStyle.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Beautify.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000082 /* RecentCaptureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentCaptureStore.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000084 /* RecentCaptureStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentCaptureStrip.swift; sourceTree = "<group>"; };
 		AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotSession+Repeat.swift"; sourceTree = "<group>"; };
 		AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Commands.swift"; sourceTree = "<group>"; };
 		AB5C00000000000000000080 /* OCRService+Ordering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OCRService+Ordering.swift"; sourceTree = "<group>"; };
@@ -905,6 +909,8 @@
 				AC0000000000000000000011 /* AnnotationItem.swift */,
 				AB5C00000000000000000078 /* BeautifyStyle.swift */,
 				AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */,
+				AB5C00000000000000000082 /* RecentCaptureStore.swift */,
+				AB5C00000000000000000084 /* RecentCaptureStrip.swift */,
 				AC0000000000000000000012 /* AnnotationDocument.swift */,
 				AC0000000000000000000013 /* AnnotationRenderer.swift */,
 				AC0000000000000000000014 /* AnnotationRenderer+Shapes.swift */,
@@ -1479,6 +1485,8 @@
 				AC0000000000000000000021 /* AnnotationItem.swift in Sources */,
 				AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */,
 				AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */,
+				AB5C00000000000000000083 /* RecentCaptureStore.swift in Sources */,
+				AB5C00000000000000000085 /* RecentCaptureStrip.swift in Sources */,
 				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,
 				AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */,
 				AC0000000000000000000024 /* AnnotationRenderer+Shapes.swift in Sources */,
