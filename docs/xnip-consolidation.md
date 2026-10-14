@@ -3,10 +3,45 @@
 Scope for consolidating the Xnip screenshot-and-annotation workflow into this fork so
 one app covers capture, annotate, pin, OCR and export.
 
-Status: proposal, revised after an architecture review (see the Advisor review section
-at the end, which corrected two claims and repriced the phases). Not implemented.
+Status: implemented through P3 on `feat/rename-blur-and-export-naming`, except the
+recent captures strip. The plan below is kept as the design record; see "Delivery
+status" for what is actually built and what is left.
 Code references were read in this checkout at `feat/rename-blur-and-export-naming`
 (commit 144e185) during two inventory passes plus the review.
+
+## Delivery status
+
+Verified on 2026-10-14 against the installed fork (`0.14.7`) on commit `e06549e`.
+A green CI build is compilation only, not acceptance; the owner has not yet run the
+end-to-end daily workflows with a real mouse.
+
+- P0 capture and contract: built. Region, window and full-display stills; PNG plus TIFF
+  on the pasteboard; the file name prefix setting; repeat-last capture; selection shared
+  by callback. Window capture has two paths, a sharp framebuffer crop when the target is
+  uncovered and an isolated composite when it is not.
+- P1 annotation core: built. Arrow, rectangle, ellipse, line, pen, highlighter, text,
+  numbered steps, blur and opaque redaction, crop, undo and redo, copy and save with
+  annotations baked in, and drag-out.
+- P2 OCR and pinning: built. Whole-image and text-snip OCR, and pins that persist,
+  restore, and stay on their display across a screen-parameter change.
+- P3 polish: built except the recent captures strip. Beautify with padding, corner
+  radius, shadow and a background, plus a colour picker that already existed. The ruler
+  is dropped.
+- P4 scrolling capture: built as the constrained, user-driven version from the plan.
+
+Automated checks that protect the still lane, run from the repo root:
+
+- `scripts/checks/beautify-preview-parity.sh` - the beautified preview must be
+  pixel-identical to the export across nine style and density combinations.
+- `scripts/checks/ocr-line-order.sh` - Vision block and line observations must not
+  duplicate or drop text, and reading order must be deterministic.
+- `scripts/checks/annotation-preview-scale.sh` - the preview must use an area filter
+  when downscaling and exact sampling otherwise.
+
+Known residuals, none of which block daily use: transparent and rounded window areas
+carry the desktop behind them through the framebuffer path; mixed-display scales are
+unverified; annotation redraw cost on a scaled context is measured but not tuned;
+there is no capture history yet.
 
 ## Goal
 
