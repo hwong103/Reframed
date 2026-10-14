@@ -22,7 +22,7 @@ extension OCRService {
     for candidate in candidates.sorted(by: byArea) {
       let area = candidate.rect.width * candidate.rect.height
       let inside = kept.filter { covers(candidate.rect, $0.rect) }
-      let covered = inside.reduce(CGFloat.zero) { $0 + $1.rect.width * $1.rect.height }
+      let covered = unionArea(of: inside.map(\.rect))
       let largest = inside.reduce(CGFloat.zero) { max($0, $1.rect.width * $1.rect.height) }
       let duplicate = covered >= 0.9 * area && inside.contains { restates(candidate.text, $0.text) }
       let container =
@@ -33,6 +33,28 @@ extension OCRService {
       kept.append(candidate)
     }
     return kept
+  }
+
+  private static func unionArea(of rects: [CGRect]) -> CGFloat {
+    let xs = Array(Set(rects.map(\.minX) + rects.map(\.maxX))).sorted()
+    let ys = Array(Set(rects.map(\.minY) + rects.map(\.maxY))).sorted()
+    guard xs.count > 1, ys.count > 1 else { return 0 }
+    var total: CGFloat = 0
+    for x in 0..<(xs.count - 1) {
+      for y in 0..<(ys.count - 1) {
+        let cell = CGRect(
+          x: xs[x],
+          y: ys[y],
+          width: xs[x + 1] - xs[x],
+          height: ys[y + 1] - ys[y]
+        )
+        let centre = CGPoint(x: cell.midX, y: cell.midY)
+        if rects.contains(where: { $0.contains(centre) }) {
+          total += cell.width * cell.height
+        }
+      }
+    }
+    return total
   }
 
   private static func rows(of candidates: [Candidate]) -> [Line] {

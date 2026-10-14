@@ -13,6 +13,16 @@ struct RecentCaptureData: Codable, Identifiable {
 @MainActor
 protocol RecentCapturePersisting: AnyObject {
   var recentCaptures: [RecentCaptureData] { get set }
+  @discardableResult
+  func commitCaptureList(_ items: [RecentCaptureData]) -> Bool
+}
+
+extension RecentCapturePersisting {
+  @discardableResult
+  func commitCaptureList(_ items: [RecentCaptureData]) -> Bool {
+    recentCaptures = items
+    return true
+  }
 }
 
 @MainActor
@@ -42,11 +52,11 @@ final class RecentCaptureStore {
   init(
     persistence: RecentCapturePersisting,
     directory: URL,
-    byteLimit: Int = RecentCaptureStore.defaultByteLimit
+    byteLimit: Int? = nil
   ) {
     self.persistence = persistence
     self.directory = directory
-    self.byteLimit = byteLimit
+    self.byteLimit = byteLimit ?? Self.defaultByteLimit
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     pruneMissingFiles()
     removeOrphans()
@@ -81,7 +91,7 @@ final class RecentCaptureStore {
     while items.count > 1, items.count > Self.limit || byteSize(of: items) > byteLimit {
       evicted.append(items.removeLast())
     }
-    persistence.recentCaptures = items
+    guard persistence.commitCaptureList(items) else { return }
     removeFiles(for: evicted)
   }
 
@@ -98,8 +108,9 @@ final class RecentCaptureStore {
   }
 
   func clear() {
-    removeFiles(for: persistence.recentCaptures)
-    persistence.recentCaptures = []
+    let cleared = persistence.recentCaptures
+    guard persistence.commitCaptureList([]) else { return }
+    removeFiles(for: cleared)
   }
 
   private func pruneMissingFiles() {

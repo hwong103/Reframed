@@ -8,7 +8,13 @@ func check(_ passed: Bool, _ label: String, _ detail: String) {
   print("\(passed ? "PASS" : "FAIL") \(label) -- \(detail)")
 }
 
-func candidate(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ text: String)
+func candidate(
+  _ x: CGFloat,
+  _ y: CGFloat,
+  _ w: CGFloat,
+  _ h: CGFloat,
+  _ text: String
+)
   -> OCRService.Candidate
 {
   (rect: CGRect(x: x, y: y, width: w, height: h), text: text)
@@ -107,6 +113,35 @@ check(
   OCRService.orderedLines(from: partialParent) == ["left middle right"],
   "a parent keeps words its children do not cover",
   "\(OCRService.orderedLines(from: partialParent))"
+)
+
+// Three children that overlap across the same left half of the parent. Their areas sum
+// to 1.35x the parent while their union is exactly half of it, and together they carry
+// every word, so the parent is only redundant if the areas are summed instead of unioned.
+let overlappingChildren: [OCRService.Candidate] = [
+  candidate(0.10, 0.400, 0.80, 0.030, "Alpha Beta Gamma Delta"),
+  candidate(0.10, 0.400, 0.36, 0.030, "Alpha Beta Delta"),
+  candidate(0.12, 0.400, 0.36, 0.030, "Alpha Gamma Delta"),
+  candidate(0.14, 0.400, 0.36, 0.030, "Beta Gamma Delta"),
+]
+check(
+  OCRService.orderedLines(from: overlappingChildren) == ["Alpha Beta Gamma Delta"],
+  "overlapping children do not fake coverage of a parent",
+  "\(OCRService.orderedLines(from: overlappingChildren))"
+)
+
+// Children whose union really is the whole parent, each smaller than half of it and
+// carrying a word of their own, still collapse the parent into one line.
+let tiledParent: [OCRService.Candidate] = [
+  candidate(0.10, 0.180, 0.80, 0.060, "One Two Three"),
+  candidate(0.10, 0.180, 0.30, 0.060, "One"),
+  candidate(0.40, 0.180, 0.25, 0.060, "Two"),
+  candidate(0.65, 0.180, 0.25, 0.060, "Three"),
+]
+check(
+  OCRService.orderedLines(from: tiledParent) == ["One Two Three"],
+  "children that tile a parent confidently drop it",
+  "\(OCRService.orderedLines(from: tiledParent))"
 )
 
 check(

@@ -137,11 +137,12 @@ final class StateService {
     data = decoded
   }
 
-  func save() {
+  @discardableResult
+  func save() -> Bool {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    guard let raw = try? encoder.encode(data) else { return }
-    try? raw.write(to: fileURL, options: .atomic)
+    guard let raw = try? encoder.encode(data) else { return false }
+    return (try? raw.write(to: fileURL, options: .atomic)) != nil
   }
 }
 
@@ -180,4 +181,10 @@ struct PinnedImageData: Codable {
   var png: Data
 }
 
-extension StateService: RecentCapturePersisting {}
+extension StateService: RecentCapturePersisting {
+  @discardableResult
+  func commitCaptureList(_ items: [RecentCaptureData]) -> Bool {
+    data.recentCaptures = items
+    return save()
+  }
+}
