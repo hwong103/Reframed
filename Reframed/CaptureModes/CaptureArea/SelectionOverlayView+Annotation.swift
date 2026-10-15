@@ -118,18 +118,17 @@ extension SelectionOverlayView {
   }
 
   func layoutComposedAnnotation(session: InlineAnnotationSession) {
-    let margin: CGFloat = 24
-    let inset = bounds.insetBy(dx: margin, dy: margin)
-    composedViewport.rect = inset.width >= 2 && inset.height >= 2 ? inset : bounds
+    let backing = window?.backingScaleFactor ?? 2
+    composedViewport.rect = bounds
     if !composedViewport.isReady {
       composedViewport.scale = AnnotationCanvasView.viewportFitScale(
         viewport: composedViewport.rect.size,
-        content: session.canvas.contentSize
+        content: session.canvas.contentSize,
+        pixelsPerPoint: backing
       )
       composedViewport.isReady = true
       composedViewport.origin = topAlignedComposedOrigin(session: session)
     }
-    let backing = window?.backingScaleFactor ?? 2
     let rect = composedViewport.rect
     let snapped = CGRect(
       origin: CGPoint(
@@ -187,7 +186,8 @@ extension SelectionOverlayView {
     guard let session = annotationSession, !session.isResizable else { return }
     composedViewport.scale = AnnotationCanvasView.viewportFitScale(
       viewport: composedViewport.rect.size,
-      content: session.canvas.contentSize
+      content: session.canvas.contentSize,
+      pixelsPerPoint: window?.backingScaleFactor ?? 2
     )
     composedViewport.origin = topAlignedComposedOrigin(session: session)
     applyComposedViewportOrigin(session: session)

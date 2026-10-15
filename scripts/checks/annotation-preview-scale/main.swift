@@ -9,9 +9,7 @@ func check(_ passed: Bool, _ label: String, _ detail: String) {
   print("\(passed ? "PASS" : "FAIL") \(label) -- \(detail)")
 }
 
-func makeSource() -> CGImage {
-  let width = 1600
-  let height = 1000
+func makeSource(width: Int = 1600, height: Int = 1000) -> CGImage {
   let context = CGContext(
     data: nil,
     width: width,
@@ -27,7 +25,8 @@ func makeSource() -> CGImage {
     .font: NSFont.systemFont(ofSize: 17),
     .foregroundColor: NSColor.black,
   ]
-  for line in 0..<26 {
+  let lines = max(1, height / 38)
+  for line in 0..<lines {
     let string = NSAttributedString(
       string: "Invoice 4092 line \(line) total $18,404.22 due 14 October",
       attributes: body
@@ -44,7 +43,7 @@ func makeSource() -> CGImage {
         strip,
         in: CGRect(
           x: 30,
-          y: 950 - CGFloat(line) * 36,
+          y: CGFloat(height) - 50 - CGFloat(line) * 36,
           width: CGFloat(strip.width),
           height: CGFloat(strip.height)
         )
@@ -116,6 +115,72 @@ func canvasRender(source: CGImage, scale: CGFloat) -> CGImage? {
   return context.makeImage()
 }
 
+struct ComposedCase {
+  let label: String
+  let overlay: CGSize
+  let pixelsPerPoint: CGFloat
+  let capture: CGSize
+}
+
+let composedCases = [
+  ComposedCase(
+    label: "overlay 3440x1440 at 1x, capture 1720x1410",
+    overlay: CGSize(width: 3440, height: 1440),
+    pixelsPerPoint: 1,
+    capture: CGSize(width: 1720, height: 1410)
+  ),
+  ComposedCase(
+    label: "overlay 1512x982 at 2x, capture 1720x1410",
+    overlay: CGSize(width: 1512, height: 982),
+    pixelsPerPoint: 2,
+    capture: CGSize(width: 1720, height: 1410)
+  ),
+  ComposedCase(
+    label: "overlay 1440x2560 at 2x, capture 1720x1410",
+    overlay: CGSize(width: 1440, height: 2560),
+    pixelsPerPoint: 2,
+    capture: CGSize(width: 1720, height: 1410)
+  ),
+]
+
+func percent(_ value: CGFloat) -> String {
+  String(format: "%.1f%%", value * 100)
+}
+
+@MainActor
+func composedDefaultCheck() {
+  for testCase in composedCases {
+    let source = makeSource(
+      width: Int(testCase.capture.width),
+      height: Int(testCase.capture.height)
+    )
+    let scale = AnnotationCanvasView.viewportFitScale(
+      viewport: testCase.overlay,
+      content: testCase.capture,
+      pixelsPerPoint: testCase.pixelsPerPoint
+    )
+    let magnification = scale * testCase.pixelsPerPoint
+    let inset = min(
+      (testCase.overlay.width - 48) / testCase.capture.width,
+      (testCase.overlay.height - 48) / testCase.capture.height
+    )
+    let previous = min(1, inset) * testCase.pixelsPerPoint
+    let rendered = canvasRender(source: source, scale: magnification)
+    let difference = rendered.map { meanAbsoluteDifference($0, source) } ?? .infinity
+    let size = rendered.map { "\($0.width)x\($0.height)" } ?? "nil"
+    check(
+      magnification == 1,
+      "default composed preview sits at actual pixels -- \(testCase.label)",
+      "device magnification \(percent(magnification)), was \(percent(previous))"
+    )
+    check(
+      difference == 0,
+      "default composed preview draws the capture's own pixels -- \(testCase.label)",
+      "preview \(size) vs capture \(source.width)x\(source.height), mean |diff| \(String(format: "%.3f", difference))"
+    )
+  }
+}
+
 @MainActor
 func run() {
   let source = makeSource()
@@ -146,6 +211,8 @@ func run() {
       )
     }
   }
+
+  composedDefaultCheck()
 
   print(failures == 0 ? "ALL CHECKS PASS" : "\(failures) CHECK(S) FAILED")
   exit(failures == 0 ? 0 : 1)

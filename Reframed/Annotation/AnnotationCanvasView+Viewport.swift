@@ -1,11 +1,21 @@
 import CoreGraphics
 
 extension AnnotationCanvasView {
-  static func viewportFitScale(viewport: CGSize, content: CGSize) -> CGFloat {
-    guard viewport.width > 0, viewport.height > 0, content.width > 0, content.height > 0 else {
+  static func viewportFitScale(
+    viewport: CGSize,
+    content: CGSize,
+    pixelsPerPoint: CGFloat
+  ) -> CGFloat {
+    guard
+      viewport.width > 0,
+      viewport.height > 0,
+      content.width > 0,
+      content.height > 0,
+      pixelsPerPoint > 0
+    else {
       return 1
     }
-    return min(1, viewport.width / content.width, viewport.height / content.height)
+    return min(1 / pixelsPerPoint, viewport.width / content.width, viewport.height / content.height)
   }
 
   static func clampedViewportOrigin(_ origin: CGPoint, content: CGSize, viewport: CGRect) -> CGPoint {
