@@ -144,17 +144,17 @@ extension SelectionOverlayView {
 
   func annotationHitTest(_ point: NSPoint) -> NSView? {
     guard let session = annotationSession else { return nil }
+    let editor = session.canvas.textScrollView
+    if session.canvas.pendingText != nil, !editor.isHidden, editor.window != nil {
+      let local = editor.convert(point, from: self)
+      if editor.bounds.contains(local) {
+        return editor
+      }
+    }
     for host in [session.closeHost, session.toolbarHost, session.badgeHost] where host.superview != nil {
       let local = host.convert(point, from: self)
       if host.bounds.contains(local) {
         return host
-      }
-    }
-    let editor = session.canvas.textScrollView
-    if session.canvas.pendingText != nil, editor.superview != nil {
-      let local = editor.convert(point, from: self)
-      if editor.bounds.contains(local) {
-        return editor
       }
     }
     return nil
