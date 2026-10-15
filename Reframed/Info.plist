@@ -13,7 +13,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>Jan Kuri &lt;jkuri88@gmail.com&gt;</string>
 	<key>LSUIElement</key>
-	<false/>
+	<true/>
 	<key>SUFeedURL</key>
 	<string>https://github.com/hwong103/Reframed/releases/download/appcast/appcast.xml</string>
 	<key>SUPublicEDKey</key>

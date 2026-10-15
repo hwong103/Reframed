@@ -88,7 +88,7 @@ screenshot ships than after.
    the realised output dimensions. Window lookup today covers on-screen layer-zero
    windows and excludes Reframed itself (`App/WindowController.swift:34-84`), and
    shareable-content enumeration is on-screen only (`App/Permissions.swift:28`).
-5. Activation. `LSUIElement` is false (`Reframed/Info.plist:15`) and selection
+5. Activation. `LSUIElement` is true (`Reframed/Info.plist:15`) and selection
    activates the app, which can dismiss the very menu being photographed. Decide
    whether immediate capture freezes display pixels before activation while delayed
    capture takes fresh pixels after selection, then restore the previous foreground app
