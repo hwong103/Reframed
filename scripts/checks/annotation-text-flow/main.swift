@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import CoreText
 import Foundation
 
 var failures = 0
@@ -97,6 +98,37 @@ func describe(_ rect: CGRect) -> String {
   String(format: "x %.1f...%.1f  y %.1f...%.1f", rect.minX, rect.maxX, rect.minY, rect.maxY)
 }
 
+func laidOutLineRects(_ item: AnnotationItem) -> [CGRect] {
+  guard let color = CGColor(colorSpace: AnnotationRenderer.colorSpace, components: [0, 0, 0, 1]) else {
+    return []
+  }
+  let attributed = AnnotationTextLayout.attributedText(
+    item.style.text,
+    fontSize: item.style.fontSize,
+    color: color
+  )
+  let framesetter = CTFramesetterCreateWithAttributedString(attributed)
+  let size = CGSize(width: item.bounds.width, height: item.bounds.height)
+  let path = CGPath(rect: CGRect(origin: .zero, size: size), transform: nil)
+  let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
+  let lines = CTFrameGetLines(frame) as? [CTLine] ?? []
+  var origins = [CGPoint](repeating: .zero, count: lines.count)
+  CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
+  return zip(lines, origins).map { line, origin in
+    let ink = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+    return CGRect(
+      x: origin.x + ink.minX,
+      y: origin.y + ink.minY,
+      width: ink.width,
+      height: ink.height
+    )
+  }
+}
+
+func laidOutLineCount(_ text: String, _ fontSize: CGFloat, _ width: CGFloat) -> Int {
+  AnnotationTextLayout.layout(text: text, fontSize: fontSize, width: width).lines
+}
+
 @MainActor
 func run() {
   let pixelWidth = 640
@@ -175,6 +207,8 @@ func run() {
     fontSize: resized.style.fontSize,
     width: resized.bounds.width
   )
+  let resizedRects = laidOutLineRects(resized)
+  let resizedExpected = laidOutLineCount(resized.style.text, resized.style.fontSize, resized.bounds.width)
   check(
     resized.bounds.width <= wrapNarrow + 0.5,
     "resize: the box takes the dragged width",
@@ -195,6 +229,11 @@ func run() {
     "resize: the font size is unchanged",
     "fontSize \(resized.style.fontSize)pt before and after"
   )
+  check(
+    resizedRects.count == resizedExpected,
+    "resize: the frame lays out every wrapped line, none dropped",
+    "\(resizedRects.count) lines drawn, \(resizedExpected) laid out, last line ink bottom \(String(format: "%.1f", resizedRects.map(\.minY).min() ?? 0)) in a \(String(format: "%.1f", resized.bounds.height))pt box"
+  )
 
   if let ink = textInk(document: model.document, image: source) {
     check(
@@ -210,6 +249,81 @@ func run() {
   } else {
     check(false, "resize: the re-flowed text renders inside the new width", "no ink found")
   }
+
+  let dragModel = AnnotationEditorModel(image: source, reference: reference)
+  dragModel.fontSize = fontSize
+  let dragCanvas = AnnotationCanvasView(model: dragModel)
+  dragCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var dragItem = AnnotationItem(kind: .text, style: dragModel.makeStyle(for: .text), start: CGPoint(x: 30, y: 30))
+  dragItem.style.text = bodyText
+  dragItem.end = CGPoint(x: 30 + narrowBox.width, y: 30 + narrowBox.height)
+  dragModel.commit { $0.append(dragItem) }
+  let beforeDrag = dragItem.bounds
+  dragCanvas.updateResize(
+    id: dragItem.id,
+    original: dragItem,
+    originalRect: beforeDrag,
+    handle: .bottom,
+    to: CGPoint(x: beforeDrag.midX, y: beforeDrag.maxY + 30)
+  )
+  let slackened = dragModel.document.item(id: dragItem.id) ?? dragItem
+  check(
+    abs(slackened.bounds.height - (beforeDrag.height + 30)) <= 0.5 && abs(slackened.bounds.minY - beforeDrag.minY) <= 0.5,
+    "drag: the bottom handle adds slack below the text",
+    String(
+      format: "height %.1f to %.1f, top %.1f to %.1f",
+      beforeDrag.height,
+      slackened.bounds.height,
+      beforeDrag.minY,
+      slackened.bounds.minY
+    )
+  )
+  dragCanvas.updateResize(
+    id: dragItem.id,
+    original: slackened,
+    originalRect: slackened.bounds.standardized,
+    handle: .top,
+    to: CGPoint(x: slackened.bounds.midX, y: slackened.bounds.minY - 25)
+  )
+  let raised = dragModel.document.item(id: dragItem.id) ?? slackened
+  check(
+    abs(raised.bounds.maxY - slackened.bounds.maxY) <= 0.5 && abs(raised.bounds.height - (slackened.bounds.height + 25)) <= 0.5,
+    "drag: the top handle keeps the bottom edge anchored",
+    String(
+      format: "bottom %.1f to %.1f, height %.1f to %.1f",
+      slackened.bounds.maxY,
+      raised.bounds.maxY,
+      slackened.bounds.height,
+      raised.bounds.height
+    )
+  )
+  dragCanvas.updateResize(
+    id: dragItem.id,
+    original: raised,
+    originalRect: raised.bounds.standardized,
+    handle: .top,
+    to: CGPoint(x: raised.bounds.midX, y: raised.bounds.maxY - 4)
+  )
+  let squashed = dragModel.document.item(id: dragItem.id) ?? raised
+  check(
+    squashed.bounds.height + 0.5
+      >= AnnotationTextLayout.boxSize(
+        text: squashed.style.text,
+        fontSize: squashed.style.fontSize,
+        width: squashed.bounds.width
+      ).height,
+    "drag: a crushed top handle still holds every line",
+    String(
+      format: "height %.1f, laid-out text %.1f, bottom %.1f",
+      squashed.bounds.height,
+      AnnotationTextLayout.boxSize(
+        text: squashed.style.text,
+        fontSize: squashed.style.fontSize,
+        width: squashed.bounds.width
+      ).height,
+      squashed.bounds.maxY
+    )
+  )
 
   let editModel = AnnotationEditorModel(image: source, reference: reference)
   editModel.fontSize = fontSize
@@ -289,6 +403,149 @@ func run() {
   } else {
     check(false, "editing: the typed text commits as one item", "no committed item")
   }
+
+  let fontModel = AnnotationEditorModel(image: source, reference: reference)
+  fontModel.fontSize = fontSize
+  let fontCanvas = AnnotationCanvasView(model: fontModel)
+  fontCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var scaled = AnnotationItem(kind: .text, style: fontModel.makeStyle(for: .text), start: CGPoint(x: 40, y: 40))
+  scaled.style.text = bodyText
+  scaled.end = CGPoint(x: 40 + wideBox.width, y: 40 + wideBox.height)
+  scaled = AnnotationTextLayout.fitted(scaled)
+  fontModel.commit { $0.append(scaled) }
+  fontModel.select(scaled.id)
+  fontModel.setFontSize(fontSize + 18)
+  if let grown = fontModel.document.item(id: scaled.id) {
+    let grownLines = laidOutLineCount(grown.style.text, grown.style.fontSize, grown.bounds.width)
+    let grownRects = laidOutLineRects(grown)
+    let inside = grownRects.allSatisfy {
+      $0.minX >= -2 && $0.maxX <= grown.bounds.width + 2 && $0.minY >= -2 && $0.maxY <= grown.bounds.height + 2
+    }
+    check(
+      grown.style.text == scaled.style.text,
+      "font size: the text is unchanged",
+      "\(grown.style.text.count) characters before and after"
+    )
+    check(
+      grown.bounds.height + 0.5
+        >= AnnotationTextLayout.boxSize(
+          text: grown.style.text,
+          fontSize: grown.style.fontSize,
+          width: grown.bounds.width
+        ).height,
+      "font size: the box grows to hold the laid-out text",
+      String(
+        format: "font %.0fpt to %.0fpt, box %.1fpt tall, laid-out text %.1fpt",
+        scaled.style.fontSize,
+        grown.style.fontSize,
+        grown.bounds.height,
+        AnnotationTextLayout.boxSize(
+          text: grown.style.text,
+          fontSize: grown.style.fontSize,
+          width: grown.bounds.width
+        ).height
+      )
+    )
+    check(
+      grownRects.count == grownLines,
+      "font size: every laid-out line is in the frame",
+      "\(grownRects.count) lines drawn, \(grownLines) laid out"
+    )
+    check(
+      inside,
+      "font size: every line's ink is inside the box",
+      "last line ink bottom \(String(format: "%.1f", grownRects.map(\.minY).min() ?? 0)) in a \(String(format: "%.1f", grown.bounds.height))pt box, ink bottom \(String(format: "%.1f", grownRects.map(\.maxY).max() ?? 0)) at the top"
+    )
+    if let ink = textInk(document: fontModel.document, image: source) {
+      check(
+        ink.maxX <= grown.bounds.maxX + 1 && ink.maxY <= grown.bounds.maxY + 1,
+        "font size: the larger text still renders inside the box",
+        "ink bottom \(String(format: "%.1f", ink.maxY)) vs box bottom \(String(format: "%.1f", grown.bounds.maxY))"
+      )
+    } else {
+      check(false, "font size: the larger text still renders inside the box", "no ink found")
+    }
+  } else {
+    check(false, "font size: the item survives the style change", "missing item after setFontSize")
+  }
+
+  let tinyModel = AnnotationEditorModel(image: source, reference: reference)
+  tinyModel.fontSize = fontSize
+  let tinyCanvas = AnnotationCanvasView(model: tinyModel)
+  tinyCanvas.frame = CGRect(x: 0, y: 0, width: 192, height: 137)
+  let tinyScale = tinyCanvas.currentLayout().scale
+  tinyCanvas.beginTextEditing(at: CGPoint(x: 60, y: 70))
+  tinyCanvas.textEditor.string = bodyText
+  tinyCanvas.layoutTextEditor()
+  let tinyPointSize = tinyCanvas.textEditor.font?.pointSize ?? 0
+  let tinyVisible = tinyCanvas.visibleCanvasRect()
+  let tinyWidth = min(AnnotationPresets.defaultTextEditorWidth, tinyVisible.width)
+  let tinyTextWidth = max(tinyWidth - AnnotationPresets.defaultTextEditorPadding * 2, 1)
+  var tinyUsed: CGFloat = 0
+  if let layoutManager = tinyCanvas.textEditor.layoutManager,
+    let container = tinyCanvas.textEditor.textContainer
+  {
+    layoutManager.ensureLayout(for: container)
+    tinyUsed = layoutManager.usedRect(for: container).height
+  }
+  let tinyShared = AnnotationTextLayout.boxSize(text: bodyText, fontSize: tinyPointSize, width: tinyTextWidth).height
+  check(
+    abs(tinyScale - 0.25) <= 0.001,
+    "small scale: the canvas resolves to 0.25",
+    String(format: "scale %.3f on a %dx%d canvas", tinyScale, pixelWidth, pixelHeight)
+  )
+  check(
+    abs(tinyPointSize - fontSize * tinyScale) <= 0.001,
+    "small scale: the editor font is the shared font size, no independent floor",
+    String(format: "editor %.2fpt, shared layout %.2fpt", tinyPointSize, fontSize * tinyScale)
+  )
+  check(
+    abs(tinyUsed - tinyShared) <= 2,
+    "small scale: the editor lays the text out at the shared height",
+    String(format: "editor %.1fpt, shared layout %.1fpt", tinyUsed, tinyShared)
+  )
+
+  let container = NSView(frame: CGRect(x: 0, y: 0, width: 200, height: 120))
+  container.wantsLayer = true
+  container.layer?.masksToBounds = true
+  let clipModel = AnnotationEditorModel(image: source, reference: reference)
+  clipModel.fontSize = fontSize
+  let clipCanvas = AnnotationCanvasView(model: clipModel)
+  clipCanvas.frame = CGRect(origin: CGPoint(x: -50, y: -40), size: CGSize(width: pixelWidth, height: pixelHeight))
+  container.addSubview(clipCanvas)
+  let clipVisible = clipCanvas.visibleCanvasRect()
+  let clickView = CGPoint(x: clipVisible.midX - 30, y: clipVisible.minY + 50)
+  clipCanvas.beginTextEditing(at: clipCanvas.sourcePoint(clickView))
+  clipCanvas.textEditor.string = bodyText
+  clipCanvas.layoutTextEditor()
+  let scrollFrame = clipCanvas.textScrollView.frame
+  var clipUsed: CGFloat = 0
+  if let layoutManager = clipCanvas.textEditor.layoutManager,
+    let textContainer = clipCanvas.textEditor.textContainer
+  {
+    layoutManager.ensureLayout(for: textContainer)
+    clipUsed = layoutManager.usedRect(for: textContainer).height
+  }
+  check(
+    clipVisible.insetBy(dx: -0.5, dy: -0.5).contains(scrollFrame),
+    "small capture: the editor stays inside the visible capture",
+    "editor \(describe(scrollFrame)) in visible \(describe(clipVisible))"
+  )
+  check(
+    clipCanvas.textEditor.frame.height + 0.5 >= clipUsed + AnnotationPresets.defaultTextEditorPadding * 2,
+    "small capture: the editor document holds every line, none clipped",
+    String(
+      format: "document %.1fpt, text %.1fpt plus %.0fpt padding",
+      clipCanvas.textEditor.frame.height,
+      clipUsed,
+      AnnotationPresets.defaultTextEditorPadding * 2
+    )
+  )
+  check(
+    clipCanvas.textScrollView.hasVerticalScroller,
+    "small capture: the editor scrolls when the text outgrows the capture",
+    "hasVerticalScroller \(clipCanvas.textScrollView.hasVerticalScroller), editor \(describe(scrollFrame))"
+  )
 
   print(failures == 0 ? "ALL CHECKS PASS" : "\(failures) CHECK(S) FAILED")
   exit(failures == 0 ? 0 : 1)

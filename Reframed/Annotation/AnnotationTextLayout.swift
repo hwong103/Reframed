@@ -1,6 +1,12 @@
+import AppKit
 import CoreGraphics
 import CoreText
 import Foundation
+
+enum AnnotationTextAnchor {
+  case top
+  case bottom
+}
 
 enum AnnotationTextLayout {
   struct Layout: Equatable {
@@ -8,10 +14,16 @@ enum AnnotationTextLayout {
     let height: CGFloat
   }
 
+  static let fontName = "Helvetica"
+
   static func font(size: CGFloat) -> CTFont {
     let pointSize = max(1, size)
-    return CTFontCreateUIFontForLanguage(.system, pointSize, nil)
-      ?? CTFontCreateWithName("Helvetica" as CFString, pointSize, nil)
+    return CTFontCreateWithName(fontName as CFString, pointSize, nil)
+  }
+
+  static func nsFont(size: CGFloat) -> NSFont {
+    let pointSize = max(1, size)
+    return NSFont(name: fontName, size: pointSize) ?? NSFont.systemFont(ofSize: pointSize)
   }
 
   static func attributedText(_ text: String, fontSize: CGFloat, color: CGColor? = nil) -> NSAttributedString {
@@ -30,27 +42,20 @@ enum AnnotationTextLayout {
     guard attributed.length > 0 else {
       return Layout(lines: 0, height: lineHeight)
     }
-    let typesetter = CTTypesetterCreateWithAttributedString(attributed)
-    let limit = Double(max(width, 1))
-    var offset = 0
-    var lines = 0
-    var height: CGFloat = 0
-    while offset < attributed.length {
-      let count = CTTypesetterSuggestLineBreak(typesetter, offset, limit)
-      guard count > 0 else { break }
-      let line = CTTypesetterCreateLine(typesetter, CFRange(location: offset, length: count))
-      var ascent: CGFloat = 0
-      var descent: CGFloat = 0
-      var leading: CGFloat = 0
-      CTLineGetTypographicBounds(line, &ascent, &descent, &leading)
-      height += ascent + descent + leading
-      lines += 1
-      offset += count
-    }
-    guard lines > 0 else {
+    let framesetter = CTFramesetterCreateWithAttributedString(attributed)
+    let probe: CGFloat = 100_000
+    let path = CGPath(rect: CGRect(x: 0, y: 0, width: max(width, 1), height: probe), transform: nil)
+    let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
+    let lines = CTFrameGetLines(frame) as? [CTLine] ?? []
+    guard let last = lines.last else {
       return Layout(lines: 0, height: lineHeight)
     }
-    return Layout(lines: lines, height: ceil(height))
+    var origins = [CGPoint](repeating: .zero, count: lines.count)
+    CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
+    var descent: CGFloat = 0
+    CTLineGetTypographicBounds(last, nil, &descent, nil)
+    let bottom = (origins.last?.y ?? probe) - descent
+    return Layout(lines: lines.count, height: max(ceil(probe - bottom), lineHeight))
   }
 
   static func lineHeight(fontSize: CGFloat) -> CGFloat {
@@ -68,6 +73,19 @@ enum AnnotationTextLayout {
     let wrap = max(width, 1)
     let layout = layout(text: text, fontSize: fontSize, width: wrap)
     return CGSize(width: wrap, height: max(layout.height, lineHeight(fontSize: fontSize)))
+  }
+
+  static func fitted(_ item: AnnotationItem, anchor: AnnotationTextAnchor = .top) -> AnnotationItem {
+    guard item.kind == .text else { return item }
+    let box = item.bounds.standardized
+    let width = max(box.width, 1)
+    let needed = boxSize(text: item.style.text, fontSize: item.style.fontSize, width: width).height
+    let height = max(box.height, needed)
+    let minY = anchor == .top ? box.minY : box.maxY - height
+    var result = item
+    result.start = CGPoint(x: box.minX, y: minY)
+    result.end = CGPoint(x: box.minX + width, y: minY + height)
+    return result
   }
 
   static func frame(text: String, fontSize: CGFloat, color: CGColor, size: CGSize) -> CTFrame? {

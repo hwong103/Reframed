@@ -142,6 +142,7 @@ final class AnnotationEditorModel {
   private func restyleSelection(_ transform: (inout AnnotationStyle) -> Void) {
     guard let id = selectionID, var item = stack.document.item(id: id) else { return }
     transform(&item.style)
+    item = AnnotationTextLayout.fitted(item)
     commit(key: "style-\(id.uuidString)") { $0.replace(id: id, with: item) }
   }
 }
