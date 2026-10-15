@@ -102,20 +102,26 @@ extension AnnotationRenderer {
   }
 
   static func drawText(_ item: AnnotationItem, in context: CGContext, viewport: Viewport) {
-    guard !item.style.text.isEmpty else {
+    let box = viewport.rect(item.bounds.standardized)
+    guard box.width >= 1, box.height >= 1 else {
       return
     }
-    let font = CTFontCreateWithName("Helvetica" as CFString, item.style.fontSize, nil)
-    let attributes: [NSAttributedString.Key: Any] = [
-      NSAttributedString.Key(kCTFontAttributeName as String): font,
-      NSAttributedString.Key(kCTForegroundColorAttributeName as String): cgColor(item.style.strokeColor),
-    ]
-    let line = CTLineCreateWithAttributedString(NSAttributedString(string: item.style.text, attributes: attributes))
-    let anchor = viewport.point(item.start)
+    guard
+      let frame = AnnotationTextLayout.frame(
+        text: item.style.text,
+        fontSize: item.style.fontSize,
+        color: cgColor(item.style.strokeColor),
+        size: box.size
+      )
+    else {
+      return
+    }
     context.saveGState()
     context.setAlpha(item.style.opacity)
-    context.textPosition = CGPoint(x: anchor.x, y: anchor.y - CTFontGetAscent(font))
-    CTLineDraw(line, context)
+    context.clip(to: box)
+    context.translateBy(x: box.minX, y: box.minY)
+    context.textMatrix = .identity
+    CTFrameDraw(frame, context)
     context.restoreGState()
   }
 

@@ -21,6 +21,7 @@ SOURCES=(
   Reframed/Annotation/AnnotationRenderer+Beautify.swift
   Reframed/Annotation/AnnotationRenderer+Effects.swift
   Reframed/Annotation/AnnotationRenderer+Shapes.swift
+  Reframed/Annotation/AnnotationTextLayout.swift
   Reframed/Annotation/BeautifyStyle.swift
   Reframed/Compositor/BackgroundStyle.swift
   Reframed/Compositor/GradientPresets.swift

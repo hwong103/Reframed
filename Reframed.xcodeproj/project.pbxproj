@@ -222,6 +222,7 @@
 		AC000000000000000000002D /* AnnotationCanvasView+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001D /* AnnotationCanvasView+Text.swift */; };
 		AC000000000000000000002E /* AnnotationToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001E /* AnnotationToolbarView.swift */; };
 		AC000000000000000000002F /* AnnotationEditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001F /* AnnotationEditorWindowController.swift */; };
+		AC0000000000000000000030 /* AnnotationTextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000020 /* AnnotationTextLayout.swift */; };
 		A50000000000000000000001 /* MouseClickMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000001 /* MouseClickMonitor.swift */; };
 		A50000000000000000000002 /* MouseClickWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000002 /* MouseClickWindow.swift */; };
 		A60000000000000000000001 /* CodableColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000001 /* CodableColor.swift */; };
@@ -539,6 +540,7 @@
 		AC000000000000000000001D /* AnnotationCanvasView+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Text.swift"; sourceTree = "<group>"; };
 		AC000000000000000000001E /* AnnotationToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolbarView.swift; sourceTree = "<group>"; };
 		AC000000000000000000001F /* AnnotationEditorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditorWindowController.swift; sourceTree = "<group>"; };
+		AC0000000000000000000020 /* AnnotationTextLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationTextLayout.swift; sourceTree = "<group>"; };
 		B432E80EDC8E91A6B74634AC /* VideoPreviewView+Update.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "VideoPreviewView+Update.swift"; sourceTree = "<group>"; };
 		B4B39BCCC031C1D78AE47B52 /* SelectionOverlayView+Controls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Controls.swift"; sourceTree = "<group>"; };
 		B50000000000000000000001 /* MouseClickMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseClickMonitor.swift; sourceTree = "<group>"; };
@@ -914,6 +916,7 @@
 				AC0000000000000000000012 /* AnnotationDocument.swift */,
 				AC0000000000000000000013 /* AnnotationRenderer.swift */,
 				AC0000000000000000000014 /* AnnotationRenderer+Shapes.swift */,
+				AC0000000000000000000020 /* AnnotationTextLayout.swift */,
 				AC0000000000000000000015 /* AnnotationRenderer+Effects.swift */,
 				AC0000000000000000000016 /* AnnotationCommandStack.swift */,
 				AC0000000000000000000017 /* AnnotationPresets.swift */,
@@ -1490,6 +1493,7 @@
 				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,
 				AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */,
 				AC0000000000000000000024 /* AnnotationRenderer+Shapes.swift in Sources */,
+				AC0000000000000000000030 /* AnnotationTextLayout.swift in Sources */,
 				AC0000000000000000000025 /* AnnotationRenderer+Effects.swift in Sources */,
 				AC0000000000000000000026 /* AnnotationCommandStack.swift in Sources */,
 				AC0000000000000000000027 /* AnnotationPresets.swift in Sources */,

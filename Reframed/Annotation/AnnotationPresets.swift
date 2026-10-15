@@ -19,6 +19,8 @@ enum AnnotationPresets {
   static let defaultRedactionStrength: CGFloat = 10
   static let defaultHighlighterOpacity: CGFloat = 0.35
   static let defaultHighlighterWidth: CGFloat = 16
+  static let defaultTextEditorWidth: CGFloat = 220
+  static let defaultTextEditorPadding: CGFloat = 3
 
   static var defaultColor: CodableColor {
     palette[0]

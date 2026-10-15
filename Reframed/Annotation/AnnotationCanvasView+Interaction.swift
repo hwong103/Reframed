@@ -169,7 +169,7 @@ extension AnnotationCanvasView {
     to source: CGPoint
   ) {
     let target = resized(originalRect, handle: handle, to: source)
-    let item = transformed(original, from: originalRect, to: target)
+    let item = fittedText(transformed(original, from: originalRect, to: target))
     model.commit(key: "resize-\(id.uuidString)") { $0.replace(id: id, with: item) }
   }
 }

@@ -71,6 +71,21 @@ extension AnnotationCanvasView {
     return result
   }
 
+  func fittedText(_ item: AnnotationItem) -> AnnotationItem {
+    guard item.kind == .text else { return item }
+    let box = item.bounds.standardized
+    let width = max(box.width, 1)
+    let size = AnnotationTextLayout.boxSize(
+      text: item.style.text,
+      fontSize: item.style.fontSize,
+      width: width
+    )
+    var result = item
+    result.start = CGPoint(x: box.minX, y: box.minY)
+    result.end = CGPoint(x: box.minX + width, y: box.minY + size.height)
+    return result
+  }
+
   func mapPoint(
     _ point: CGPoint,
     from source: CGRect,
