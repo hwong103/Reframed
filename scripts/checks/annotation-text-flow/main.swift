@@ -919,6 +919,41 @@ func run() {
     check(false, "re-edit: the item is widened and re-wrapped before the re-edit", "item missing after the resize")
   }
 
+  let overflowModel = AnnotationEditorModel(image: source, reference: reference)
+  overflowModel.fontSize = fontSize
+  overflowModel.setTool(.text)
+  let overflowCanvas = AnnotationCanvasView(model: overflowModel)
+  overflowCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var overflowItem = AnnotationItem(
+    kind: .text,
+    style: overflowModel.makeStyle(for: .text),
+    start: CGPoint(x: 20, y: 40)
+  )
+  overflowItem.style.text = bodyText
+  overflowItem.end = CGPoint(x: 20 + 800, y: 40 + 200)
+  overflowItem = AnnotationTextLayout.fitted(overflowItem)
+  overflowModel.commit { $0.append(overflowItem) }
+  overflowCanvas.beginTextEditing(existing: overflowItem)
+  overflowCanvas.layoutTextEditor()
+  let overflowArea = overflowCanvas.textEditorArea()
+  let overflowViewport = overflowCanvas.textScrollView.frame
+  let overflowDocument = overflowCanvas.textEditor.frame.width
+  check(
+    overflowArea.insetBy(dx: -0.5, dy: -0.5).contains(overflowViewport)
+      && overflowViewport.width <= overflowArea.width + 0.5
+      && abs(overflowDocument - overflowItem.bounds.width * overflowCanvas.currentLayout().scale) <= 0.5
+      && overflowCanvas.textScrollView.hasHorizontalScroller,
+    "re-edit viewport: a document wider than the visible area scrolls horizontally",
+    String(
+      format: "viewport %.1fpt wide in area %.1fpt wide, document %.1fpt, horizontal scroller %@",
+      overflowViewport.width,
+      overflowArea.width,
+      overflowDocument,
+      overflowCanvas.textScrollView.hasHorizontalScroller ? "on" : "off"
+    )
+  )
+  overflowCanvas.endTextEditing(commit: false)
+
   let gateModel = AnnotationEditorModel(image: source, reference: reference)
   gateModel.fontSize = fontSize
   gateModel.setTool(.text)

@@ -92,8 +92,9 @@ extension AnnotationCanvasView {
     if let existing = editingTextItem {
       let textWidth = max(existing.bounds.width * scale - padding * 2, 1)
       let documentWidth = textWidth + padding * 2
+      let area = textEditorArea()
       return TextEditorGeometry(
-        viewportWidth: documentWidth + scrollerWidth(),
+        viewportWidth: min(documentWidth + scrollerWidth(), max(area.width, 1)),
         documentWidth: documentWidth,
         textWidth: textWidth
       )
