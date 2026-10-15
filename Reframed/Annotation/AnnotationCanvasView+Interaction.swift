@@ -30,6 +30,11 @@ extension AnnotationCanvasView {
       placeStepStamp(stamp, at: source)
       return
     }
+    if model.tool == .text, let item = textItem(at: source) {
+      dragState = .moving(item.id, item, source)
+      model.select(item.id)
+      return
+    }
     if model.tool == .text {
       beginTextEditing(at: source)
       return

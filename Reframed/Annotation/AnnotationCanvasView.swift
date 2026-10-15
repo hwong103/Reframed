@@ -52,6 +52,7 @@ final class AnnotationCanvasView: NSView {
   let tolerance: CGFloat = 8
   var dragState: DragState = .idle
   var pendingText: PendingText?
+  var editingTextItem: AnnotationItem?
   var isInline = false
   var stepStampProvider: (() -> String?)?
   var explicitLayout: Layout?
@@ -98,7 +99,12 @@ final class AnnotationCanvasView: NSView {
 
   override func mouseDown(with event: NSEvent) {
     window?.makeFirstResponder(self)
-    beginInteraction(at: convert(event.locationInWindow, from: nil))
+    let point = convert(event.locationInWindow, from: nil)
+    if event.clickCount >= 2, let item = textItem(at: sourcePoint(point)) {
+      beginTextEditing(existing: item)
+      return
+    }
+    beginInteraction(at: point)
   }
 
   override func mouseDragged(with event: NSEvent) {

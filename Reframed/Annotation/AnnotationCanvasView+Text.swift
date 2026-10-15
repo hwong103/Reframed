@@ -7,11 +7,20 @@ extension AnnotationCanvasView {
   }
 
   func beginTextEditing(at source: CGPoint) {
+    beginTextEditing(at: source, replacing: nil)
+  }
+
+  func beginTextEditing(existing item: AnnotationItem) {
+    beginTextEditing(at: item.start, replacing: item)
+  }
+
+  func beginTextEditing(at source: CGPoint, replacing item: AnnotationItem?) {
     endTextEditing(commit: true)
+    editingTextItem = item
     pendingText = PendingText(anchor: source)
     textEditorOrigin = viewPoint(source)
     configureTextEditor()
-    textEditor.string = ""
+    textEditor.string = item?.style.text ?? ""
     layoutTextEditor()
     window?.makeFirstResponder(textEditor)
   }
@@ -80,14 +89,17 @@ extension AnnotationCanvasView {
     max(textEditorContentWidth() - AnnotationPresets.defaultTextEditorPadding * 2, 1)
   }
 
-  func textEditorBox(required: CGFloat, minimum: CGFloat) -> CGRect {
+  func textEditorBox(required: CGFloat, minimum: CGFloat, pinned: Bool) -> CGRect {
     let capture = visibleCanvasRect()
     let area = textEditorArea()
     let width = min(AnnotationPresets.defaultTextEditorWidth, max(capture.width, 1))
-    let x = min(max(textEditorOrigin.x, capture.minX), max(capture.minX, capture.maxX - width))
+    let x =
+      pinned
+      ? textEditorOrigin.x
+      : min(max(textEditorOrigin.x, capture.minX), max(capture.minX, capture.maxX - width))
     let below = max(textEditorOrigin.y - area.minY, 0)
     let above = max(area.maxY - textEditorOrigin.y, 0)
-    let growsDown = below >= above
+    let growsDown = pinned || below >= above
     let room = growsDown ? below : above
     let height = min(max(required, min(minimum, room)), max(room, 1))
     let top = growsDown ? textEditorOrigin.y : textEditorOrigin.y + height
@@ -97,7 +109,8 @@ extension AnnotationCanvasView {
   func layoutTextEditor() {
     guard pendingText != nil else { return }
     let padding = AnnotationPresets.defaultTextEditorPadding
-    let fontSize = Self.textEditorPointSize(model.fontSize, scale: currentLayout().scale)
+    let baseFontSize = editingTextItem?.style.fontSize ?? model.fontSize
+    let fontSize = Self.textEditorPointSize(baseFontSize, scale: currentLayout().scale)
     let contentWidth = textEditorContentWidth()
     let textWidth = textEditorTextWidth()
     var drawn = AnnotationTextLayout.boxSize(
@@ -111,9 +124,9 @@ extension AnnotationCanvasView {
     }
     let required = drawn + padding * 2
     let minimum = AnnotationTextLayout.lineHeight(fontSize: fontSize) + padding * 2
-    let box = textEditorBox(required: required, minimum: minimum)
+    let box = textEditorBox(required: required, minimum: minimum, pinned: editingTextItem != nil)
     textEditor.font = AnnotationTextLayout.nsFont(size: fontSize)
-    textEditor.textColor = NSColor(cgColor: model.strokeColor.cgColor)
+    textEditor.textColor = NSColor(cgColor: (editingTextItem?.style.strokeColor ?? model.strokeColor).cgColor)
     textScrollView.frame = textEditorHost().map { convert(box, to: $0) } ?? box
     textEditor.frame = CGRect(x: 0, y: 0, width: contentWidth, height: max(required, box.height))
     pendingText = PendingText(anchor: sourcePoint(CGPoint(x: box.minX, y: box.maxY)))
@@ -122,6 +135,8 @@ extension AnnotationCanvasView {
   func endTextEditing(commit shouldCommit: Bool) {
     guard let pending = pendingText else { return }
     pendingText = nil
+    let existing = editingTextItem
+    editingTextItem = nil
     let layout = currentLayout()
     let text = textEditor.string.trimmingCharacters(in: .whitespacesAndNewlines)
     let sourceWidth = textEditorTextWidth() / max(layout.scale, 0.0001)
@@ -131,16 +146,25 @@ extension AnnotationCanvasView {
       window?.makeFirstResponder(self)
       return
     }
-    let size = AnnotationTextLayout.boxSize(text: text, fontSize: model.fontSize, width: sourceWidth)
+    let style = existing?.style ?? model.makeStyle(for: .text)
+    let size = AnnotationTextLayout.boxSize(text: text, fontSize: style.fontSize, width: sourceWidth)
     var item = AnnotationItem(
+      id: existing?.id ?? UUID(),
       kind: .text,
-      style: model.makeStyle(for: .text),
+      style: style,
       start: pending.anchor,
       end: pending.anchor
     )
     item.style.text = text
     item.end = CGPoint(x: pending.anchor.x + size.width, y: pending.anchor.y + size.height)
-    model.commit { $0.append(item) }
+    let target = existing?.id
+    model.commit { document in
+      if let target, document.item(id: target) != nil {
+        document.replace(id: target, with: item)
+      } else {
+        document.append(item)
+      }
+    }
     model.select(item.id)
     window?.makeFirstResponder(self)
   }

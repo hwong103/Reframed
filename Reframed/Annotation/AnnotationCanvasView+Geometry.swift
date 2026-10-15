@@ -137,6 +137,15 @@ extension AnnotationCanvasView {
     return nil
   }
 
+  func textItem(at source: CGPoint) -> AnnotationItem? {
+    for item in model.document.items.reversed() where item.kind == .text {
+      if contains(item: item, point: source) {
+        return item
+      }
+    }
+    return nil
+  }
+
   func contains(item: AnnotationItem, point: CGPoint) -> Bool {
     let tolerance = self.tolerance / max(currentLayout().scale, 0.0001)
     switch item.kind {

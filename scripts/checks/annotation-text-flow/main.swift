@@ -688,6 +688,139 @@ func run() {
     "\(hugeText.count) characters, \(hugeLines) lines drawn of \(hugeLayout.lines) laid out, height \(String(format: "%.0f", hugeLayout.height))pt"
   )
 
+  let toolModel = AnnotationEditorModel(image: source, reference: reference)
+  toolModel.fontSize = fontSize
+  toolModel.setTool(.text)
+  let toolCanvas = AnnotationCanvasView(model: toolModel)
+  toolCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var placed = AnnotationItem(kind: .text, style: toolModel.makeStyle(for: .text), start: CGPoint(x: 60, y: 80))
+  placed.style.text = bodyText
+  placed.end = CGPoint(x: 60 + narrowBox.width, y: 80 + narrowBox.height)
+  toolModel.commit { $0.append(placed) }
+  toolModel.select(nil)
+  let insideView = toolCanvas.viewPoint(CGPoint(x: placed.bounds.midX, y: placed.bounds.midY))
+  let insideSource = toolCanvas.sourcePoint(insideView)
+  check(
+    toolCanvas.textItem(at: insideSource)?.id == placed.id,
+    "text tool: a committed text item is hit-testable inside its box",
+    "hit \(toolCanvas.textItem(at: insideSource)?.id.uuidString ?? "nil") vs item \(placed.id.uuidString)"
+  )
+  toolCanvas.beginInteraction(at: insideView)
+  check(
+    toolModel.selectedItem?.id == placed.id && toolCanvas.pendingText == nil,
+    "text tool: clicking a committed text item selects it instead of opening an editor",
+    "selected \(toolModel.selectedItem?.id.uuidString ?? "nil"), editor open \(toolCanvas.pendingText != nil)"
+  )
+  toolCanvas.continueInteraction(at: CGPoint(x: insideView.x + 40, y: insideView.y + 25))
+  let moved = toolModel.document.item(id: placed.id)
+  check(
+    (moved?.bounds.minX ?? 0) > placed.bounds.minX + 10 && (moved?.bounds.minY ?? 0) < placed.bounds.minY - 10,
+    "text tool: dragging a selected text item moves it",
+    "box \(describe(placed.bounds)) moved to \(moved.map { describe($0.bounds) } ?? "missing")"
+  )
+  toolCanvas.finishInteraction()
+
+  if let selected = toolModel.document.item(id: placed.id) {
+    let rightHandle = toolCanvas.viewPoint(CGPoint(x: selected.bounds.maxX, y: selected.bounds.midY))
+    let handle = toolCanvas.handleHit(at: rightHandle)
+    check(
+      handle != nil,
+      "text tool: the selected text item shows hit-testable handles",
+      "handle \(handle.map { String(describing: $0) } ?? "nil") at \(describe(CGRect(x: rightHandle.x, y: rightHandle.y, width: 1, height: 1)))"
+    )
+    toolCanvas.beginInteraction(at: rightHandle)
+    toolCanvas.continueInteraction(
+      at: toolCanvas.viewPoint(CGPoint(x: selected.bounds.maxX + 140, y: selected.bounds.midY))
+    )
+    toolCanvas.finishInteraction()
+    let widened = toolModel.document.item(id: placed.id)
+    check(
+      (widened?.bounds.width ?? 0) > selected.bounds.width + 100,
+      "text tool: dragging the handle resizes the text item",
+      "width \(selected.bounds.width) to \(widened?.bounds.width ?? 0)"
+    )
+
+    toolCanvas.beginTextEditing(existing: selected)
+    check(
+      toolCanvas.textEditor.string == bodyText,
+      "re-edit: the editor opens on the committed text",
+      "\(toolCanvas.textEditor.string.count) of \(bodyText.count) characters"
+    )
+    check(
+      toolCanvas.editingTextItem?.id == selected.id && toolCanvas.pendingText != nil,
+      "re-edit: the editor targets the existing item",
+      "editing \(toolCanvas.editingTextItem?.id.uuidString ?? "nil"), pending \(toolCanvas.pendingText != nil)"
+    )
+    toolCanvas.textEditor.string = "Short replacement"
+    toolCanvas.layoutTextEditor()
+    let countBefore = toolModel.document.count
+    toolCanvas.endTextEditing(commit: true)
+    let edited = toolModel.document.item(id: selected.id)
+    check(
+      edited?.style.text == "Short replacement" && toolModel.document.count == countBefore,
+      "re-edit: committing replaces the item instead of adding one",
+      "text \(edited?.style.text ?? "nil"), items \(countBefore) to \(toolModel.document.count)"
+    )
+    check(
+      edited.map { abs($0.bounds.minX - selected.bounds.minX) <= 0.5 && abs($0.bounds.minY - selected.bounds.minY) <= 0.5 } ?? false,
+      "re-edit: the item keeps its top-left",
+      "was (\(selected.bounds.minX), \(selected.bounds.minY)), now (\(edited?.bounds.minX ?? 0), \(edited?.bounds.minY ?? 0))"
+    )
+    check(
+      edited.map { abs($0.style.fontSize - selected.style.fontSize) <= 0.001 } ?? false,
+      "re-edit: the item keeps its font size",
+      "fontSize \(selected.style.fontSize) to \(edited?.style.fontSize ?? 0)"
+    )
+    if let edited {
+      let needed = AnnotationTextLayout.boxSize(
+        text: edited.style.text,
+        fontSize: edited.style.fontSize,
+        width: edited.bounds.width
+      )
+      check(
+        edited.bounds.height + 0.5 >= needed.height,
+        "re-edit: the committed box still holds the re-laid text",
+        String(format: "box %.1fpt tall, laid-out text %.1fpt tall", edited.bounds.height, needed.height)
+      )
+    }
+  } else {
+    check(false, "text tool: the selected text item shows hit-testable handles", "item missing after the move")
+  }
+
+  toolCanvas.stepStampProvider = { "7" }
+  let stampCount = toolModel.document.count
+  if let last = toolModel.document.items.last {
+    toolCanvas.beginInteraction(
+      at: toolCanvas.viewPoint(CGPoint(x: last.bounds.midX, y: last.bounds.midY))
+    )
+  }
+  check(
+    toolModel.document.count == stampCount + 1 && toolCanvas.pendingText == nil,
+    "step tool: clicking over a text item still stamps a new step",
+    "items \(stampCount) to \(toolModel.document.count), editor open \(toolCanvas.pendingText != nil)"
+  )
+  toolCanvas.stepStampProvider = nil
+
+  let lowModel = AnnotationEditorModel(image: source, reference: reference)
+  lowModel.fontSize = fontSize
+  lowModel.setTool(.text)
+  let lowCanvas = AnnotationCanvasView(model: lowModel)
+  lowCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var low = AnnotationItem(kind: .text, style: lowModel.makeStyle(for: .text), start: CGPoint(x: 80, y: 330))
+  low.style.text = bodyText
+  low.end = CGPoint(x: 80 + narrowBox.width, y: 330 + narrowBox.height)
+  lowModel.commit { $0.append(low) }
+  lowCanvas.beginTextEditing(existing: low)
+  lowCanvas.textEditor.string = "Lower half note"
+  lowCanvas.layoutTextEditor()
+  lowCanvas.endTextEditing(commit: true)
+  let lowEdited = lowModel.document.item(id: low.id)
+  check(
+    lowEdited.map { abs($0.bounds.minX - low.bounds.minX) <= 0.5 && abs($0.bounds.minY - low.bounds.minY) <= 0.5 } ?? false,
+    "re-edit: an item in the lower half keeps its top-left",
+    "was (\(low.bounds.minX), \(low.bounds.minY)) in a \(pixelHeight)pt tall canvas, now (\(lowEdited?.bounds.minX ?? 0), \(lowEdited?.bounds.minY ?? 0))"
+  )
+
   print(failures == 0 ? "ALL CHECKS PASS" : "\(failures) CHECK(S) FAILED")
   exit(failures == 0 ? 0 : 1)
 }
