@@ -43,8 +43,10 @@ extension AnnotationCanvasView {
     textScrollView.layer?.borderColor = NSColor.controlAccentColor.cgColor
     textScrollView.layer?.cornerRadius = 4
     textScrollView.documentView = textEditor
-    if textScrollView.superview == nil {
-      addSubview(textScrollView)
+    let host = textEditorHost()
+    if textScrollView.superview !== host {
+      textScrollView.removeFromSuperview()
+      host?.addSubview(textScrollView)
     }
   }
 
@@ -54,37 +56,66 @@ extension AnnotationCanvasView {
     return containerRect.intersection(bounds)
   }
 
+  func textEditorHost() -> NSView? {
+    superview?.superview ?? superview
+  }
+
+  func textEditorArea() -> CGRect {
+    guard let host = textEditorHost() else { return bounds.insetBy(dx: 8, dy: 8) }
+    return convert(host.bounds, from: host).intersection(bounds).insetBy(dx: 8, dy: 8)
+  }
+
+  func scrollerWidth() -> CGFloat {
+    guard textScrollView.scrollerStyle == .legacy else { return 0 }
+    return NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+  }
+
+  func textEditorContentWidth() -> CGFloat {
+    let capture = visibleCanvasRect()
+    let boxWidth = min(AnnotationPresets.defaultTextEditorWidth, max(capture.width, 1))
+    return max(boxWidth - scrollerWidth(), 1)
+  }
+
+  func textEditorTextWidth() -> CGFloat {
+    max(textEditorContentWidth() - AnnotationPresets.defaultTextEditorPadding * 2, 1)
+  }
+
+  func textEditorBox(required: CGFloat, minimum: CGFloat) -> CGRect {
+    let capture = visibleCanvasRect()
+    let area = textEditorArea()
+    let width = min(AnnotationPresets.defaultTextEditorWidth, max(capture.width, 1))
+    let x = min(max(textEditorOrigin.x, capture.minX), max(capture.minX, capture.maxX - width))
+    let below = max(textEditorOrigin.y - area.minY, 0)
+    let above = max(area.maxY - textEditorOrigin.y, 0)
+    let growsDown = below >= above
+    let room = growsDown ? below : above
+    let height = min(max(required, min(minimum, room)), max(room, 1))
+    let top = growsDown ? textEditorOrigin.y : textEditorOrigin.y + height
+    return CGRect(x: x, y: top - height, width: width, height: height)
+  }
+
   func layoutTextEditor() {
     guard pendingText != nil else { return }
     let padding = AnnotationPresets.defaultTextEditorPadding
     let fontSize = Self.textEditorPointSize(model.fontSize, scale: currentLayout().scale)
-    let visible = visibleCanvasRect()
-    let width = min(AnnotationPresets.defaultTextEditorWidth, max(visible.width, 1))
-    let textWidth = max(width - padding * 2, 1)
-    let shared = AnnotationTextLayout.boxSize(
+    let contentWidth = textEditorContentWidth()
+    let textWidth = textEditorTextWidth()
+    var drawn = AnnotationTextLayout.boxSize(
       text: textEditor.string,
       fontSize: fontSize,
       width: textWidth
     ).height
-    var drawn = shared
     if let layoutManager = textEditor.layoutManager, let textContainer = textEditor.textContainer {
       layoutManager.ensureLayout(for: textContainer)
       drawn = max(drawn, layoutManager.usedRect(for: textContainer).height)
     }
     let required = drawn + padding * 2
     let minimum = AnnotationTextLayout.lineHeight(fontSize: fontSize) + padding * 2
-    let x = min(max(textEditorOrigin.x, visible.minX), max(visible.minX, visible.maxX - width))
-    let below = max(textEditorOrigin.y - visible.minY, 0)
-    let above = max(visible.maxY - textEditorOrigin.y, 0)
-    let growsDown = below >= above
-    let room = growsDown ? below : above
-    let height = min(max(required, min(minimum, room)), max(room, 1))
-    let top = growsDown ? textEditorOrigin.y : textEditorOrigin.y + height
-    let box = CGRect(x: x, y: top - height, width: width, height: height)
+    let box = textEditorBox(required: required, minimum: minimum)
     textEditor.font = AnnotationTextLayout.nsFont(size: fontSize)
     textEditor.textColor = NSColor(cgColor: model.strokeColor.cgColor)
-    textScrollView.frame = box
-    textEditor.frame = CGRect(x: 0, y: 0, width: width, height: max(required, height))
+    textScrollView.frame = textEditorHost().map { convert(box, to: $0) } ?? box
+    textEditor.frame = CGRect(x: 0, y: 0, width: contentWidth, height: max(required, box.height))
     pendingText = PendingText(anchor: sourcePoint(CGPoint(x: box.minX, y: box.maxY)))
   }
 
@@ -92,17 +123,14 @@ extension AnnotationCanvasView {
     guard let pending = pendingText else { return }
     pendingText = nil
     let layout = currentLayout()
-    let padding = AnnotationPresets.defaultTextEditorPadding
     let text = textEditor.string.trimmingCharacters(in: .whitespacesAndNewlines)
+    let sourceWidth = textEditorTextWidth() / max(layout.scale, 0.0001)
     textEditor.delegate = nil
     textScrollView.removeFromSuperview()
     guard shouldCommit, !text.isEmpty, layout.scale > 0 else {
       window?.makeFirstResponder(self)
       return
     }
-    let visible = visibleCanvasRect()
-    let width = min(AnnotationPresets.defaultTextEditorWidth, max(visible.width, 1))
-    let sourceWidth = max(width - padding * 2, 1) / layout.scale
     let size = AnnotationTextLayout.boxSize(text: text, fontSize: model.fontSize, width: sourceWidth)
     var item = AnnotationItem(
       kind: .text,

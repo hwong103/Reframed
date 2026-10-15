@@ -505,16 +505,22 @@ func run() {
     String(format: "editor %.1fpt, shared layout %.1fpt", tinyUsed, tinyShared)
   )
 
-  let container = NSView(frame: CGRect(x: 0, y: 0, width: 200, height: 120))
+  let windowView = NSView(frame: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+  let smallCapture = CGRect(x: 50, y: 40, width: 200, height: 120)
+  let container = NSView(frame: smallCapture)
   container.wantsLayer = true
   container.layer?.masksToBounds = true
+  windowView.addSubview(container)
   let clipModel = AnnotationEditorModel(image: source, reference: reference)
   clipModel.fontSize = fontSize
   let clipCanvas = AnnotationCanvasView(model: clipModel)
-  clipCanvas.frame = CGRect(origin: CGPoint(x: -50, y: -40), size: CGSize(width: pixelWidth, height: pixelHeight))
+  clipCanvas.frame = CGRect(
+    origin: CGPoint(x: -smallCapture.minX, y: -smallCapture.minY),
+    size: CGSize(width: pixelWidth, height: pixelHeight)
+  )
   container.addSubview(clipCanvas)
   let clipVisible = clipCanvas.visibleCanvasRect()
-  let clickView = CGPoint(x: clipVisible.midX - 30, y: clipVisible.minY + 50)
+  let clickView = CGPoint(x: clipVisible.midX - 30, y: clipVisible.midY)
   clipCanvas.beginTextEditing(at: clipCanvas.sourcePoint(clickView))
   clipCanvas.textEditor.string = bodyText
   clipCanvas.layoutTextEditor()
@@ -527,9 +533,9 @@ func run() {
     clipUsed = layoutManager.usedRect(for: textContainer).height
   }
   check(
-    clipVisible.insetBy(dx: -0.5, dy: -0.5).contains(scrollFrame),
-    "small capture: the editor stays inside the visible capture",
-    "editor \(describe(scrollFrame)) in visible \(describe(clipVisible))"
+    windowView.bounds.insetBy(dx: -0.5, dy: -0.5).contains(scrollFrame) && clipVisible.contains(clickView),
+    "small capture: the editor stays inside the window around a small capture",
+    "editor \(describe(scrollFrame)) in window \(describe(windowView.bounds)), capture \(describe(clipVisible))"
   )
   check(
     clipCanvas.textEditor.frame.height + 0.5 >= clipUsed + AnnotationPresets.defaultTextEditorPadding * 2,
@@ -545,6 +551,127 @@ func run() {
     clipCanvas.textScrollView.hasVerticalScroller,
     "small capture: the editor scrolls when the text outgrows the capture",
     "hasVerticalScroller \(clipCanvas.textScrollView.hasVerticalScroller), editor \(describe(scrollFrame))"
+  )
+
+  let overlay = NSView(frame: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+  let capture = CGRect(x: 200, y: 150, width: 200, height: 30)
+  let maskedClip = NSView(frame: capture)
+  maskedClip.wantsLayer = true
+  maskedClip.layer?.masksToBounds = true
+  overlay.addSubview(maskedClip)
+  let tallModel = AnnotationEditorModel(image: source, reference: reference)
+  tallModel.fontSize = fontSize * 2
+  let tallCanvas = AnnotationCanvasView(model: tallModel)
+  tallCanvas.frame = CGRect(origin: CGPoint(x: -capture.minX, y: -capture.minY), size: overlay.frame.size)
+  maskedClip.addSubview(tallCanvas)
+  tallCanvas.beginTextEditing(at: tallCanvas.sourcePoint(CGPoint(x: capture.midX, y: capture.midY)))
+  tallCanvas.textEditor.string = bodyText
+  tallCanvas.layoutTextEditor()
+  let tallBox = tallCanvas.textScrollView.frame
+  let oneLine =
+    AnnotationTextLayout.lineHeight(fontSize: tallModel.fontSize)
+    + AnnotationPresets.defaultTextEditorPadding * 2
+  check(
+    tallBox.height + 0.5 >= oneLine,
+    "short capture: the editor viewport holds a full line plus padding",
+    String(
+      format: "viewport %.1fpt, one line %.1fpt, capture %.1fpt tall",
+      tallBox.height,
+      oneLine,
+      capture.height
+    )
+  )
+  check(
+    overlay.bounds.insetBy(dx: -0.5, dy: -0.5).contains(tallBox),
+    "short capture: the editor stays inside the window",
+    "editor \(describe(tallBox)) in window \(describe(overlay.bounds))"
+  )
+  check(
+    tallBox.maxY > capture.maxY || tallBox.minY < capture.minY,
+    "short capture: the editor escapes the capture so the line is readable",
+    "editor \(describe(tallBox)) vs capture \(describe(capture))"
+  )
+  tallCanvas.endTextEditing(commit: true)
+  if let committed = tallModel.document.items.last {
+    let anchorView = tallCanvas.viewPoint(committed.start)
+    check(
+      abs(anchorView.x - tallBox.minX) <= 0.6 && abs(anchorView.y - tallBox.maxY) <= 0.6,
+      "short capture: the committed text lands where the editor sat",
+      String(
+        format: "committed corner (%.1f, %.1f) vs editor corner (%.1f, %.1f)",
+        anchorView.x,
+        anchorView.y,
+        tallBox.minX,
+        tallBox.maxY
+      )
+    )
+    check(
+      committed.style.text == bodyText,
+      "short capture: the committed text is whole",
+      "\(committed.style.text.count) of \(bodyText.count) characters"
+    )
+  } else {
+    check(false, "short capture: the committed text lands where the editor sat", "no committed item")
+  }
+
+  let scrollModel = AnnotationEditorModel(image: source, reference: reference)
+  scrollModel.fontSize = fontSize
+  let scrollCanvas = AnnotationCanvasView(model: scrollModel)
+  scrollCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  scrollCanvas.beginTextEditing(at: CGPoint(x: 60, y: 200))
+  scrollCanvas.textScrollView.scrollerStyle = .legacy
+  scrollCanvas.textScrollView.autohidesScrollers = false
+  scrollCanvas.textEditor.string = String(repeating: bodyText + " ", count: 40)
+  scrollCanvas.layoutTextEditor()
+  let outerWidth = scrollCanvas.textScrollView.frame.width
+  scrollCanvas.textScrollView.tile()
+  let contentWidth = scrollCanvas.textScrollView.contentSize.width
+  let scrollerWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+  let documentWidth = scrollCanvas.textEditor.frame.width
+  check(
+    abs(documentWidth - (outerWidth - scrollerWidth)) <= 1,
+    "scroller: the document takes the content width, not the outer width",
+    String(
+      format: "outer %.1fpt - scroller %.1fpt = %.1fpt, document %.1fpt, tiled content %.1fpt",
+      outerWidth,
+      scrollerWidth,
+      outerWidth - scrollerWidth,
+      documentWidth,
+      contentWidth
+    )
+  )
+  check(
+    contentWidth + 0.5 >= documentWidth,
+    "scroller: the document never overlaps the scroller",
+    String(format: "tiled content %.1fpt, document %.1fpt", contentWidth, documentWidth)
+  )
+  check(
+    !scrollCanvas.textScrollView.hasHorizontalScroller
+      && scrollCanvas.textEditor.frame.width <= scrollCanvas.textScrollView.frame.width,
+    "scroller: the editor never scrolls horizontally",
+    String(
+      format: "horizontal scroller %@, document %.1fpt in a %.1fpt box",
+      scrollCanvas.textScrollView.hasHorizontalScroller ? "on" : "off",
+      scrollCanvas.textEditor.frame.width,
+      scrollCanvas.textScrollView.frame.width
+    )
+  )
+
+  let hugeText = String(repeating: "The quick brown fox jumps over the lazy dog 0123456789 ", count: 3_200)
+  let hugeWidth: CGFloat = 300
+  let hugeLayout = AnnotationTextLayout.layout(text: hugeText, fontSize: fontSize, width: hugeWidth)
+  let hugeFrame = CTFramesetterCreateFrame(
+    CTFramesetterCreateWithAttributedString(AnnotationTextLayout.attributedText(hugeText, fontSize: fontSize)),
+    CFRange(location: 0, length: 0),
+    CGPath(rect: CGRect(x: 0, y: 0, width: hugeWidth, height: hugeLayout.height), transform: nil),
+    nil
+  )
+  let hugeVisible = CTFrameGetVisibleStringRange(hugeFrame)
+  let hugeLines = (CTFrameGetLines(hugeFrame) as? [CTLine] ?? []).count
+  check(
+    hugeVisible.length >= hugeText.count && hugeLines == hugeLayout.lines,
+    "long text: the measured height covers every line with no probe limit",
+    "\(hugeText.count) characters, \(hugeLines) lines drawn of \(hugeLayout.lines) laid out, height \(String(format: "%.0f", hugeLayout.height))pt"
   )
 
   print(failures == 0 ? "ALL CHECKS PASS" : "\(failures) CHECK(S) FAILED")

@@ -43,19 +43,28 @@ enum AnnotationTextLayout {
       return Layout(lines: 0, height: lineHeight)
     }
     let framesetter = CTFramesetterCreateWithAttributedString(attributed)
-    let probe: CGFloat = 100_000
-    let path = CGPath(rect: CGRect(x: 0, y: 0, width: max(width, 1), height: probe), transform: nil)
-    let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
-    let lines = CTFrameGetLines(frame) as? [CTLine] ?? []
-    guard let last = lines.last else {
-      return Layout(lines: 0, height: lineHeight)
+    let wrap = max(width, 1)
+    var fit = CFRange()
+    var height = ceil(
+      CTFramesetterSuggestFrameSizeWithConstraints(
+        framesetter,
+        CFRange(location: 0, length: 0),
+        nil,
+        CGSize(width: wrap, height: CGFloat.greatestFiniteMagnitude),
+        &fit
+      ).height
+    )
+    for _ in 0..<8 {
+      let path = CGPath(rect: CGRect(x: 0, y: 0, width: wrap, height: height), transform: nil)
+      let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
+      let lines = CTFrameGetLines(frame) as? [CTLine] ?? []
+      let visible = CTFrameGetVisibleStringRange(frame)
+      if visible.length >= attributed.length || lines.isEmpty {
+        return Layout(lines: lines.count, height: max(height, lineHeight))
+      }
+      height += lineHeight
     }
-    var origins = [CGPoint](repeating: .zero, count: lines.count)
-    CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
-    var descent: CGFloat = 0
-    CTLineGetTypographicBounds(last, nil, &descent, nil)
-    let bottom = (origins.last?.y ?? probe) - descent
-    return Layout(lines: lines.count, height: max(ceil(probe - bottom), lineHeight))
+    return Layout(lines: 0, height: max(height, lineHeight))
   }
 
   static func lineHeight(fontSize: CGFloat) -> CGFloat {
