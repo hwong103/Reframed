@@ -813,6 +813,50 @@ func run() {
   lowCanvas.beginTextEditing(existing: low)
   lowCanvas.textEditor.string = "Lower half note"
   lowCanvas.layoutTextEditor()
+  let lowPadding = AnnotationPresets.defaultTextEditorPadding
+  let lowScale = lowCanvas.currentLayout().scale
+  let lowPointSize = AnnotationCanvasView.textEditorPointSize(low.style.fontSize, scale: lowScale)
+  let lowOneLine = AnnotationTextLayout.lineHeight(fontSize: lowPointSize) + lowPadding * 2
+  let lowAnchorView = lowCanvas.viewPoint(low.start)
+  let lowBox = lowCanvas.textScrollView.frame
+  let lowArea = lowCanvas.textEditorArea()
+  let lowExpectedTextWidth = max(low.bounds.width * lowScale - lowPadding * 2, 1)
+  check(
+    lowBox.height + 0.5 >= lowOneLine,
+    "re-edit viewport: an item near the bottom still gets a full line plus padding",
+    String(
+      format: "viewport %.1fpt, one line %.1fpt, %.1fpt below the anchor",
+      lowBox.height,
+      lowOneLine,
+      max(lowAnchorView.y - lowArea.minY, 0)
+    )
+  )
+  check(
+    lowBox.maxY > lowAnchorView.y,
+    "re-edit viewport: the viewport moves above the anchor instead of collapsing",
+    String(format: "viewport y %.1f...%.1f, anchor %.1f", lowBox.minY, lowBox.maxY, lowAnchorView.y)
+  )
+  check(
+    lowArea.insetBy(dx: -0.5, dy: -0.5).contains(lowBox),
+    "re-edit viewport: the viewport stays inside the visible area",
+    "viewport \(describe(lowBox)) in area \(describe(lowArea))"
+  )
+  check(
+    abs(lowCanvas.textEditor.frame.width - (lowExpectedTextWidth + lowPadding * 2)) <= 0.5
+      && abs(lowCanvas.textEditorGeometry().textWidth - lowExpectedTextWidth) <= 0.5,
+    "re-edit viewport: the document keeps the item's own width",
+    String(
+      format: "item %.1fpt wide, document %.1fpt, text area %.1fpt",
+      low.bounds.width,
+      lowCanvas.textEditor.frame.width,
+      lowCanvas.textEditorGeometry().textWidth
+    )
+  )
+  check(
+    lowCanvas.textScrollView.hasVerticalScroller,
+    "re-edit viewport: the viewport scrolls instead of losing text",
+    "hasVerticalScroller \(lowCanvas.textScrollView.hasVerticalScroller)"
+  )
   lowCanvas.endTextEditing(commit: true)
   let lowEdited = lowModel.document.item(id: low.id)
   check(
@@ -820,6 +864,116 @@ func run() {
     "re-edit: an item in the lower half keeps its top-left",
     "was (\(low.bounds.minX), \(low.bounds.minY)) in a \(pixelHeight)pt tall canvas, now (\(lowEdited?.bounds.minX ?? 0), \(lowEdited?.bounds.minY ?? 0))"
   )
+
+  let widenModel = AnnotationEditorModel(image: source, reference: reference)
+  widenModel.fontSize = fontSize
+  widenModel.setTool(.text)
+  let widenCanvas = AnnotationCanvasView(model: widenModel)
+  widenCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var widenItem = AnnotationItem(kind: .text, style: widenModel.makeStyle(for: .text), start: CGPoint(x: 40, y: 60))
+  widenItem.style.text = bodyText
+  widenItem.end = CGPoint(x: 40 + narrowBox.width, y: 60 + narrowBox.height)
+  widenModel.commit { $0.append(widenItem) }
+  let narrowLines = laidOutLineCount(widenItem.style.text, widenItem.style.fontSize, widenItem.bounds.width)
+  widenModel.select(widenItem.id)
+  let widenHandle = widenCanvas.viewPoint(CGPoint(x: widenItem.bounds.maxX, y: widenItem.bounds.midY))
+  widenCanvas.beginInteraction(at: widenHandle)
+  widenCanvas.continueInteraction(
+    at: widenCanvas.viewPoint(CGPoint(x: widenItem.bounds.maxX + 180, y: widenItem.bounds.midY))
+  )
+  widenCanvas.finishInteraction()
+  if let widened = widenModel.document.item(id: widenItem.id) {
+    let widenedLines = laidOutLineCount(widened.style.text, widened.style.fontSize, widened.bounds.width)
+    check(
+      widened.bounds.width > widenItem.bounds.width + 100 && widenedLines < narrowLines,
+      "re-edit: the item is widened and re-wrapped before the re-edit",
+      "width \(widenItem.bounds.width) to \(widened.bounds.width), \(narrowLines) lines to \(widenedLines)"
+    )
+    widenCanvas.beginTextEditing(existing: widened)
+    let seededDocument = widenCanvas.textEditorGeometry().documentWidth
+    check(
+      abs(seededDocument - widened.bounds.width * widenCanvas.currentLayout().scale) <= 0.5,
+      "re-edit: the editor is seeded with the item's own width",
+      String(format: "item %.1fpt wide, seeded document %.1fpt", widened.bounds.width, seededDocument)
+    )
+    widenCanvas.endTextEditing(commit: true)
+    let unchanged = widenModel.document.item(id: widened.id)
+    check(
+      unchanged.map { abs($0.bounds.width - widened.bounds.width) <= 0.001 && abs($0.bounds.height - widened.bounds.height) <= 0.001 }
+        ?? false,
+      "re-edit: committing without edits keeps the widened box",
+      String(
+        format: "was %.1fx%.1f, now %.1fx%.1f",
+        widened.bounds.width,
+        widened.bounds.height,
+        unchanged?.bounds.width ?? 0,
+        unchanged?.bounds.height ?? 0
+      )
+    )
+    check(
+      unchanged.map { laidOutLineCount($0.style.text, $0.style.fontSize, $0.bounds.width) == widenedLines } ?? false,
+      "re-edit: committing without edits keeps the wrapping",
+      unchanged.map { "\(laidOutLineCount($0.style.text, $0.style.fontSize, $0.bounds.width)) lines of \(widenedLines)" } ?? "missing"
+    )
+  } else {
+    check(false, "re-edit: the item is widened and re-wrapped before the re-edit", "item missing after the resize")
+  }
+
+  let gateModel = AnnotationEditorModel(image: source, reference: reference)
+  gateModel.fontSize = fontSize
+  gateModel.setTool(.text)
+  let gateCanvas = AnnotationCanvasView(model: gateModel)
+  gateCanvas.frame = CGRect(x: 0, y: 0, width: pixelWidth + 32, height: pixelHeight + 32)
+  var gateText = AnnotationItem(kind: .text, style: gateModel.makeStyle(for: .text), start: CGPoint(x: 50, y: 50))
+  gateText.style.text = bodyText
+  gateText.end = CGPoint(x: 50 + narrowBox.width, y: 50 + narrowBox.height)
+  gateModel.commit { $0.append(gateText) }
+  let gatePoint = gateCanvas.viewPoint(CGPoint(x: gateText.bounds.midX, y: gateText.bounds.midY))
+  check(
+    gateCanvas.reeditableTextItem(at: gatePoint)?.id == gateText.id,
+    "gate: the text tool re-edits a committed text item",
+    "resolved \(gateCanvas.reeditableTextItem(at: gatePoint)?.id.uuidString ?? "nil")"
+  )
+  gateModel.select(gateText.id)
+  let gateHandle = gateCanvas.viewPoint(CGPoint(x: gateText.bounds.maxX, y: gateText.bounds.midY))
+  check(
+    gateCanvas.reeditableTextItem(at: gateHandle) == nil,
+    "gate: a handle hit outranks the re-edit",
+    "resolved \(gateCanvas.reeditableTextItem(at: gateHandle).map { String(describing: $0.id) } ?? "nil")"
+  )
+  gateModel.setTool(.rectangle)
+  check(
+    gateCanvas.reeditableTextItem(at: gatePoint) == nil,
+    "gate: the text tool must be active",
+    "tool \(gateModel.tool)"
+  )
+  gateModel.setTool(.crop)
+  check(
+    gateCanvas.reeditableTextItem(at: gatePoint) == nil,
+    "gate: the crop tool is not a re-edit",
+    "tool \(gateModel.tool)"
+  )
+  gateModel.setTool(.text)
+  var cover = AnnotationItem(
+    kind: .blur,
+    style: gateModel.makeStyle(for: .blur),
+    start: gateText.bounds.origin,
+    end: CGPoint(x: gateText.bounds.maxX, y: gateText.bounds.maxY)
+  )
+  cover.end = CGPoint(x: gateText.bounds.maxX, y: gateText.bounds.maxY)
+  gateModel.commit { $0.append(cover) }
+  check(
+    gateCanvas.reeditableTextItem(at: gatePoint) == nil,
+    "gate: an area item on top of the text blocks the re-edit",
+    "resolved \(gateCanvas.reeditableTextItem(at: gatePoint).map { String(describing: $0.id) } ?? "nil")"
+  )
+  gateCanvas.stepStampProvider = { "7" }
+  check(
+    gateCanvas.reeditableTextItem(at: gatePoint) == nil,
+    "gate: the step tool stamps instead of re-editing",
+    "resolved \(gateCanvas.reeditableTextItem(at: gatePoint).map { String(describing: $0.id) } ?? "nil")"
+  )
+  gateCanvas.stepStampProvider = nil
 
   print(failures == 0 ? "ALL CHECKS PASS" : "\(failures) CHECK(S) FAILED")
   exit(failures == 0 ? 0 : 1)

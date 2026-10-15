@@ -2,6 +2,12 @@ import AppKit
 import CoreGraphics
 
 extension AnnotationCanvasView {
+  struct TextEditorGeometry {
+    let viewportWidth: CGFloat
+    let documentWidth: CGFloat
+    let textWidth: CGFloat
+  }
+
   static func textEditorPointSize(_ base: CGFloat, scale: CGFloat) -> CGFloat {
     max(1, base * scale)
   }
@@ -17,8 +23,9 @@ extension AnnotationCanvasView {
   func beginTextEditing(at source: CGPoint, replacing item: AnnotationItem?) {
     endTextEditing(commit: true)
     editingTextItem = item
-    pendingText = PendingText(anchor: source)
-    textEditorOrigin = viewPoint(source)
+    let anchor = item?.start ?? source
+    pendingText = PendingText(anchor: anchor)
+    textEditorOrigin = viewPoint(anchor)
     configureTextEditor()
     textEditor.string = item?.style.text ?? ""
     layoutTextEditor()
@@ -79,27 +86,35 @@ extension AnnotationCanvasView {
     return NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
   }
 
-  func textEditorContentWidth() -> CGFloat {
+  func textEditorGeometry() -> TextEditorGeometry {
+    let scale = max(currentLayout().scale, 0.0001)
+    let padding = AnnotationPresets.defaultTextEditorPadding
+    if let existing = editingTextItem {
+      let textWidth = max(existing.bounds.width * scale - padding * 2, 1)
+      let documentWidth = textWidth + padding * 2
+      return TextEditorGeometry(
+        viewportWidth: documentWidth + scrollerWidth(),
+        documentWidth: documentWidth,
+        textWidth: textWidth
+      )
+    }
     let capture = visibleCanvasRect()
     let boxWidth = min(AnnotationPresets.defaultTextEditorWidth, max(capture.width, 1))
-    return max(boxWidth - scrollerWidth(), 1)
+    let documentWidth = max(boxWidth - scrollerWidth(), 1)
+    return TextEditorGeometry(
+      viewportWidth: boxWidth,
+      documentWidth: documentWidth,
+      textWidth: max(documentWidth - padding * 2, 1)
+    )
   }
 
-  func textEditorTextWidth() -> CGFloat {
-    max(textEditorContentWidth() - AnnotationPresets.defaultTextEditorPadding * 2, 1)
-  }
-
-  func textEditorBox(required: CGFloat, minimum: CGFloat, pinned: Bool) -> CGRect {
-    let capture = visibleCanvasRect()
+  func textEditorBox(required: CGFloat, minimum: CGFloat, viewportWidth: CGFloat, within horizontal: CGRect) -> CGRect {
     let area = textEditorArea()
-    let width = min(AnnotationPresets.defaultTextEditorWidth, max(capture.width, 1))
-    let x =
-      pinned
-      ? textEditorOrigin.x
-      : min(max(textEditorOrigin.x, capture.minX), max(capture.minX, capture.maxX - width))
+    let width = max(viewportWidth, 1)
+    let x = min(max(textEditorOrigin.x, horizontal.minX), max(horizontal.minX, horizontal.maxX - width))
     let below = max(textEditorOrigin.y - area.minY, 0)
     let above = max(area.maxY - textEditorOrigin.y, 0)
-    let growsDown = pinned || below >= above
+    let growsDown = below >= above
     let room = growsDown ? below : above
     let height = min(max(required, min(minimum, room)), max(room, 1))
     let top = growsDown ? textEditorOrigin.y : textEditorOrigin.y + height
@@ -109,14 +124,14 @@ extension AnnotationCanvasView {
   func layoutTextEditor() {
     guard pendingText != nil else { return }
     let padding = AnnotationPresets.defaultTextEditorPadding
-    let baseFontSize = editingTextItem?.style.fontSize ?? model.fontSize
+    let existing = editingTextItem
+    let baseFontSize = existing?.style.fontSize ?? model.fontSize
     let fontSize = Self.textEditorPointSize(baseFontSize, scale: currentLayout().scale)
-    let contentWidth = textEditorContentWidth()
-    let textWidth = textEditorTextWidth()
+    let geometry = textEditorGeometry()
     var drawn = AnnotationTextLayout.boxSize(
       text: textEditor.string,
       fontSize: fontSize,
-      width: textWidth
+      width: geometry.textWidth
     ).height
     if let layoutManager = textEditor.layoutManager, let textContainer = textEditor.textContainer {
       layoutManager.ensureLayout(for: textContainer)
@@ -124,22 +139,32 @@ extension AnnotationCanvasView {
     }
     let required = drawn + padding * 2
     let minimum = AnnotationTextLayout.lineHeight(fontSize: fontSize) + padding * 2
-    let box = textEditorBox(required: required, minimum: minimum, pinned: editingTextItem != nil)
+    let box = textEditorBox(
+      required: required,
+      minimum: minimum,
+      viewportWidth: geometry.viewportWidth,
+      within: existing == nil ? visibleCanvasRect() : textEditorArea()
+    )
     textEditor.font = AnnotationTextLayout.nsFont(size: fontSize)
-    textEditor.textColor = NSColor(cgColor: (editingTextItem?.style.strokeColor ?? model.strokeColor).cgColor)
+    textEditor.textColor = NSColor(cgColor: (existing?.style.strokeColor ?? model.strokeColor).cgColor)
+    textScrollView.hasHorizontalScroller = geometry.documentWidth > box.width + 0.5
     textScrollView.frame = textEditorHost().map { convert(box, to: $0) } ?? box
-    textEditor.frame = CGRect(x: 0, y: 0, width: contentWidth, height: max(required, box.height))
-    pendingText = PendingText(anchor: sourcePoint(CGPoint(x: box.minX, y: box.maxY)))
+    textEditor.frame = CGRect(x: 0, y: 0, width: geometry.documentWidth, height: max(required, box.height))
+    if existing == nil {
+      pendingText = PendingText(anchor: sourcePoint(CGPoint(x: box.minX, y: box.maxY)))
+    }
   }
 
   func endTextEditing(commit shouldCommit: Bool) {
     guard let pending = pendingText else { return }
-    pendingText = nil
     let existing = editingTextItem
-    editingTextItem = nil
     let layout = currentLayout()
     let text = textEditor.string.trimmingCharacters(in: .whitespacesAndNewlines)
-    let sourceWidth = textEditorTextWidth() / max(layout.scale, 0.0001)
+    let sourceWidth =
+      existing.map { max($0.bounds.width, 1) }
+      ?? max(textEditorGeometry().textWidth / max(layout.scale, 0.0001), 1)
+    pendingText = nil
+    editingTextItem = nil
     textEditor.delegate = nil
     textScrollView.removeFromSuperview()
     guard shouldCommit, !text.isEmpty, layout.scale > 0 else {
@@ -148,6 +173,7 @@ extension AnnotationCanvasView {
     }
     let style = existing?.style ?? model.makeStyle(for: .text)
     let size = AnnotationTextLayout.boxSize(text: text, fontSize: style.fontSize, width: sourceWidth)
+    let height = existing.map { max($0.bounds.height, size.height) } ?? size.height
     var item = AnnotationItem(
       id: existing?.id ?? UUID(),
       kind: .text,
@@ -156,7 +182,7 @@ extension AnnotationCanvasView {
       end: pending.anchor
     )
     item.style.text = text
-    item.end = CGPoint(x: pending.anchor.x + size.width, y: pending.anchor.y + size.height)
+    item.end = CGPoint(x: pending.anchor.x + sourceWidth, y: pending.anchor.y + height)
     let target = existing?.id
     model.commit { document in
       if let target, document.item(id: target) != nil {

@@ -100,11 +100,22 @@ final class AnnotationCanvasView: NSView {
   override func mouseDown(with event: NSEvent) {
     window?.makeFirstResponder(self)
     let point = convert(event.locationInWindow, from: nil)
-    if event.clickCount >= 2, let item = textItem(at: sourcePoint(point)) {
+    if event.clickCount >= 2, let item = reeditableTextItem(at: point) {
       beginTextEditing(existing: item)
       return
     }
     beginInteraction(at: point)
+  }
+
+  func reeditableTextItem(at view: CGPoint) -> AnnotationItem? {
+    guard model.tool == .text, stepStampProvider == nil, handleHit(at: view) == nil else {
+      return nil
+    }
+    let source = sourcePoint(view)
+    guard let item = textItem(at: source), let top = topItem(at: source) else {
+      return nil
+    }
+    return top.id == item.id ? item : nil
   }
 
   override func mouseDragged(with event: NSEvent) {
