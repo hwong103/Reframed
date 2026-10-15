@@ -24,6 +24,8 @@ extension SelectionOverlayView {
   }
 
   func handleMouseDown(_ point: CGPoint, shiftHeld: Bool) {
+    annotationSession?.endTextEditing()
+
     if let hosting = controlsHost, !hosting.isHidden {
       let panelPoint = hosting.convert(point, from: self)
       if hosting.bounds.contains(panelPoint) {

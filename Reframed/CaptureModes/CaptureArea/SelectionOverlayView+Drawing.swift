@@ -150,6 +150,13 @@ extension SelectionOverlayView {
         return host
       }
     }
+    let editor = session.canvas.textScrollView
+    if session.canvas.pendingText != nil, editor.superview != nil {
+      let local = editor.convert(point, from: self)
+      if editor.bounds.contains(local) {
+        return editor
+      }
+    }
     return nil
   }
 

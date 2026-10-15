@@ -591,6 +591,20 @@ func run() {
     "short capture: the editor escapes the capture so the line is readable",
     "editor \(describe(tallBox)) vs capture \(describe(capture))"
   )
+  let editorHost = tallCanvas.textScrollView.superview
+  check(
+    editorHost === overlay,
+    "short capture: the editor is hosted outside the masked capture container",
+    "host \(editorHost === overlay ? "overlay" : String(describing: editorHost)), masked clip \(describe(maskedClip.frame))"
+  )
+  let escapeProbe = CGPoint(x: tallBox.midX, y: capture.maxY + 20)
+  let resolved = overlay.hitTest(escapeProbe)
+  check(
+    !capture.contains(escapeProbe)
+      && (resolved === tallCanvas.textEditor || (resolved?.isDescendant(of: tallCanvas.textScrollView) ?? false)),
+    "short capture: a point in the escaped editor resolves to the editor",
+    "point \(describe(CGRect(x: escapeProbe.x, y: escapeProbe.y, width: 1, height: 1))) outside \(describe(capture)) resolved to \(resolved.map { String(describing: type(of: $0)) } ?? "nil")"
+  )
   tallCanvas.endTextEditing(commit: true)
   if let committed = tallModel.document.items.last {
     let anchorView = tallCanvas.viewPoint(committed.start)

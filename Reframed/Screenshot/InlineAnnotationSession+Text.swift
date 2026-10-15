@@ -1,6 +1,10 @@
 import CoreGraphics
 
 extension InlineAnnotationSession {
+  func endTextEditing() {
+    canvas.endTextEditing(commit: true)
+  }
+
   func captureText() {
     guard !isReadingText else { return }
     guard let rendered = renderedSelection() else { return end() }
