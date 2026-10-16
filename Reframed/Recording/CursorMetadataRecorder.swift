@@ -12,7 +12,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
   private var captureWidth: Double = 0
   private var captureHeight: Double = 0
   private var displayScale: Double = 2.0
-  private var displayHeight: Double = 0
+  private var quartzFlipHeight: Double = 0
   private var isConfigured = false
 
   private var samples: [CursorSample] = []
@@ -30,7 +30,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     captureOrigin: CGPoint,
     captureSize: CGSize,
     displayScale: CGFloat,
-    displayHeight: CGFloat
+    quartzFlipHeight: CGFloat
   ) {
     lock.lock()
     self.captureOriginX = Double(captureOrigin.x)
@@ -38,7 +38,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     self.captureWidth = Double(captureSize.width)
     self.captureHeight = Double(captureSize.height)
     self.displayScale = Double(displayScale)
-    self.displayHeight = Double(displayHeight)
+    self.quartzFlipHeight = Double(quartzFlipHeight)
     self.isConfigured = true
     lock.unlock()
   }
@@ -192,7 +192,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     let captOriginY = captureOriginY
     let captW = captureWidth
     let captH = captureHeight
-    let dispH = displayHeight
+    let dispH = quartzFlipHeight
     let cursorType = cachedCursorType
     lock.unlock()
 
@@ -321,7 +321,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
   }
 
   private func normalizePoint(screenX: Double, screenY: Double) -> (Double, Double) {
-    let sckY = displayHeight - screenY
+    let sckY = quartzFlipHeight - screenY
     let nx = (screenX - captureOriginX) / captureWidth
     let ny = (sckY - captureOriginY) / captureHeight
     return (nx, ny)

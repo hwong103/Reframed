@@ -104,10 +104,14 @@ extension RecordingCoordinator {
     )
     self.videoWriter = vidWriter
 
+    let primaryScreenHeight = CGDisplayBounds(CGMainDisplayID()).height
     let captureOrigin: CGPoint
     switch target {
     case .region(let selection):
-      captureOrigin = selection.screenCaptureKitRect.origin
+      captureOrigin = CGPoint(
+        x: selection.rect.origin.x,
+        y: primaryScreenHeight - selection.rect.origin.y - selection.rect.height
+      )
     case .window(let window):
       captureOrigin = window.frame.origin
     }
@@ -117,7 +121,7 @@ extension RecordingCoordinator {
         captureOrigin: captureOrigin,
         captureSize: sourceRect.size,
         displayScale: displayScale,
-        displayHeight: CGFloat(CGDisplayPixelsHigh(display.displayID))
+        quartzFlipHeight: primaryScreenHeight
       )
       self.cursorMetadataRecorder = cursorMetadataRecorder
     }
