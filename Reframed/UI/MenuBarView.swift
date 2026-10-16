@@ -1,28 +1,26 @@
 import AVFoundation
+import AppKit
 import SwiftUI
 
 struct MenuBarView: View {
   let session: SessionState
+  let screenshotCoordinator: ScreenshotCoordinator
   let onDismiss: () -> Void
   let onShowPermissions: () -> Void
 
   @State var recentProjects: [RecentProject] = []
+  @State var recentCaptures: [RecentCaptureData] = []
   @State var totalProjectCount: Int = 0
   @State var permissionsGranted = Permissions.allPermissionsGranted
   @Environment(\.colorScheme) private var colorScheme
 
   private let permissionTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-  private var isBusy: Bool {
+  var isBusy: Bool {
     if case .idle = session.state { return false }
     if case .editing = session.state { return false }
     return true
   }
-
-  private let gridColumns = Array(
-    repeating: GridItem(.flexible(), spacing: 6),
-    count: 4
-  )
 
   var body: some View {
     let _ = colorScheme
@@ -39,62 +37,7 @@ struct MenuBarView: View {
           .padding(.top, 8)
       }
 
-      if permissionsGranted {
-        Spacer().frame(height: 2)
-
-        HoverEffectScope {
-          LazyVGrid(columns: gridColumns, spacing: 6) {
-            ActionGridItem(
-              icon: "house",
-              title: "Home",
-              hoverId: "action.home"
-            ) {
-              onDismiss()
-              session.showToolbar()
-            }
-
-            ActionGridItem(
-              icon: "display",
-              title: "Display",
-              hoverId: "action.display"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.entireScreen)
-            }
-
-            ActionGridItem(
-              icon: "macwindow",
-              title: "Window",
-              hoverId: "action.window"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.selectedWindow)
-            }
-
-            ActionGridItem(
-              icon: "rectangle.dashed",
-              title: "Area",
-              hoverId: "action.area"
-            ) {
-              onDismiss()
-              guard case .idle = session.state else { return }
-              session.showToolbar()
-              session.selectMode(.selectedArea)
-            }
-          }
-        }
-        .disabled(isBusy)
-        .padding(.horizontal, 10)
-      } else {
-        PermissionsPrompt {
-          onDismiss()
-          onShowPermissions()
-        }
-      }
+      quickActionsSection
 
       MenuBarDivider()
 
@@ -131,6 +74,12 @@ struct MenuBarView: View {
       }
 
       MenuBarDivider()
+
+      if !recentCaptures.isEmpty {
+        recentCapturesSection
+
+        MenuBarDivider()
+      }
 
       HoverEffectScope {
         HStack(spacing: 0) {
@@ -178,8 +127,43 @@ struct MenuBarView: View {
     .task {
       await loadRecentProjects()
     }
+    .onAppear {
+      recentCaptures = RecentCaptureStore.shared.captures
+    }
     .onReceive(permissionTimer) { _ in
       permissionsGranted = Permissions.allPermissionsGranted
     }
+  }
+
+  private var recentCapturesSection: some View {
+    RecentCaptureStrip(
+      captures: recentCaptures,
+      onCopy: { capture in
+        let copied = RecentCaptureStore.shared.copyToClipboard(capture)
+        onDismiss()
+        ScreenshotFeedbackWindow.show(
+          copied ? "Copied to clipboard" : "Could not copy that capture",
+          detail: copied ? "\(capture.width) \u{00d7} \(capture.height) px" : capture.filename,
+          near: NSEvent.mouseLocation
+        )
+      },
+      onSave: { capture in
+        let saved = RecentCaptureStore.shared.save(capture)
+        onDismiss()
+        ScreenshotFeedbackWindow.show(
+          saved == nil ? "Could not save that capture" : "Screenshot saved",
+          detail: saved?.lastPathComponent ?? capture.filename,
+          near: NSEvent.mouseLocation
+        )
+      },
+      onReveal: { capture in
+        onDismiss()
+        RecentCaptureStore.shared.reveal(capture)
+      },
+      onClear: {
+        RecentCaptureStore.shared.clear()
+        recentCaptures = []
+      }
+    )
   }
 }

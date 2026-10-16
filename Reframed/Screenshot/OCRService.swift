@@ -1,0 +1,100 @@
+import CoreGraphics
+import Foundation
+import Vision
+
+enum OCRError: LocalizedError {
+  case invalidRegion
+  case recognitionFailed(String)
+
+  var errorDescription: String? {
+    switch self {
+    case .invalidRegion:
+      return "The text region is empty"
+    case .recognitionFailed(let message):
+      return "Text recognition failed: \(message)"
+    }
+  }
+}
+
+struct OCRResult: Sendable, Equatable {
+  let lines: [String]
+
+  var text: String {
+    lines.joined(separator: "\n")
+  }
+
+  var characterCount: Int {
+    text.count
+  }
+}
+
+enum OCRService {
+  @MainActor private static var warmUpStarted = false
+
+  @MainActor
+  static func warmUp() {
+    guard !warmUpStarted else { return }
+    warmUpStarted = true
+    Task.detached(priority: .userInitiated) {
+      guard let image = sampleImage() else { return }
+      _ = try? recognize(in: image)
+    }
+  }
+
+  static func recognize(in image: CGImage) throws -> OCRResult {
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = .accurate
+    request.usesLanguageCorrection = true
+    request.automaticallyDetectsLanguage = true
+    return OCRResult(lines: try lines(of: request, in: image))
+  }
+
+  static func recognize(in image: CGImage, region: CGRect) throws -> OCRResult {
+    let bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+    let clipped = region.standardized.integral.intersection(bounds)
+    guard clipped.width >= 1, clipped.height >= 1 else {
+      throw OCRError.invalidRegion
+    }
+    guard let cropped = image.cropping(to: clipped) else {
+      throw OCRError.invalidRegion
+    }
+    return try recognize(in: cropped)
+  }
+
+  private static func lines(of request: VNRecognizeTextRequest, in image: CGImage) throws -> [String] {
+    let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
+    do {
+      try handler.perform([request])
+    } catch {
+      throw OCRError.recognitionFailed(error.localizedDescription)
+    }
+    return readingOrderedLines(from: request.results ?? [])
+  }
+
+  private static func readingOrderedLines(from observations: [VNRecognizedTextObservation]) -> [String] {
+    let candidates = observations.compactMap { observation -> Candidate? in
+      guard let text = observation.topCandidates(1).first?.string else { return nil }
+      return (rect: observation.boundingBox, text: text)
+    }
+    return orderedLines(from: candidates)
+  }
+
+  private static func sampleImage() -> CGImage? {
+    guard
+      let context = CGContext(
+        data: nil,
+        width: 64,
+        height: 64,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      )
+    else {
+      return nil
+    }
+    context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+    return context.makeImage()
+  }
+}

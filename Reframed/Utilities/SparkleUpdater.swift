@@ -8,15 +8,16 @@ final class SparkleUpdater {
 
   private init() {
     controller = SPUStandardUpdaterController(
-      startingUpdater: true,
+      startingUpdater: false,
       updaterDelegate: nil,
       userDriverDelegate: nil
     )
-    controller.updater.automaticallyChecksForUpdates = true
+    controller.updater.automaticallyChecksForUpdates = false
     controller.updater.updateCheckInterval = 3600
   }
 
   func checkForUpdates() {
+    controller.startUpdater()
     controller.checkForUpdates(nil)
   }
 }

@@ -2,7 +2,12 @@ import AppKit
 
 @MainActor
 final class SelectionOverlayWindow: NSWindow {
-  init(screen: NSScreen, session: SessionState) {
+  init(
+    screen: NSScreen,
+    request: SelectionRequest,
+    isInitialActive: Bool = false,
+    hoverProvider: HoverTargetProvider? = nil
+  ) {
     super.init(
       contentRect: screen.frame,
       styleMask: .borderless,
@@ -21,7 +26,14 @@ final class SelectionOverlayWindow: NSWindow {
     appearance = NSAppearance(named: .aqua)
 
     let localFrame = CGRect(origin: .zero, size: screen.frame.size)
-    let overlayView = SelectionOverlayView(frame: localFrame, session: session)
+    let background = request.backgroundImages[screen.displayID]
+    let overlayView = SelectionOverlayView(
+      frame: localFrame,
+      request: request,
+      backgroundImage: background,
+      isInitialActive: isInitialActive,
+      hoverProvider: hoverProvider
+    )
     contentView = overlayView
 
     setFrame(screen.frame, display: true)
@@ -31,6 +43,13 @@ final class SelectionOverlayWindow: NSWindow {
   override var canBecomeMain: Bool { true }
 
   override func sendEvent(_ event: NSEvent) {
+    if event.type == .keyDown, let overlay = contentView as? SelectionOverlayView {
+      let responder = firstResponder
+      let isEditingText = responder is NSTextView || responder is NSTextField
+      if !isEditingText, overlay.handleAnnotationKey(event) {
+        return
+      }
+    }
     if event.type == .mouseMoved, !isKeyWindow {
       makeKey()
     }

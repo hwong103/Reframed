@@ -127,16 +127,27 @@ extension EditorState {
     )
   }
 
-  func restoreFromSnapshot(_ data: EditorStateData) {
-    isRestoringState = true
-    pendingUndoTask?.cancel()
+  func stickyDefaultsSnapshot() -> EditorStateData {
+    var snapshot = createSnapshot()
+    snapshot.trimStartSeconds = 0
+    snapshot.trimEndSeconds = 0
+    snapshot.systemAudioRegions = nil
+    snapshot.micAudioRegions = nil
+    snapshot.cameraRegions = nil
+    snapshot.videoRegions = nil
+    snapshot.spotlightRegions = nil
+    snapshot.captionSegments = nil
+    snapshot.audioSettings = nil
+    snapshot.webcamEnabled = nil
+    snapshot.zoomSettings?.keyframes = []
+    return snapshot
+  }
 
-    let prev = createSnapshot()
+  func persistEditorDefaults() {
+    ConfigService.shared.updateEditorDefaults(with: stickyDefaultsSnapshot())
+  }
 
-    trimStart = .zero
-    trimEnd = playerController.duration
-    playerController.trimEnd = playerController.duration
-
+  func applyStyleSettings(from data: EditorStateData) {
     backgroundStyle = data.backgroundStyle
     backgroundImageFillMode = data.backgroundImageFillMode ?? .fill
     canvasAspect = data.canvasAspect ?? .original
@@ -196,6 +207,19 @@ extension EditorState {
       cursorMotionBlur = animSettings.cursorMotionBlur
       clickBounce = animSettings.clickBounce
     }
+  }
+
+  func restoreFromSnapshot(_ data: EditorStateData) {
+    isRestoringState = true
+    pendingUndoTask?.cancel()
+
+    let prev = createSnapshot()
+
+    trimStart = .zero
+    trimEnd = playerController.duration
+    playerController.trimEnd = playerController.duration
+
+    applyStyleSettings(from: data)
 
     if let savedSysRegions = data.systemAudioRegions, !savedSysRegions.isEmpty {
       systemAudioRegions = savedSysRegions

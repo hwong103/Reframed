@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   let session = SessionState()
+  lazy var screenshotCoordinator = ScreenshotCoordinator(appState: session)
   private var permissionsWindow: NSWindow?
   private var shortcutManager: KeyboardShortcutManager?
   private var eventMonitor: Any?
@@ -11,8 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     _ = SparkleUpdater.shared
     ConfigService.shared.applyAppearance()
+    OCRService.warmUp()
 
-    let manager = KeyboardShortcutManager(session: session)
+    let manager = KeyboardShortcutManager(session: session, screenshotCoordinator: screenshotCoordinator)
     manager.start()
     shortcutManager = manager
 

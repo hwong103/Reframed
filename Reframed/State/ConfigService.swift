@@ -65,6 +65,11 @@ final class ConfigService {
     set { data.retinaCapture = newValue; save() }
   }
 
+  var editorDefaults: EditorStateData? {
+    get { data.editorDefaults }
+    set { data.editorDefaults = newValue; save() }
+  }
+
   var dimOuterArea: Bool {
     get { data.dimOuterArea }
     set { data.dimOuterArea = newValue; save() }
@@ -93,6 +98,31 @@ final class ConfigService {
   var appearance: String {
     get { data.appearance }
     set { data.appearance = newValue; save(); applyAppearance() }
+  }
+
+  func updateEditorDefaults(with snapshot: EditorStateData) {
+    var next = snapshot
+    let existing = data.editorDefaults
+
+    if next.cursorSettings == nil { next.cursorSettings = existing?.cursorSettings }
+    if next.zoomSettings == nil { next.zoomSettings = existing?.zoomSettings }
+    if next.animationSettings == nil { next.animationSettings = existing?.animationSettings }
+
+    if case .image = next.backgroundStyle {
+      next.backgroundStyle =
+        nonImageBackground(existing?.backgroundStyle) ?? .solidColor(CodableColor(r: 0, g: 0, b: 0))
+    }
+    if let style = next.cameraBackgroundStyle, case .image = style {
+      next.cameraBackgroundStyle = nil
+    }
+    data.editorDefaults = next
+    save()
+  }
+
+  private func nonImageBackground(_ style: BackgroundStyle?) -> BackgroundStyle? {
+    guard let style else { return nil }
+    if case .image = style { return nil }
+    return style
   }
 
   func applyAppearance() {
@@ -183,4 +213,5 @@ private struct ConfigData: Codable {
   var isMicrophoneOn: Bool = false
   var appearance: String = "system"
   var shortcuts: [String: KeyboardShortcut] = [:]
+  var editorDefaults: EditorStateData? = nil
 }

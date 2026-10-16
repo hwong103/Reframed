@@ -3,6 +3,7 @@ import AppKit
 @MainActor
 final class KeyboardShortcutManager {
   private weak var session: SessionState?
+  let screenshotCoordinator: ScreenshotCoordinator
   private var localMonitor: Any?
   private var eventTap: CFMachPort?
   private var tapRunLoopSource: CFRunLoopSource?
@@ -13,8 +14,9 @@ final class KeyboardShortcutManager {
     var eventTap: CFMachPort?
   }
 
-  init(session: SessionState) {
+  init(session: SessionState, screenshotCoordinator: ScreenshotCoordinator) {
     self.session = session
+    self.screenshotCoordinator = screenshotCoordinator
   }
 
   func start() {
@@ -57,6 +59,8 @@ final class KeyboardShortcutManager {
       }
       return event
     }
+
+    PinnedImageManager.shared.restoreIfNeeded()
   }
 
   nonisolated private static let eventTapCallback: CGEventTapCallBack = {
@@ -86,19 +90,16 @@ final class KeyboardShortcutManager {
         return false
       }
 
-      switch session.state {
-      case .countdown, .recording, .paused:
-        break
-      default:
-        return false
+      if keyCode == 53, manager.screenshotCoordinator.handleEscape() {
+        return true
       }
 
       for action in ShortcutAction.allCases where action.isGlobal {
         let shortcut = ConfigService.shared.shortcut(for: action)
-        if shortcut.matchesCGEvent(keyCode: keyCode, flags: flags) {
-          manager.performAction(action, on: session)
-          return true
-        }
+        guard shortcut.matchesCGEvent(keyCode: keyCode, flags: flags) else { continue }
+        guard manager.allowsGlobalAction(action, in: session) else { continue }
+        manager.performAction(action, on: session)
+        return true
       }
       return false
     }
@@ -125,50 +126,4 @@ final class KeyboardShortcutManager {
     localMonitor = nil
   }
 
-  private func performAction(_ action: ShortcutAction, on session: SessionState) {
-    switch action {
-    case .switchToDisplay:
-      guard case .idle = session.state else { return }
-      session.selectMode(.entireScreen)
-
-    case .switchToWindow:
-      guard case .idle = session.state else { return }
-      session.selectMode(.selectedWindow)
-
-    case .switchToArea:
-      guard case .idle = session.state else { return }
-      session.selectMode(.selectedArea)
-
-    case .stopRecording:
-      switch session.state {
-      case .recording, .paused:
-        Task {
-          try? await session.stopRecording()
-        }
-      default:
-        break
-      }
-
-    case .pauseResumeRecording:
-      switch session.state {
-      case .recording:
-        session.pauseRecording()
-      case .paused:
-        session.resumeRecording()
-      default:
-        break
-      }
-
-    case .restartRecording:
-      switch session.state {
-      case .recording, .paused, .countdown:
-        session.restartRecording()
-      default:
-        break
-      }
-
-    case .editorUndo, .editorRedo:
-      return
-    }
-  }
 }

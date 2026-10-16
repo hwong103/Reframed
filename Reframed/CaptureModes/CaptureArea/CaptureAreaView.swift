@@ -1,7 +1,14 @@
 import SwiftUI
 
 struct CaptureAreaView: View {
-  let session: SessionState
+  let timerDelay: Int
+  let confirmTitle: String?
+  let hint: String
+  let onCountdownStart: () -> Void
+  let onCancel: () -> Void
+  let onConfirm: () -> Void
+  let onSelectionRectChange: (CGRect) -> Void
+  let ownerToken: ObjectIdentifier
   @State private var x: Int = 0
   @State private var y: Int = 0
   @State private var w: Int = 0
@@ -9,12 +16,12 @@ struct CaptureAreaView: View {
   @State private var isEditing = false
   @State private var showPresets = false
   @State private var triggerStart = false
-
+  @State private var targetTitle: String?
+  @State private var targetPixel: CGSize?
   private let textColor = Color.black
   private let secondaryTextColor = Color.black.opacity(0.6)
   private let fieldBg = Color.black.opacity(0.04)
   private let fieldBorder = Color.black.opacity(0.1)
-
   private let presets: [(String, Int, Int)] = [
     ("1920 \u{00d7} 1080", 1920, 1080),
     ("1280 \u{00d7} 720", 1280, 720),
@@ -25,6 +32,16 @@ struct CaptureAreaView: View {
 
   var body: some View {
     VStack(spacing: 16) {
+      if let targetPixel {
+        VStack(spacing: 2) {
+          if let targetTitle {
+            Text(targetTitle).font(.system(size: FontSize.xs, weight: .semibold))
+              .foregroundStyle(textColor).lineLimit(1).truncationMode(.middle)
+          }
+          Text("\(Int(targetPixel.width)) \u{00d7} \(Int(targetPixel.height)) px")
+            .font(.system(size: FontSize.xxs, design: .monospaced)).foregroundStyle(secondaryTextColor)
+        }.frame(maxWidth: 320)
+      }
       HStack(spacing: 12) {
         fieldGroup("Size") {
           HStack(spacing: 6) {
@@ -74,15 +91,19 @@ struct CaptureAreaView: View {
         .buttonStyle(SecondaryButtonStyle(size: .small, forceLightMode: true))
       }
 
-      StartRecordingButton(
-        delay: session.options.timerDelay.rawValue,
-        onCountdownStart: { session.hideToolbar() },
-        onCancel: { session.cancelSelection() },
-        action: { session.overlayView?.confirmSelection() },
-        trigger: $triggerStart
-      )
+      if let confirmTitle {
+        stillConfirmButton(title: confirmTitle)
+      } else {
+        StartRecordingButton(
+          delay: timerDelay,
+          onCountdownStart: onCountdownStart,
+          onCancel: onCancel,
+          action: onConfirm,
+          trigger: $triggerStart
+        )
+      }
 
-      Text("Shift to lock aspect ratio \u{00b7} Esc to cancel \u{00b7} Enter to start")
+      Text(hint)
         .font(.system(size: FontSize.xxs))
         .foregroundStyle(Color.black.opacity(0.35))
     }
@@ -98,8 +119,30 @@ struct CaptureAreaView: View {
       w = Int(r.width)
       h = Int(r.height)
     }
-    .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { _ in
+    .onReceive(NotificationCenter.default.publisher(for: .areaSelectionConfirmRequested)) { notification in
+      guard let sender = notification.object as? ObjectIdentifier, sender == ownerToken else { return }
       triggerStart = true
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .selectionTargetChanged)) { notification in
+      guard let box = notification.object as? SelectionTargetInfoBox else { return }
+      targetTitle = box.info.title
+      targetPixel = CGSize(width: box.info.pixelWidth, height: box.info.pixelHeight)
+    }
+  }
+
+  private func stillConfirmButton(title: String) -> some View {
+    Button(action: onConfirm) {
+      HStack(spacing: 6) {
+        Image(systemName: "camera")
+        Text(title)
+      }
+    }
+    .buttonStyle(PrimaryButtonStyle(size: .large, forceLightMode: true))
+    .onChange(of: triggerStart) { _, newValue in
+      if newValue {
+        triggerStart = false
+        onConfirm()
+      }
     }
   }
 
@@ -137,7 +180,7 @@ struct CaptureAreaView: View {
       width: CGFloat(max(w, 10)),
       height: CGFloat(max(h, 10))
     )
-    session.updateOverlaySelection(rect)
+    onSelectionRectChange(rect)
   }
 
   private func centerSelection() {
@@ -152,4 +195,5 @@ struct CaptureAreaView: View {
 extension Notification.Name {
   static let selectionRectChanged = Notification.Name("selectionRectChanged")
   static let areaSelectionConfirmRequested = Notification.Name("areaSelectionConfirmRequested")
+  static let selectionTargetChanged = Notification.Name("selectionTargetChanged")
 }

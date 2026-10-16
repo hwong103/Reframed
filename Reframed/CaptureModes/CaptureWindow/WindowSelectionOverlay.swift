@@ -31,6 +31,34 @@ final class WindowSelectionOverlay: NSWindow {
     setFrame(screen.frame, display: true)
   }
 
+  init(screen: NSScreen, request: WindowSelectionRequest, windowController: WindowController) {
+    super.init(
+      contentRect: screen.frame,
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+
+    isOpaque = false
+    backgroundColor = .clear
+    level = .screenSaver
+    collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    ignoresMouseEvents = false
+    acceptsMouseMovedEvents = true
+    hasShadow = false
+    appearance = NSAppearance(named: .aqua)
+
+    let view = ScreenshotWindowSelectionView(
+      screen: screen,
+      request: request,
+      windowController: windowController
+    )
+    let hostingView = NSHostingView(rootView: view)
+    contentView = hostingView
+
+    setFrame(screen.frame, display: true)
+  }
+
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { true }
 

@@ -109,6 +109,16 @@ final class StateService {
     }
   }
 
+  var pinnedImages: [PinnedImageData] {
+    get { data.pinnedImages }
+    set { data.pinnedImages = newValue; save() }
+  }
+
+  var recentCaptures: [RecentCaptureData] {
+    get { data.recentCaptures ?? [] }
+    set { data.recentCaptures = newValue; save() }
+  }
+
   private init() {
     let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".reframed", isDirectory: true)
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -127,11 +137,12 @@ final class StateService {
     data = decoded
   }
 
-  func save() {
+  @discardableResult
+  func save() -> Bool {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    guard let raw = try? encoder.encode(data) else { return }
-    try? raw.write(to: fileURL, options: .atomic)
+    guard let raw = try? encoder.encode(data) else { return false }
+    return (try? raw.write(to: fileURL, options: .atomic)) != nil
   }
 }
 
@@ -156,4 +167,24 @@ private struct StateData: Codable {
   var recordingPreviewPosition: PointData? = nil
   var recordingPreviewHeight: CGFloat? = nil
   var editorWindowFrame: RectData? = nil
+  var pinnedImages: [PinnedImageData] = []
+  var recentCaptures: [RecentCaptureData]? = nil
+}
+
+struct PinnedImageData: Codable {
+  var id: String
+  var displayID: UInt32
+  var x: Double
+  var y: Double
+  var width: Double
+  var height: Double
+  var png: Data
+}
+
+extension StateService: RecentCapturePersisting {
+  @discardableResult
+  func commitCaptureList(_ items: [RecentCaptureData]) -> Bool {
+    data.recentCaptures = items
+    return save()
+  }
 }

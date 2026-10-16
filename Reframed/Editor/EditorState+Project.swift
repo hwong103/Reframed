@@ -59,6 +59,7 @@ extension EditorState {
   }
 
   func saveState() {
+    persistEditorDefaults()
     guard let project else { return }
     do {
       try project.saveEditorState(createSnapshot())

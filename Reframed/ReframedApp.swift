@@ -8,12 +8,14 @@ struct ReframedApp: App {
 
   init() {
     LogBootstrap.configure()
+    OCRService.warmUp()
   }
 
   var body: some Scene {
     MenuBarExtra {
       MenuBarView(
         session: appDelegate.session,
+        screenshotCoordinator: appDelegate.screenshotCoordinator,
         onDismiss: { isMenuPresented = false },
         onShowPermissions: { appDelegate.showPermissionsWindow() }
       )

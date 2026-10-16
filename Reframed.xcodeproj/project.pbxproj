@@ -98,6 +98,7 @@
 		A1000000000000000000003E /* KeyboardShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000003E /* KeyboardShortcut.swift */; };
 		A1000000000000000000003F /* KeyboardShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000003F /* KeyboardShortcutManager.swift */; };
 		A10000000000000000000040 /* SettingsShortcutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000040 /* SettingsShortcutsTab.swift */; };
+		A1000000000000000000006C /* SettingsScreenshotsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000006C /* SettingsScreenshotsTab.swift */; };
 		A10000000000000000000041 /* ShortcutRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000041 /* ShortcutRow.swift */; };
 		A10000000000000000000042 /* ShortcutRecorderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000042 /* ShortcutRecorderButton.swift */; };
 		A10000000000000000000043 /* ShortcutCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000043 /* ShortcutCaptureView.swift */; };
@@ -156,6 +157,72 @@
 		A40000000000000000000002 /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000002 /* TimeFormatting.swift */; };
 		A40000000000000000000003 /* MediaFileInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000003 /* MediaFileInfo.swift */; };
 		A40000000000000000000004 /* MathUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000004 /* MathUtilities.swift */; };
+		AB5C00000000000000000001 /* ImageExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000011 /* ImageExporter.swift */; };
+		AB5C00000000000000000002 /* ScreenshotNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000012 /* ScreenshotNaming.swift */; };
+		AB5C00000000000000000003 /* ScreenshotResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000013 /* ScreenshotResult.swift */; };
+		AB5C00000000000000000004 /* ScreenshotSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000014 /* ScreenshotSession.swift */; };
+		AB5C00000000000000000005 /* StillCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000015 /* StillCaptureService.swift */; };
+		AB5C00000000000000000006 /* ScreenshotCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000016 /* ScreenshotCoordinator.swift */; };
+		AB5C00000000000000000007 /* MenuBarView+QuickActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000017 /* MenuBarView+QuickActions.swift */; };
+		AB5C00000000000000000008 /* ShortcutAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000018 /* ShortcutAction.swift */; };
+		AB5C00000000000000000009 /* ScreenshotFeedbackWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */; };
+		AB5C0000000000000000000A /* KeyboardShortcutManager+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001A /* KeyboardShortcutManager+Actions.swift */; };
+		AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001B /* ScreenshotActionBarView.swift */; };
+		AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */; };
+		AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */; };
+		AB5C00000000000000000031 /* StillCaptureService+Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000030 /* StillCaptureService+Window.swift */; };
+		AB5C00000000000000000033 /* ScreenshotWindowSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */; };
+		AB5C00000000000000000035 /* ScreenshotCoordinator+Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */; };
+		AB5C00000000000000000041 /* SelectionOverlayView+Interaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000040 /* SelectionOverlayView+Interaction.swift */; };
+		AB5C00000000000000000051 /* CaptureAnnotationTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004C /* CaptureAnnotationTool.swift */; };
+		AB5C00000000000000000052 /* CaptureAnnotationToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */; };
+		AB5C00000000000000000053 /* CaptureDimensionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004E /* CaptureDimensionBadge.swift */; };
+		AB5C00000000000000000054 /* InlineAnnotationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004F /* InlineAnnotationSession.swift */; };
+		AB5C00000000000000000055 /* SelectionOverlayView+Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */; };
+		AB5C00000000000000000058 /* CaptureAnnotationToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */; };
+		AB5C00000000000000000059 /* InlineAnnotationSession+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */; };
+		AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */; };
+		AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005C /* CaptureSelectionChrome.swift */; };
+		AB5C0000000000000000005F /* WindowCaptureComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000005E /* WindowCaptureComposer.swift */; };
+		AB5C00000000000000000063 /* SelectionOverlayView+WindowPick.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */; };
+		AB5C00000000000000000065 /* CaptureAnnotationDragSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */; };
+		AB5C00000000000000000060 /* ScrollStitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000061 /* ScrollStitcher.swift */; };
+		AB5C00000000000000000066 /* ScrollStitcher+Stitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000067 /* ScrollStitcher+Stitch.swift */; };
+		AB5C00000000000000000068 /* ScrollingCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000069 /* ScrollingCaptureSession.swift */; };
+		AB5C0000000000000000006A /* ScrollingCaptureHUDWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000006B /* ScrollingCaptureHUDWindow.swift */; };
+		AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000042 /* HoverTargetProvider.swift */; };
+		AB5C00000000000000000045 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000044 /* OCRService.swift */; };
+		AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000046 /* PinnedImageWindow.swift */; };
+		AB5C0000000000000000006F /* PinnedImageWindow+Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */; };
+		AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000048 /* PinnedImageManager.swift */; };
+		AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000036 /* WindowSelectionRequest.swift */; };
+		AB5C00000000000000000071 /* AnnotationCanvasView+Viewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */; };
+		AB5C00000000000000000073 /* AnnotationCanvasView+DragCompose.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */; };
+		AB5C00000000000000000075 /* ScreenshotCoordinator+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000074 /* ScreenshotCoordinator+Text.swift */; };
+		AB5C00000000000000000077 /* InlineAnnotationSession+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */; };
+		AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000078 /* BeautifyStyle.swift */; };
+		AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */; };
+		AB5C00000000000000000083 /* RecentCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000082 /* RecentCaptureStore.swift */; };
+		AB5C00000000000000000085 /* RecentCaptureStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000084 /* RecentCaptureStrip.swift */; };
+		AB5C0000000000000000007F /* InlineAnnotationSession+Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */; };
+		AB5C00000000000000000081 /* OCRService+Ordering.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C00000000000000000080 /* OCRService+Ordering.swift */; };
+		AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */; };
+		AC0000000000000000000021 /* AnnotationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* AnnotationItem.swift */; };
+		AC0000000000000000000022 /* AnnotationDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* AnnotationDocument.swift */; };
+		AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000013 /* AnnotationRenderer.swift */; };
+		AC0000000000000000000024 /* AnnotationRenderer+Shapes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000014 /* AnnotationRenderer+Shapes.swift */; };
+		AC0000000000000000000025 /* AnnotationRenderer+Effects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000015 /* AnnotationRenderer+Effects.swift */; };
+		AC0000000000000000000026 /* AnnotationCommandStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000016 /* AnnotationCommandStack.swift */; };
+		AC0000000000000000000027 /* AnnotationPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000017 /* AnnotationPresets.swift */; };
+		AC0000000000000000000028 /* AnnotationEditorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000018 /* AnnotationEditorModel.swift */; };
+		AC0000000000000000000029 /* AnnotationCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000019 /* AnnotationCanvasView.swift */; };
+		AC000000000000000000002A /* AnnotationCanvasView+Drawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001A /* AnnotationCanvasView+Drawing.swift */; };
+		AC000000000000000000002B /* AnnotationCanvasView+Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001B /* AnnotationCanvasView+Geometry.swift */; };
+		AC000000000000000000002C /* AnnotationCanvasView+Interaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001C /* AnnotationCanvasView+Interaction.swift */; };
+		AC000000000000000000002D /* AnnotationCanvasView+Text.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001D /* AnnotationCanvasView+Text.swift */; };
+		AC000000000000000000002E /* AnnotationToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001E /* AnnotationToolbarView.swift */; };
+		AC000000000000000000002F /* AnnotationEditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000001F /* AnnotationEditorWindowController.swift */; };
+		AC0000000000000000000030 /* AnnotationTextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000020 /* AnnotationTextLayout.swift */; };
 		A50000000000000000000001 /* MouseClickMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000001 /* MouseClickMonitor.swift */; };
 		A50000000000000000000002 /* MouseClickWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50000000000000000000002 /* MouseClickWindow.swift */; };
 		A60000000000000000000001 /* CodableColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60000000000000000000001 /* CodableColor.swift */; };
@@ -231,6 +298,7 @@
 		E8B5DFD9612004970422D043 /* CmdScrollZoomOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C3A4D8ED8A124F0232C7E9 /* CmdScrollZoomOverlay.swift */; };
 		EBE32ED2DD59A7C40750A461 /* EditorView+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765BACA0E0486EBEC9CD107E /* EditorView+Sidebar.swift */; };
 		ED4608FB0AB34BC3B7BEDB94 /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC41BA6DF5654C57AC930549 /* WindowController.swift */; };
+		AB5C0000000000000000004B /* WindowController+HoverTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C0000000000000000004A /* WindowController+HoverTarget.swift */; };
 		ED6385F211F8F89B5F9DB254 /* SessionState+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606EC18A425D1DD59552E55E /* SessionState+UI.swift */; };
 		F2A404FA6C34F146B2DE873E /* VideoPreviewContainer+Webcam.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFB8530E54B2C3F5B4C5C547 /* VideoPreviewContainer+Webcam.swift */; };
 		F93F2FF47E12481595833E3E /* WindowSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4146D517F5E493F943D90D0 /* WindowSelectionView.swift */; };
@@ -347,6 +415,7 @@
 		B1000000000000000000003E /* KeyboardShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcut.swift; sourceTree = "<group>"; };
 		B1000000000000000000003F /* KeyboardShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutManager.swift; sourceTree = "<group>"; };
 		B10000000000000000000040 /* SettingsShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsShortcutsTab.swift; sourceTree = "<group>"; };
+		B1000000000000000000006C /* SettingsScreenshotsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenshotsTab.swift; sourceTree = "<group>"; };
 		B10000000000000000000041 /* ShortcutRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRow.swift; sourceTree = "<group>"; };
 		B10000000000000000000042 /* ShortcutRecorderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderButton.swift; sourceTree = "<group>"; };
 		B10000000000000000000043 /* ShortcutCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutCaptureView.swift; sourceTree = "<group>"; };
@@ -406,6 +475,72 @@
 		B40000000000000000000002 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
 		B40000000000000000000003 /* MediaFileInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFileInfo.swift; sourceTree = "<group>"; };
 		B40000000000000000000004 /* MathUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathUtilities.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000011 /* ImageExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageExporter.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000012 /* ScreenshotNaming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotNaming.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000013 /* ScreenshotResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotResult.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000014 /* ScreenshotSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSession.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000015 /* StillCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StillCaptureService.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000016 /* ScreenshotCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCoordinator.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000017 /* MenuBarView+QuickActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenuBarView+QuickActions.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000018 /* ShortcutAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutAction.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotFeedbackWindow.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000001A /* KeyboardShortcutManager+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcutManager+Actions.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000001B /* ScreenshotActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarView.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotActionBarWindow.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Support.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000030 /* StillCaptureService+Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StillCaptureService+Window.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWindowSelectionView.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Window.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000040 /* SelectionOverlayView+Interaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Interaction.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000004C /* CaptureAnnotationTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationTool.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationToolbarView.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004E /* CaptureDimensionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDimensionBadge.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004F /* InlineAnnotationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineAnnotationSession.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Annotation.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationToolbarButton.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Output.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Annotation.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000005C /* CaptureSelectionChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSelectionChrome.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000042 /* HoverTargetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverTargetProvider.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000044 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000046 /* PinnedImageWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageWindow.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PinnedImageWindow+Geometry.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000048 /* PinnedImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedImageManager.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000036 /* WindowSelectionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSelectionRequest.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Viewport.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+DragCompose.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000074 /* ScreenshotCoordinator+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotCoordinator+Text.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Text.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000078 /* BeautifyStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeautifyStyle.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Beautify.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000082 /* RecentCaptureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentCaptureStore.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000084 /* RecentCaptureStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentCaptureStrip.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScreenshotSession+Repeat.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InlineAnnotationSession+Commands.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000080 /* OCRService+Ordering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OCRService+Ordering.swift"; sourceTree = "<group>"; };
+		AB5C0000000000000000005E /* WindowCaptureComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureComposer.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+WindowPick.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAnnotationDragSource.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000061 /* ScrollStitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollStitcher.swift; sourceTree = "<group>"; };
+		AB5C00000000000000000067 /* ScrollStitcher+Stitch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScrollStitcher+Stitch.swift"; sourceTree = "<group>"; };
+		AB5C00000000000000000069 /* ScrollingCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingCaptureSession.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000006B /* ScrollingCaptureHUDWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingCaptureHUDWindow.swift; sourceTree = "<group>"; };
+		AC0000000000000000000011 /* AnnotationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationItem.swift; sourceTree = "<group>"; };
+		AC0000000000000000000012 /* AnnotationDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationDocument.swift; sourceTree = "<group>"; };
+		AC0000000000000000000013 /* AnnotationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationRenderer.swift; sourceTree = "<group>"; };
+		AC0000000000000000000014 /* AnnotationRenderer+Shapes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Shapes.swift"; sourceTree = "<group>"; };
+		AC0000000000000000000015 /* AnnotationRenderer+Effects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationRenderer+Effects.swift"; sourceTree = "<group>"; };
+		AC0000000000000000000016 /* AnnotationCommandStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCommandStack.swift; sourceTree = "<group>"; };
+		AC0000000000000000000017 /* AnnotationPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPresets.swift; sourceTree = "<group>"; };
+		AC0000000000000000000018 /* AnnotationEditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditorModel.swift; sourceTree = "<group>"; };
+		AC0000000000000000000019 /* AnnotationCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCanvasView.swift; sourceTree = "<group>"; };
+		AC000000000000000000001A /* AnnotationCanvasView+Drawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Drawing.swift"; sourceTree = "<group>"; };
+		AC000000000000000000001B /* AnnotationCanvasView+Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Geometry.swift"; sourceTree = "<group>"; };
+		AC000000000000000000001C /* AnnotationCanvasView+Interaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Interaction.swift"; sourceTree = "<group>"; };
+		AC000000000000000000001D /* AnnotationCanvasView+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnnotationCanvasView+Text.swift"; sourceTree = "<group>"; };
+		AC000000000000000000001E /* AnnotationToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolbarView.swift; sourceTree = "<group>"; };
+		AC000000000000000000001F /* AnnotationEditorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditorWindowController.swift; sourceTree = "<group>"; };
+		AC0000000000000000000020 /* AnnotationTextLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationTextLayout.swift; sourceTree = "<group>"; };
 		B432E80EDC8E91A6B74634AC /* VideoPreviewView+Update.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "VideoPreviewView+Update.swift"; sourceTree = "<group>"; };
 		B4B39BCCC031C1D78AE47B52 /* SelectionOverlayView+Controls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SelectionOverlayView+Controls.swift"; sourceTree = "<group>"; };
 		B50000000000000000000001 /* MouseClickMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseClickMonitor.swift; sourceTree = "<group>"; };
@@ -476,6 +611,7 @@
 		E926AD0DCDC6B2F794EF9C92 /* SessionState+Recording.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SessionState+Recording.swift"; sourceTree = "<group>"; };
 		EB80B289E404CFF82DC2A109 /* History+ChangeRules.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "History+ChangeRules.swift"; sourceTree = "<group>"; };
 		EC41BA6DF5654C57AC930549 /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
+		AB5C0000000000000000004A /* WindowController+HoverTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowController+HoverTarget.swift"; sourceTree = "<group>"; };
 		EFF5D8C3FCEE6DC1F9BB700A /* ZoomKeyframeEditor+Logic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ZoomKeyframeEditor+Logic.swift"; sourceTree = "<group>"; };
 		F10139C60D4C38761A7D3914 /* EditorView+Preview.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "EditorView+Preview.swift"; sourceTree = "<group>"; };
 		F1874AA3B515AEFC58016EC5 /* MenuBarView+Projects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "MenuBarView+Projects.swift"; sourceTree = "<group>"; };
@@ -544,6 +680,8 @@
 				D30000000000000000000001 /* Project */,
 				D10000000000000000000009 /* Utilities */,
 				D1000000000000000000000C /* UI */,
+				AB5C00000000000000000021 /* Screenshot */,
+				AC0000000000000000000001 /* Annotation */,
 				3DCA03E02F3B511C003FE309 /* Assets.xcassets */,
 				AA0000000000000000000002 /* Credits.html */,
 			);
@@ -556,6 +694,7 @@
 				B10000000000000000000002 /* AppDelegate.swift */,
 				B10000000000000000000003 /* Permissions.swift */,
 				EC41BA6DF5654C57AC930549 /* WindowController.swift */,
+				AB5C0000000000000000004A /* WindowController+HoverTarget.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -579,6 +718,7 @@
 				B10000000000000000000030 /* ConfigService.swift */,
 				B10000000000000000000031 /* StateService.swift */,
 				B1000000000000000000003F /* KeyboardShortcutManager.swift */,
+				AB5C0000000000000000001A /* KeyboardShortcutManager+Actions.swift */,
 				2575DEC82B154B6BFF040F7B /* SessionState+Camera.swift */,
 				2A0FBA8BCE1837F6AE0375EF /* SessionState+Audio.swift */,
 				606EC18A425D1DD59552E55E /* SessionState+UI.swift */,
@@ -634,6 +774,7 @@
 				B60000000000000000000001 /* CodableColor.swift */,
 				DA000000000000000000001D /* RNNoiseProcessor.swift */,
 				B1000000000000000000003E /* KeyboardShortcut.swift */,
+				AB5C00000000000000000018 /* ShortcutAction.swift */,
 				E1000000000000000000000E /* SparkleUpdater.swift */,
 				B1000000000000000000004C /* UpdateChecker.swift */,
 				CA20000000000000000000A1 /* WhisperModelManager.swift */,
@@ -681,6 +822,7 @@
 				B70000000000000000000004 /* DevicePopover.swift */,
 				B70000000000000000000005 /* DevicePickerPopover.swift */,
 				B80000000000000000000001 /* MenuBarView.swift */,
+				AB5C00000000000000000017 /* MenuBarView+QuickActions.swift */,
 				B80000000000000000000002 /* HoverEffect.swift */,
 				B10000000000000000000036 /* SettingsGeneralTab.swift */,
 				B10000000000000000000037 /* SettingsRecordingTab.swift */,
@@ -695,6 +837,7 @@
 				B10000000000000000000044 /* SegmentPicker.swift */,
 				B1000000000000000000003D /* Constants.swift */,
 				B10000000000000000000040 /* SettingsShortcutsTab.swift */,
+				B1000000000000000000006C /* SettingsScreenshotsTab.swift */,
 				B10000000000000000000041 /* ShortcutRow.swift */,
 				B10000000000000000000042 /* ShortcutRecorderButton.swift */,
 				B10000000000000000000043 /* ShortcutCaptureView.swift */,
@@ -716,6 +859,79 @@
 				6B4535D89EAC6F65D82BC248 /* CaptureToolbar+Controls.swift */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		AB5C00000000000000000021 /* Screenshot */ = {
+			isa = PBXGroup;
+			children = (
+				AB5C00000000000000000011 /* ImageExporter.swift */,
+				AB5C0000000000000000001B /* ScreenshotActionBarView.swift */,
+				AB5C0000000000000000001C /* ScreenshotActionBarWindow.swift */,
+				AB5C0000000000000000001D /* ScreenshotCoordinator+Support.swift */,
+				AB5C00000000000000000016 /* ScreenshotCoordinator.swift */,
+				AB5C00000000000000000034 /* ScreenshotCoordinator+Window.swift */,
+				AB5C00000000000000000019 /* ScreenshotFeedbackWindow.swift */,
+				AB5C00000000000000000012 /* ScreenshotNaming.swift */,
+				AB5C00000000000000000013 /* ScreenshotResult.swift */,
+				AB5C00000000000000000014 /* ScreenshotSession.swift */,
+				AB5C0000000000000000007C /* ScreenshotSession+Repeat.swift */,
+				AB5C00000000000000000032 /* ScreenshotWindowSelectionView.swift */,
+				AB5C00000000000000000015 /* StillCaptureService.swift */,
+				AB5C00000000000000000030 /* StillCaptureService+Window.swift */,
+				AB5C00000000000000000042 /* HoverTargetProvider.swift */,
+				AB5C00000000000000000044 /* OCRService.swift */,
+				AB5C00000000000000000046 /* PinnedImageWindow.swift */,
+				AB5C0000000000000000006E /* PinnedImageWindow+Geometry.swift */,
+				AB5C00000000000000000048 /* PinnedImageManager.swift */,
+				AB5C0000000000000000004C /* CaptureAnnotationTool.swift */,
+				AB5C0000000000000000004D /* CaptureAnnotationToolbarView.swift */,
+				AB5C0000000000000000004E /* CaptureDimensionBadge.swift */,
+				AB5C0000000000000000004F /* InlineAnnotationSession.swift */,
+				AB5C00000000000000000056 /* CaptureAnnotationToolbarButton.swift */,
+				AB5C00000000000000000057 /* InlineAnnotationSession+Output.swift */,
+				AB5C00000000000000000076 /* InlineAnnotationSession+Text.swift */,
+				AB5C0000000000000000007E /* InlineAnnotationSession+Commands.swift */,
+				AB5C00000000000000000080 /* OCRService+Ordering.swift */,
+				AB5C00000000000000000082 /* RecentCaptureStore.swift */,
+				AB5C00000000000000000084 /* RecentCaptureStrip.swift */,
+				AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */,
+				AB5C00000000000000000061 /* ScrollStitcher.swift */,
+				AB5C00000000000000000067 /* ScrollStitcher+Stitch.swift */,
+				AB5C00000000000000000069 /* ScrollingCaptureSession.swift */,
+				AB5C0000000000000000006B /* ScrollingCaptureHUDWindow.swift */,
+				AB5C0000000000000000005A /* ScreenshotCoordinator+Annotation.swift */,
+				AB5C00000000000000000074 /* ScreenshotCoordinator+Text.swift */,
+				AB5C0000000000000000005C /* CaptureSelectionChrome.swift */,
+				AB5C0000000000000000005E /* WindowCaptureComposer.swift */,
+			);
+			path = Screenshot;
+			sourceTree = "<group>";
+		};
+		AC0000000000000000000001 /* Annotation */ = {
+			isa = PBXGroup;
+			children = (
+				AC0000000000000000000011 /* AnnotationItem.swift */,
+				AB5C00000000000000000078 /* BeautifyStyle.swift */,
+				AB5C0000000000000000007A /* AnnotationRenderer+Beautify.swift */,
+				AC0000000000000000000012 /* AnnotationDocument.swift */,
+				AC0000000000000000000013 /* AnnotationRenderer.swift */,
+				AC0000000000000000000014 /* AnnotationRenderer+Shapes.swift */,
+				AC0000000000000000000020 /* AnnotationTextLayout.swift */,
+				AC0000000000000000000015 /* AnnotationRenderer+Effects.swift */,
+				AC0000000000000000000016 /* AnnotationCommandStack.swift */,
+				AC0000000000000000000017 /* AnnotationPresets.swift */,
+				AC0000000000000000000018 /* AnnotationEditorModel.swift */,
+				AC0000000000000000000019 /* AnnotationCanvasView.swift */,
+				AC000000000000000000001A /* AnnotationCanvasView+Drawing.swift */,
+				AC000000000000000000001B /* AnnotationCanvasView+Geometry.swift */,
+				AC000000000000000000001C /* AnnotationCanvasView+Interaction.swift */,
+				AC000000000000000000001D /* AnnotationCanvasView+Text.swift */,
+				AB5C00000000000000000070 /* AnnotationCanvasView+Viewport.swift */,
+				AB5C00000000000000000072 /* AnnotationCanvasView+DragCompose.swift */,
+				AC000000000000000000001E /* AnnotationToolbarView.swift */,
+				AC000000000000000000001F /* AnnotationEditorWindowController.swift */,
+			);
+			path = Annotation;
 			sourceTree = "<group>";
 		};
 		D1000000000000000000000D /* CaptureModes */ = {
@@ -747,9 +963,12 @@
 				B1000000000000000000000D /* SelectionOverlayView.swift */,
 				B1000000000000000000000F /* ResizeHandle.swift */,
 				B1000000000000000000001E /* CaptureAreaView.swift */,
+				AB5C00000000000000000040 /* SelectionOverlayView+Interaction.swift */,
 				7E2B226826676E12A667F53E /* SelectionOverlayView+Drawing.swift */,
 				A204316B5FA59D98E694D332 /* SelectionOverlayView+Resize.swift */,
 				B4B39BCCC031C1D78AE47B52 /* SelectionOverlayView+Controls.swift */,
+				AB5C00000000000000000050 /* SelectionOverlayView+Annotation.swift */,
+				AB5C00000000000000000062 /* SelectionOverlayView+WindowPick.swift */,
 			);
 			path = CaptureArea;
 			sourceTree = "<group>";
@@ -768,6 +987,7 @@
 				BDB41C1253D94BEF960FD7D2 /* WindowSelectionCoordinator.swift */,
 				A435021272D7425AB77F93DF /* WindowSelectionOverlay.swift */,
 				C4146D517F5E493F943D90D0 /* WindowSelectionView.swift */,
+				AB5C00000000000000000036 /* WindowSelectionRequest.swift */,
 				B2000000000000000000002B /* ResizePopover.swift */,
 			);
 			path = CaptureWindow;
@@ -1008,6 +1228,7 @@
 				A1000000000000000000001D /* RecordingBorderWindow.swift in Sources */,
 				A1F00000000000000000001 /* WindowPositionObserver.swift in Sources */,
 				A1000000000000000000001E /* CaptureAreaView.swift in Sources */,
+				AB5C00000000000000000041 /* SelectionOverlayView+Interaction.swift in Sources */,
 				A10000000000000000000013 /* FileManager+Reframed.swift in Sources */,
 				A10000000000000000000032 /* MicrophoneCapture.swift in Sources */,
 				A10000000000000000000034 /* SystemAudioCapture.swift in Sources */,
@@ -1028,6 +1249,7 @@
 				A10000000000000000000028 /* CaptureToolbarWindow.swift in Sources */,
 				A1000000000000000000002A /* StartRecordingOverlay.swift in Sources */,
 				ED4608FB0AB34BC3B7BEDB94 /* WindowController.swift in Sources */,
+				AB5C0000000000000000004B /* WindowController+HoverTarget.swift in Sources */,
 				A1000000000000000000002B /* PermissionsView.swift in Sources */,
 				A1000000000000000000002C /* StartRecordingButton.swift in Sources */,
 				A1000000000000000000002D /* SettingsView.swift in Sources */,
@@ -1117,6 +1339,7 @@
 				A1000000000000000000003E /* KeyboardShortcut.swift in Sources */,
 				A1000000000000000000003F /* KeyboardShortcutManager.swift in Sources */,
 				A10000000000000000000040 /* SettingsShortcutsTab.swift in Sources */,
+				A1000000000000000000006C /* SettingsScreenshotsTab.swift in Sources */,
 				A10000000000000000000041 /* ShortcutRow.swift in Sources */,
 				A10000000000000000000042 /* ShortcutRecorderButton.swift in Sources */,
 				A10000000000000000000043 /* ShortcutCaptureView.swift in Sources */,
@@ -1219,6 +1442,71 @@
 				083CE52934446637B35EF2A7 /* RecordingCoordinator+Lifecycle.swift in Sources */,
 				D3134AAE9FC7FC1D4E19341B /* History+ChangeRules.swift in Sources */,
 				026E7D919650C4854FCBCF33 /* ExportSheet+Phases.swift in Sources */,
+				AB5C00000000000000000001 /* ImageExporter.swift in Sources */,
+				AB5C00000000000000000002 /* ScreenshotNaming.swift in Sources */,
+				AB5C00000000000000000003 /* ScreenshotResult.swift in Sources */,
+				AB5C00000000000000000004 /* ScreenshotSession.swift in Sources */,
+				AB5C0000000000000000007D /* ScreenshotSession+Repeat.swift in Sources */,
+				AB5C00000000000000000005 /* StillCaptureService.swift in Sources */,
+				AB5C00000000000000000031 /* StillCaptureService+Window.swift in Sources */,
+				AB5C00000000000000000006 /* ScreenshotCoordinator.swift in Sources */,
+				AB5C00000000000000000035 /* ScreenshotCoordinator+Window.swift in Sources */,
+				AB5C00000000000000000007 /* MenuBarView+QuickActions.swift in Sources */,
+				AB5C00000000000000000008 /* ShortcutAction.swift in Sources */,
+				AB5C00000000000000000009 /* ScreenshotFeedbackWindow.swift in Sources */,
+				AB5C0000000000000000000A /* KeyboardShortcutManager+Actions.swift in Sources */,
+				AB5C0000000000000000000B /* ScreenshotActionBarView.swift in Sources */,
+				AB5C0000000000000000000C /* ScreenshotActionBarWindow.swift in Sources */,
+				AB5C0000000000000000000D /* ScreenshotCoordinator+Support.swift in Sources */,
+				AB5C00000000000000000033 /* ScreenshotWindowSelectionView.swift in Sources */,
+				AB5C00000000000000000043 /* HoverTargetProvider.swift in Sources */,
+				AB5C00000000000000000045 /* OCRService.swift in Sources */,
+				AB5C00000000000000000047 /* PinnedImageWindow.swift in Sources */,
+				AB5C0000000000000000006F /* PinnedImageWindow+Geometry.swift in Sources */,
+				AB5C00000000000000000049 /* PinnedImageManager.swift in Sources */,
+				AB5C00000000000000000051 /* CaptureAnnotationTool.swift in Sources */,
+				AB5C00000000000000000052 /* CaptureAnnotationToolbarView.swift in Sources */,
+				AB5C00000000000000000053 /* CaptureDimensionBadge.swift in Sources */,
+				AB5C00000000000000000054 /* InlineAnnotationSession.swift in Sources */,
+				AB5C00000000000000000055 /* SelectionOverlayView+Annotation.swift in Sources */,
+				AB5C00000000000000000058 /* CaptureAnnotationToolbarButton.swift in Sources */,
+				AB5C00000000000000000059 /* InlineAnnotationSession+Output.swift in Sources */,
+				AB5C00000000000000000077 /* InlineAnnotationSession+Text.swift in Sources */,
+				AB5C0000000000000000007F /* InlineAnnotationSession+Commands.swift in Sources */,
+				AB5C00000000000000000081 /* OCRService+Ordering.swift in Sources */,
+				AB5C0000000000000000005B /* ScreenshotCoordinator+Annotation.swift in Sources */,
+				AB5C00000000000000000075 /* ScreenshotCoordinator+Text.swift in Sources */,
+				AB5C0000000000000000005D /* CaptureSelectionChrome.swift in Sources */,
+				AB5C0000000000000000005F /* WindowCaptureComposer.swift in Sources */,
+				AB5C00000000000000000063 /* SelectionOverlayView+WindowPick.swift in Sources */,
+				AB5C00000000000000000065 /* CaptureAnnotationDragSource.swift in Sources */,
+				AB5C00000000000000000060 /* ScrollStitcher.swift in Sources */,
+				AB5C00000000000000000066 /* ScrollStitcher+Stitch.swift in Sources */,
+				AB5C00000000000000000068 /* ScrollingCaptureSession.swift in Sources */,
+				AB5C0000000000000000006A /* ScrollingCaptureHUDWindow.swift in Sources */,
+				AB5C00000000000000000037 /* WindowSelectionRequest.swift in Sources */,
+				AC0000000000000000000021 /* AnnotationItem.swift in Sources */,
+				AB5C00000000000000000079 /* BeautifyStyle.swift in Sources */,
+				AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */,
+				AB5C00000000000000000083 /* RecentCaptureStore.swift in Sources */,
+				AB5C00000000000000000085 /* RecentCaptureStrip.swift in Sources */,
+				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,
+				AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */,
+				AC0000000000000000000024 /* AnnotationRenderer+Shapes.swift in Sources */,
+				AC0000000000000000000030 /* AnnotationTextLayout.swift in Sources */,
+				AC0000000000000000000025 /* AnnotationRenderer+Effects.swift in Sources */,
+				AC0000000000000000000026 /* AnnotationCommandStack.swift in Sources */,
+				AC0000000000000000000027 /* AnnotationPresets.swift in Sources */,
+				AC0000000000000000000028 /* AnnotationEditorModel.swift in Sources */,
+				AC0000000000000000000029 /* AnnotationCanvasView.swift in Sources */,
+				AC000000000000000000002A /* AnnotationCanvasView+Drawing.swift in Sources */,
+				AC000000000000000000002B /* AnnotationCanvasView+Geometry.swift in Sources */,
+				AC000000000000000000002C /* AnnotationCanvasView+Interaction.swift in Sources */,
+				AC000000000000000000002D /* AnnotationCanvasView+Text.swift in Sources */,
+				AB5C00000000000000000071 /* AnnotationCanvasView+Viewport.swift in Sources */,
+				AB5C00000000000000000073 /* AnnotationCanvasView+DragCompose.swift in Sources */,
+				AC000000000000000000002E /* AnnotationToolbarView.swift in Sources */,
+				AC000000000000000000002F /* AnnotationEditorWindowController.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
