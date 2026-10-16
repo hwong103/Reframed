@@ -4,7 +4,7 @@ set -euo pipefail
 IDENTITY="Reframed Local Signing"
 KEYCHAIN="$HOME/Library/Keychains/reframed-signing.keychain-db"
 REPO="${REPO:-hwong103/Reframed}"
-BRANCH="${BRANCH:-feat/rename-blur-and-export-naming}"
+BRANCH="${BRANCH:-main}"
 TARGET="/Applications/Reframed.app"
 BACKUP_DIR="$HOME/Library/Application Support/Reframed-Fork"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
