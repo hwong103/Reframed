@@ -225,6 +225,8 @@ final class EditorState {
       if let savedSegments = saved.captionSegments, !savedSegments.isEmpty {
         self.captionSegments = savedSegments
       }
+    } else if let defaults = ConfigService.shared.editorDefaults {
+      applyStyleSettings(from: defaults)
     }
     if captionAudioSource == .microphone && result.microphoneAudioURL == nil && result.systemAudioURL != nil {
       captionAudioSource = .system
@@ -238,6 +240,9 @@ final class EditorState {
     self.result = result
     self.playerController = SyncedPlayerController(result: result)
     self.projectName = result.screenVideoURL.deletingPathExtension().lastPathComponent
+    if let defaults = ConfigService.shared.editorDefaults {
+      applyStyleSettings(from: defaults)
+    }
   }
 
   func setup() async {
@@ -351,6 +356,10 @@ final class EditorState {
     trimStart = .zero
     trimEnd = playerController.duration
     playerController.trimEnd = playerController.duration
+
+    if autoZoomEnabled, zoomTimeline == nil, project?.metadata.editorState == nil {
+      generateAutoZoom()
+    }
 
     if let proj = project, let historyData = proj.loadHistory() {
       history.load(from: historyData)
