@@ -1,3 +1,4 @@
+import ServiceManagement
 import SwiftUI
 
 extension SettingsView {
@@ -16,6 +17,35 @@ extension SettingsView {
             }
           )
         )
+      }
+
+      settingsToggle(
+        "Open Reframed at Login",
+        isOn: Binding(
+          get: { launchAtLoginEnabled },
+          set: { setLaunchAtLogin($0) }
+        )
+      )
+
+      if SMAppService.mainApp.status == .requiresApproval {
+        HStack {
+          Text("Allow Reframed in System Settings > General > Login Items.")
+            .font(.system(size: FontSize.xs))
+            .foregroundStyle(ReframedColors.secondaryText)
+          Spacer()
+          Button("Open Login Items") {
+            SMAppService.openSystemSettingsLoginItems()
+          }
+          .buttonStyle(OutlineButtonStyle(size: .small))
+        }
+        .padding(.top, -10)
+      }
+
+      if let launchAtLoginError {
+        Text(launchAtLoginError)
+          .font(.system(size: FontSize.xs))
+          .foregroundStyle(ReframedColors.secondaryText)
+          .padding(.top, -10)
       }
 
       settingsRow(label: "Project Folder") {
@@ -91,6 +121,29 @@ extension SettingsView {
           set: { options?.showRecordingPreview = $0 }
         )
       )
+    }
+  }
+
+  func setLaunchAtLogin(_ enabled: Bool) {
+    do {
+      if enabled {
+        try SMAppService.mainApp.register()
+      } else {
+        try SMAppService.mainApp.unregister()
+      }
+      refreshLaunchAtLoginStatus()
+      launchAtLoginError = nil
+    } catch {
+      refreshLaunchAtLoginStatus()
+      launchAtLoginError = "Could not update login settings: \(error.localizedDescription)"
+    }
+  }
+
+  func refreshLaunchAtLoginStatus() {
+    let status = SMAppService.mainApp.status
+    launchAtLoginEnabled = status == .enabled || status == .requiresApproval
+    if status == .enabled {
+      launchAtLoginError = nil
     }
   }
 }

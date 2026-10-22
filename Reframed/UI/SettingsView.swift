@@ -1,4 +1,5 @@
 import AVFoundation
+import ServiceManagement
 import SwiftUI
 
 private enum SettingsTab: String, CaseIterable {
@@ -19,7 +20,12 @@ struct SettingsView: View {
   @State var cameraMaximumResolution: String = ConfigService.shared.cameraMaximumResolution
   @State var projectFolder: String = ConfigService.shared.projectFolder
   @State var appearance: String = ConfigService.shared.appearance
+  @State var launchAtLoginEnabled =
+    SMAppService.mainApp.status == .enabled
+    || SMAppService.mainApp.status == .requiresApproval
+  @State var launchAtLoginError: String?
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.scenePhase) private var scenePhase
 
   let fpsOptions = [24, 30, 40, 50, 60]
 
@@ -69,6 +75,12 @@ struct SettingsView: View {
     }
     .frame(width: 600, height: 460)
     .background(ReframedColors.backgroundPopover)
+    .onAppear(perform: refreshLaunchAtLoginStatus)
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active {
+        refreshLaunchAtLoginStatus()
+      }
+    }
   }
 
   private var tabBar: some View {
