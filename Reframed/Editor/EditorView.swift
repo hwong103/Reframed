@@ -115,6 +115,12 @@ struct EditorView: View {
         isPresented: $editorState.showExportSheet
       )
     }
+    .sheet(isPresented: $editorState.showAgentHandoffSheet) {
+      AgentHandoffSheet(
+        editorState: editorState,
+        isPresented: $editorState.showAgentHandoffSheet
+      )
+    }
     .alert("Delete Recording?", isPresented: $editorState.showDeleteConfirmation) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {

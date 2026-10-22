@@ -41,6 +41,7 @@ final class EditorState {
   var cameraFullscreenAspect: CameraFullscreenAspect = .original
   var projectName: String = ""
   var showExportSheet = false
+  var showAgentHandoffSheet = false
   var showDeleteConfirmation = false
   var lastExportedURL: URL?
 

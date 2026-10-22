@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0255AD69477B42D2B028628B /* CaptureTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFD921258364EA6A604537F /* CaptureTarget.swift */; };
 		026E7D919650C4854FCBCF33 /* ExportSheet+Phases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496C1D98B8AB2982DF4AA7D4 /* ExportSheet+Phases.swift */; };
+		F5A9A2D87F4F4F5DA6C12B01 /* AgentHandoffSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A9A2D87F4F4F5DA6C12B02 /* AgentHandoffSheet.swift */; };
 		07D41C6C5E3E6E5D646991CC /* SessionState+Recording.swift in Sources */ = {isa = PBXBuildFile; fileRef = E926AD0DCDC6B2F794EF9C92 /* SessionState+Recording.swift */; };
 		083CE52934446637B35EF2A7 /* RecordingCoordinator+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2630C23881313B30C965A75A /* RecordingCoordinator+Lifecycle.swift */; };
 		099C5B4AFE46AC44C6636A86 /* EditorState+CameraRegions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1183EC0D0DA57B9B73BC950 /* EditorState+CameraRegions.swift */; };
@@ -452,6 +453,7 @@
 		B20000000000000000000014 /* GradientPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientPresets.swift; sourceTree = "<group>"; };
 		B20000000000000000000015 /* ExportSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSettings.swift; sourceTree = "<group>"; };
 		B20000000000000000000016 /* EditorTopBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTopBar.swift; sourceTree = "<group>"; };
+		F5A9A2D87F4F4F5DA6C12B02 /* AgentHandoffSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHandoffSheet.swift; sourceTree = "<group>"; };
 		B20000000000000000000017 /* ExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSheet.swift; sourceTree = "<group>"; };
 		B20000000000000000000018 /* PropertiesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertiesPanel.swift; sourceTree = "<group>"; };
 		B2000000000000000000001A /* CompositionInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositionInstruction.swift; sourceTree = "<group>"; };
@@ -999,6 +1001,7 @@
 				B2000000000000000000000B /* AudioWaveformGenerator.swift */,
 				B20000000000000000000006 /* EditorState.swift */,
 				B20000000000000000000016 /* EditorTopBar.swift */,
+				F5A9A2D87F4F4F5DA6C12B02 /* AgentHandoffSheet.swift */,
 				B20000000000000000000022 /* History.swift */,
 				B20000000000000000000023 /* HistoryPopover.swift */,
 				B2000000000000000000000C /* EditorView.swift */,
@@ -1274,6 +1277,7 @@
 				A20000000000000000000018 /* PropertiesPanel.swift in Sources */,
 				A2000000000000000000001A /* CompositionInstruction.swift in Sources */,
 				A2000000000000000000000C /* EditorView.swift in Sources */,
+				F5A9A2D87F4F4F5DA6C12B01 /* AgentHandoffSheet.swift in Sources */,
 				A2000000000000000000000D /* EditorWindow.swift in Sources */,
 				A2000000000000000000000F /* FrameRenderer.swift in Sources */,
 				A20000000000000000000010 /* VideoCompositor.swift in Sources */,

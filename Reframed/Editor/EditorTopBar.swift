@@ -24,6 +24,10 @@ struct EditorTopBar: View {
         Button("Export") { editorState.showExportSheet = true }
           .buttonStyle(PrimaryButtonStyle(size: .small))
           .disabled(editorState.isExporting)
+
+        Button("Agent Handoff") { editorState.showAgentHandoffSheet = true }
+          .buttonStyle(OutlineButtonStyle(size: .small))
+          .disabled(editorState.isExporting)
       }
     }
     .padding(.leading, 16)
