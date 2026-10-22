@@ -41,7 +41,7 @@ struct AgentHandoffSheet: View {
     let _ = colorScheme
     VStack(alignment: .leading, spacing: 18) {
       Text(createdFolder == nil ? "Create Agent Handoff" : "Handoff Ready")
-        .font(.system(size: FontSize.md, weight: .semibold))
+        .font(.system(size: FontSize.xxl, weight: .semibold))
         .foregroundStyle(ReframedColors.primaryText)
 
       if let createdFolder {
