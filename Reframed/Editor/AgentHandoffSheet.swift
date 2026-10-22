@@ -205,6 +205,8 @@ private enum AgentHandoffExporter {
     let generator = AVAssetImageGenerator(asset: asset)
     generator.appliesPreferredTrackTransform = true
     generator.maximumSize = CGSize(width: 2400, height: 2400)
+    generator.requestedTimeToleranceBefore = .zero
+    generator.requestedTimeToleranceAfter = .zero
     let count = min(12, max(2, frameCount))
     let times = (0..<count).map { index in
       duration * Double(index) / Double(count - 1)
