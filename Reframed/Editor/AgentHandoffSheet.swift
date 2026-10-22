@@ -202,11 +202,6 @@ private enum AgentHandoffExporter {
     guard duration.isFinite, duration > 0 else {
       throw CocoaError(.fileReadCorruptFile)
     }
-    let generator = AVAssetImageGenerator(asset: asset)
-    generator.appliesPreferredTrackTransform = true
-    generator.maximumSize = CGSize(width: 2400, height: 2400)
-    generator.requestedTimeToleranceBefore = .zero
-    generator.requestedTimeToleranceAfter = .zero
     let count = min(12, max(2, frameCount))
     let times = (0..<count).map { index in
       duration * Double(index) / Double(count - 1)
@@ -215,6 +210,13 @@ private enum AgentHandoffExporter {
     var images: [CGImage] = []
     for (index, seconds) in times.enumerated() {
       try Task.checkCancellation()
+      // AVAssetImageGenerator can return a cached result for a nearby request,
+      // even with zero tolerance. A fresh generator keeps adjacent samples distinct.
+      let generator = AVAssetImageGenerator(asset: asset)
+      generator.appliesPreferredTrackTransform = true
+      generator.maximumSize = CGSize(width: 2400, height: 2400)
+      generator.requestedTimeToleranceBefore = .zero
+      generator.requestedTimeToleranceAfter = .zero
       let time = CMTime(seconds: min(seconds, max(0, duration - 0.05)), preferredTimescale: 600)
       let (image, actualTime) = try await generator.image(at: time)
       let outputSeconds = CMTimeGetSeconds(actualTime)
