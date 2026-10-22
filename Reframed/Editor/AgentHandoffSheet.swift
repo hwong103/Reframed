@@ -1,6 +1,7 @@
 import AVFoundation
 import AppKit
 import CoreGraphics
+import CoreImage
 import CoreText
 import Foundation
 import ImageIO
@@ -202,30 +203,74 @@ private enum AgentHandoffExporter {
     guard duration.isFinite, duration > 0 else {
       throw CocoaError(.fileReadCorruptFile)
     }
+    guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+      throw CocoaError(.fileReadCorruptFile)
+    }
+    let preferredTransform = try await videoTrack.load(.preferredTransform)
     let count = min(12, max(2, frameCount))
     let times = (0..<count).map { index in
-      duration * Double(index) / Double(count - 1)
+      min(duration * Double(index) / Double(count - 1), max(0, duration - 0.05))
     }
+    let reader = try AVAssetReader(asset: asset)
+    let readerOutput = AVAssetReaderTrackOutput(
+      track: videoTrack,
+      outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+    )
+    readerOutput.alwaysCopiesSampleData = false
+    guard reader.canAdd(readerOutput) else {
+      throw CocoaError(.fileReadUnknown)
+    }
+    reader.add(readerOutput)
+    guard reader.startReading() else {
+      throw reader.error ?? CocoaError(.fileReadUnknown)
+    }
+    let imageContext = CIContext()
     var frames: [AgentHandoffManifest.Frame] = []
     var images: [CGImage] = []
+    var nextSample = readerOutput.copyNextSampleBuffer()
     for (index, seconds) in times.enumerated() {
       try Task.checkCancellation()
-      // AVAssetImageGenerator can return a cached result for a nearby request,
-      // even with zero tolerance. A fresh generator keeps adjacent samples distinct.
-      let generator = AVAssetImageGenerator(asset: asset)
-      generator.appliesPreferredTrackTransform = true
-      generator.maximumSize = CGSize(width: 2400, height: 2400)
-      generator.requestedTimeToleranceBefore = .zero
-      generator.requestedTimeToleranceAfter = .zero
-      let time = CMTime(seconds: min(seconds, max(0, duration - 0.05)), preferredTimescale: 600)
-      let (image, actualTime) = try await generator.image(at: time)
-      let outputSeconds = CMTimeGetSeconds(actualTime)
+      while let sample = nextSample {
+        let sampleSeconds = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sample))
+        let previousSeconds = frames.last?.timeSeconds ?? -1
+        if sampleSeconds >= seconds, sampleSeconds > previousSeconds {
+          break
+        }
+        nextSample = readerOutput.copyNextSampleBuffer()
+      }
+      guard let sample = nextSample else {
+        throw reader.error ?? CocoaError(.fileReadCorruptFile)
+      }
+      let sampleTime = CMSampleBufferGetPresentationTimeStamp(sample)
+      let outputSeconds = CMTimeGetSeconds(sampleTime)
+      guard let pixelBuffer = CMSampleBufferGetImageBuffer(sample) else {
+        throw CocoaError(.fileReadCorruptFile)
+      }
+      let transformedImage = CIImage(cvPixelBuffer: pixelBuffer).transformed(by: preferredTransform)
+      let transformedExtent = transformedImage.extent.integral
+      let scale = min(1, 2400 / max(transformedExtent.width, transformedExtent.height))
+      let normalizedImage = transformedImage.transformed(
+        by: CGAffineTransform(translationX: -transformedExtent.minX, y: -transformedExtent.minY)
+      ).transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+      let imageExtent = normalizedImage.extent.integral
+      guard
+        let image = imageContext.createCGImage(
+          normalizedImage,
+          from: CGRect(origin: .zero, size: imageExtent.size)
+        )
+      else {
+        throw CocoaError(.fileReadUnknown)
+      }
       let name = String(format: "frame-%03d.jpg", index + 1)
       let url = staging.appendingPathComponent("frames").appendingPathComponent(name)
       try writeJPEG(image, to: url, quality: 0.92)
       images.append(image)
       frames.append(.init(timeSeconds: outputSeconds, path: "frames/\(name)"))
       progress(0.45 + 0.35 * Double(index + 1) / Double(count), "Saving frame \(index + 1) of \(count)…")
+      nextSample = readerOutput.copyNextSampleBuffer()
+    }
+    if reader.status == .failed {
+      throw reader.error ?? CocoaError(.fileReadUnknown)
     }
     let contactURL = staging.appendingPathComponent("contact-sheet.jpg")
     try writeContactSheet(images, frames: frames, to: contactURL)
