@@ -100,6 +100,16 @@ final class ConfigService {
     set { data.appearance = newValue; save(); applyAppearance() }
   }
 
+  var localMCPEnabled: Bool {
+    get { data.localMCPEnabled }
+    set { data.localMCPEnabled = newValue; save() }
+  }
+
+  var localMCPPort: Int {
+    get { data.localMCPPort }
+    set { data.localMCPPort = newValue; save() }
+  }
+
   func updateEditorDefaults(with snapshot: EditorStateData) {
     var next = snapshot
     let existing = data.editorDefaults
@@ -212,6 +222,8 @@ private struct ConfigData: Codable {
   var hdrCapture: Bool = false
   var isMicrophoneOn: Bool = false
   var appearance: String = "system"
+  var localMCPEnabled: Bool = true
+  var localMCPPort: Int = 48_484
   var shortcuts: [String: KeyboardShortcut] = [:]
   var editorDefaults: EditorStateData? = nil
 }

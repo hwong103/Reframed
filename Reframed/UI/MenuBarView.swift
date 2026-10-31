@@ -7,6 +7,7 @@ struct MenuBarView: View {
   let screenshotCoordinator: ScreenshotCoordinator
   let onDismiss: () -> Void
   let onShowPermissions: () -> Void
+  let onShowLibrary: () -> Void
 
   @State var recentProjects: [RecentProject] = []
   @State var recentCaptures: [RecentCaptureData] = []
@@ -85,10 +86,9 @@ struct MenuBarView: View {
         HStack(spacing: 0) {
           Button {
             onDismiss()
-            let path = (ConfigService.shared.projectFolder as NSString).expandingTildeInPath
-            NSWorkspace.shared.open(URL(fileURLWithPath: path))
+            onShowLibrary()
           } label: {
-            Text("Open Projects")
+            Text("Library")
               .font(.system(size: FontSize.xxs, weight: .medium))
               .foregroundStyle(ReframedColors.primaryText)
               .frame(maxWidth: .infinity)

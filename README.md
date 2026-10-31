@@ -42,6 +42,19 @@ Or grab the `.dmg` from [Releases](https://github.com/jkuri/reframed/releases).
 - **120 Hz cursor tracking** records position and click data independently from video frame rate
 - **`.frm` project bundles** preserve all source recordings and editor state for re-editing
 
+### Capture Library
+
+- **One local index** for screenshots and recording projects, searchable by name and file path
+- **Screenshots remain available** until they are explicitly removed
+- **Recording thumbnails, project metadata, rename, reveal, open, and delete actions** live in one window
+- **Local MCP access** through a tokenized loopback endpoint for compatible agents
+
+Open the Library from the Reframed menu bar. The **Copy setup** button in the Library
+sidebar copies a client configuration for the local MCP server. MCP can list captures,
+read a project document, validate and save `name` or `editorState` merge patches, open a
+project in the editor, and render an export. The server binds to the loopback interface,
+uses a per-install token, and can be disabled from the same sidebar.
+
 ### Video editor
 
 - **Timeline trimming** with independent trim ranges for video, system audio, and microphone

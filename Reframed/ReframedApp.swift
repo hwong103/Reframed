@@ -17,7 +17,8 @@ struct ReframedApp: App {
         session: appDelegate.session,
         screenshotCoordinator: appDelegate.screenshotCoordinator,
         onDismiss: { isMenuPresented = false },
-        onShowPermissions: { appDelegate.showPermissionsWindow() }
+        onShowPermissions: { appDelegate.showPermissionsWindow() },
+        onShowLibrary: { appDelegate.showCaptureLibrary() }
       )
       .presentationBackground(ReframedColors.backgroundPopover)
     } label: {
