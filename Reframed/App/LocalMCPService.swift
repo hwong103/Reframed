@@ -8,6 +8,7 @@ final class LocalMCPService {
 
   private let queue = DispatchQueue(label: "eu.jankuri.reframed.local-mcp", qos: .userInitiated)
   private var listener: NWListener?
+  private weak var session: SessionState?
   private var connections: [ObjectIdentifier: NWConnection] = [:]
   private var requestBuffers: [ObjectIdentifier: Data] = [:]
 
@@ -34,7 +35,8 @@ final class LocalMCPService {
     return String(decoding: data, as: UTF8.self)
   }
 
-  func startIfEnabled() {
+  func startIfEnabled(session: SessionState) {
+    self.session = session
     guard ConfigService.shared.localMCPEnabled else { return }
     start()
   }
@@ -50,6 +52,7 @@ final class LocalMCPService {
 
   func start() {
     guard listener == nil else { return }
+    _ = token
     guard let port = NWEndpoint.Port(rawValue: UInt16(clamping: ConfigService.shared.localMCPPort))
     else { return }
 
@@ -326,7 +329,7 @@ final class LocalMCPService {
       return try await exportProject(project, arguments: arguments)
     case "open_project":
       let project = try resolveProject(arguments)
-      session.openProject(at: project.bundleURL)
+      try requireSession().openProject(at: project.bundleURL)
       return try jsonString([
         "project": project.name,
         "path": project.bundleURL.path,
@@ -337,12 +340,15 @@ final class LocalMCPService {
     }
   }
 
-  private var session: SessionState {
-    (NSApplication.shared.delegate as! AppDelegate).session
+  private func requireSession() throws -> SessionState {
+    guard let session else {
+      throw MCPError("Reframed is not ready")
+    }
+    return session
   }
 
-  private func captureListPayload() -> [[String: Any]] {
-    let store = CaptureLibraryStore(session: session)
+  private func captureListPayload() throws -> [[String: Any]] {
+    let store = CaptureLibraryStore(session: try requireSession())
     store.refresh()
     return store.items.map { item in
       var payload: [String: Any] = [
@@ -360,7 +366,7 @@ final class LocalMCPService {
   }
 
   private func resolveProject(_ arguments: [String: Any]) throws -> ReframedProject {
-    let store = CaptureLibraryStore(session: session)
+    let store = CaptureLibraryStore(session: try requireSession())
     store.refresh()
     let candidates = store.items.compactMap { item -> (String, URL)? in
       guard item.kind == .recording else { return nil }
