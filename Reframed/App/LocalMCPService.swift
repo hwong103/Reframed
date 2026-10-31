@@ -7,7 +7,6 @@ final class LocalMCPService {
   static let shared = LocalMCPService()
 
   private let queue = DispatchQueue(label: "eu.jankuri.reframed.local-mcp", qos: .userInitiated)
-  private let tokenDefaultsKey = "ReframedLocalMCPToken"
   private var listener: NWListener?
   private var connections: [ObjectIdentifier: NWConnection] = [:]
   private var requestBuffers: [ObjectIdentifier: Data] = [:]
@@ -54,13 +53,12 @@ final class LocalMCPService {
     guard let port = NWEndpoint.Port(rawValue: UInt16(clamping: ConfigService.shared.localMCPPort))
     else { return }
 
-    let parameters = NWParameters.tcp
-    parameters.allowLocalEndpointReuse = true
-    parameters.requiredInterfaceType = .loopback
-    parameters.includePeerToPeer = false
-
     do {
-      let listener = try NWListener(using: parameters, on: port)
+      let parameters = NWParameters.tcp
+      parameters.allowLocalEndpointReuse = true
+      parameters.includePeerToPeer = false
+      parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: port)
+      let listener = try NWListener(using: parameters)
       listener.newConnectionHandler = { [weak self] connection in
         Task { @MainActor in
           self?.accept(connection)
@@ -90,13 +88,13 @@ final class LocalMCPService {
   }
 
   private var token: String {
-    if let existing = UserDefaults.standard.string(forKey: tokenDefaultsKey), !existing.isEmpty {
-      return existing
+    if !ConfigService.shared.localMCPToken.isEmpty {
+      return ConfigService.shared.localMCPToken
     }
     let created =
       UUID().uuidString.replacingOccurrences(of: "-", with: "")
       + UUID().uuidString.replacingOccurrences(of: "-", with: "")
-    UserDefaults.standard.set(created, forKey: tokenDefaultsKey)
+    ConfigService.shared.localMCPToken = created
     return created
   }
 
