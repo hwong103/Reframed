@@ -368,7 +368,7 @@ private struct CaptureLibraryView: View {
       agentSection
       refreshButton
     }
-    .frame(width: 190)
+    .frame(width: 210)
     .background(ReframedColors.backgroundPopover)
   }
 
@@ -643,10 +643,16 @@ private struct LibraryThumbnail: View {
     case .screenshot:
       return NSImage(contentsOf: item.fileURL)
     case .recording:
-      let asset = AVURLAsset(url: item.fileURL.appendingPathComponent("screen.mov"))
-      if !FileManager.default.fileExists(atPath: asset.url.path) {
+      let movURL = item.fileURL.appendingPathComponent("screen.mov")
+      let mp4URL = item.fileURL.appendingPathComponent("screen.mp4")
+      let videoURL =
+        FileManager.default.fileExists(atPath: movURL.path)
+        ? movURL
+        : mp4URL
+      if !FileManager.default.fileExists(atPath: videoURL.path) {
         return nil
       }
+      let asset = AVURLAsset(url: videoURL)
       let generator = AVAssetImageGenerator(asset: asset)
       generator.appliesPreferredTrackTransform = true
       generator.maximumSize = CGSize(width: 420, height: 260)
