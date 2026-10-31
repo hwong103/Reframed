@@ -14,7 +14,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     _ = SparkleUpdater.shared
     ConfigService.shared.applyAppearance()
     OCRService.warmUp()
-    LocalMCPService.shared.startIfEnabled(session: session)
+    LocalMCPService.shared.startIfEnabled(
+      session: session,
+      openLibrary: { [weak self] in self?.showCaptureLibrary() }
+    )
 
     let manager = KeyboardShortcutManager(session: session, screenshotCoordinator: screenshotCoordinator)
     manager.start()

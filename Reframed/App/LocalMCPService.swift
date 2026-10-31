@@ -9,6 +9,7 @@ final class LocalMCPService {
   private let queue = DispatchQueue(label: "eu.jankuri.reframed.local-mcp", qos: .userInitiated)
   private var listener: NWListener?
   private weak var session: SessionState?
+  private var openLibrary: (() -> Void)?
   private var connections: [ObjectIdentifier: NWConnection] = [:]
   private var requestBuffers: [ObjectIdentifier: Data] = [:]
 
@@ -35,8 +36,9 @@ final class LocalMCPService {
     return String(decoding: data, as: UTF8.self)
   }
 
-  func startIfEnabled(session: SessionState) {
+  func startIfEnabled(session: SessionState, openLibrary: @escaping () -> Void) {
     self.session = session
+    self.openLibrary = openLibrary
     guard ConfigService.shared.localMCPEnabled else { return }
     start()
   }
@@ -317,6 +319,9 @@ final class LocalMCPService {
     switch name {
     case "list_captures":
       return try jsonString(captureListPayload())
+    case "open_library":
+      openLibrary?()
+      return try jsonString(["opened": true])
     case "get_project":
       let project = try resolveProject(arguments)
       return try jsonString(projectPayload(project))
@@ -543,6 +548,11 @@ final class LocalMCPService {
       tool(
         name: "list_captures",
         description: "Lists local Reframed screenshots and recording projects, newest first.",
+        properties: [:]
+      ),
+      tool(
+        name: "open_library",
+        description: "Opens Reframed's local Capture Library window.",
         properties: [:]
       ),
       tool(
