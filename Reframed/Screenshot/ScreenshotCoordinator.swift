@@ -9,7 +9,7 @@ final class ScreenshotCoordinator {
   let selectionCoordinator = SelectionCoordinator()
   weak var appState: SessionState?
   var exclusions: [SCRunningApplication] = []
-  private let frameService = StillCaptureService()
+  let frameService = StillCaptureService()
   var previousApplication: NSRunningApplication?
   var isCapturing = false
   var isTextSnip = false
