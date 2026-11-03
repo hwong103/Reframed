@@ -134,6 +134,39 @@ struct StillCaptureService {
     )
   }
 
+  func cropFrozenWindow(_ target: HoverTarget, from image: CGImage) throws -> ScreenshotResult {
+    let displayID = NSScreen.displayID(for: CGPoint(x: target.bounds.midX, y: target.bounds.midY))
+    guard let screen = NSScreen.screen(for: displayID) else {
+      throw ScreenshotCaptureError.displayNotFound(displayID)
+    }
+    let scale = screen.backingScaleFactor
+    let displayBounds = CGDisplayBounds(displayID)
+    let local = target.bounds.offsetBy(dx: -displayBounds.minX, dy: -displayBounds.minY)
+    let left = round(local.minX * scale)
+    let right = round(local.maxX * scale)
+    let top = round(local.minY * scale)
+    let bottom = round(local.maxY * scale)
+    let pixelRect = CGRect(
+      x: left,
+      y: top,
+      width: max(right - left, 0),
+      height: max(bottom - top, 0)
+    ).intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+    guard
+      pixelRect.width >= 1,
+      pixelRect.height >= 1,
+      let cropped = image.cropping(to: pixelRect)
+    else {
+      throw ScreenshotCaptureError.emptySelection
+    }
+    return ScreenshotResult(
+      image: cropped,
+      displayID: displayID,
+      pointSize: CGSize(width: pixelRect.width / scale, height: pixelRect.height / scale),
+      backingScale: scale
+    )
+  }
+
   private func resolveScreen(_ displayID: CGDirectDisplayID) throws -> NSScreen {
     guard let screen = NSScreen.screen(for: displayID) else {
       throw ScreenshotCaptureError.displayNotFound(displayID)
