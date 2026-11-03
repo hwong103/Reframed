@@ -9,11 +9,12 @@ final class ScreenshotCoordinator {
   let selectionCoordinator = SelectionCoordinator()
   weak var appState: SessionState?
   var exclusions: [SCRunningApplication] = []
-  private let frameService = StillCaptureService()
+  let frameService = StillCaptureService()
   var previousApplication: NSRunningApplication?
   var isCapturing = false
   var isTextSnip = false
   var frozenDisplays: [CGDirectDisplayID: CGImage] = [:]
+  var frozenHoverTargets: [HoverTarget] = []
   var windowSelectionCoordinator: WindowSelectionCoordinator?
   var lastWindowSelection: WindowSetSelection?
   var annotationSavedURL: URL?
@@ -21,6 +22,7 @@ final class ScreenshotCoordinator {
   var scrollingSession: ScrollingCaptureSession?
   var scrollingGeneration = 0
   var scrollingRequest = 0
+  var windowCaptureRequest = 0
 
   init(appState: SessionState?, captureSession: ScreenshotSession = ScreenshotSession()) {
     self.appState = appState
@@ -63,6 +65,7 @@ final class ScreenshotCoordinator {
 
   func cancel() {
     scrollingRequest += 1
+    windowCaptureRequest += 1
     if let token = textProgressToken {
       textProgressToken = nil
       ScreenshotFeedbackWindow.dismiss(token)
@@ -78,6 +81,7 @@ final class ScreenshotCoordinator {
     isCapturing = false
     isTextSnip = false
     frozenDisplays.removeAll()
+    frozenHoverTargets.removeAll()
     annotationSavedURL = nil
     ScreenshotActionBarWindow.dismiss()
     restoreFocus(previousApplication)
@@ -87,6 +91,10 @@ final class ScreenshotCoordinator {
   func handleEscape() -> Bool {
     if let session = scrollingSession, session.isEscapable {
       session.cancel()
+      return true
+    }
+    if selectionCoordinator.hasActiveSelection {
+      cancel()
       return true
     }
     guard ScreenshotActionBarWindow.isVisible else { return false }
@@ -128,6 +136,8 @@ final class ScreenshotCoordinator {
       previousApplication = nil
       return
     }
+    let targets = HoverTargetSnapshot.current()
+    frozenHoverTargets = targets
     let request = SelectionRequest(
       timerDelay: 0,
       confirmTitle: "Capture",
@@ -135,7 +145,7 @@ final class ScreenshotCoordinator {
       backgroundImages: frozenDisplays,
       initialFullScreen: true,
       hoverTargetsEnabled: true,
-      hoverTargets: HoverTargetSnapshot.current(),
+      hoverTargets: targets,
       annotation: isTextSnip ? nil : makeAnnotationHandlers(),
       onCountdownStart: {},
       onConfirm: { selection in self.confirmSelection(selection) },
@@ -149,6 +159,7 @@ final class ScreenshotCoordinator {
     defer {
       isCapturing = false
       frozenDisplays.removeAll()
+      frozenHoverTargets.removeAll()
     }
     do {
       let result = try await capturedRegion(selection)

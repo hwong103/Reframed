@@ -5,6 +5,7 @@ struct HoverTarget: Equatable {
   let bounds: CGRect
   let title: String?
   let windowID: CGWindowID
+  let layer: Int
 }
 
 enum HoverTargetSnapshot {
@@ -26,10 +27,12 @@ enum HoverTargetSnapshot {
 
       let windowNumber = windowDict[kCGWindowNumber as String] as? Int ?? 0
       let rawTitle = windowDict[kCGWindowName as String] as? String
+      let layer = windowDict[kCGWindowLayer as String] as? Int ?? 0
       return HoverTarget(
         bounds: bounds,
         title: (rawTitle?.isEmpty == false) ? rawTitle : nil,
-        windowID: CGWindowID(windowNumber)
+        windowID: CGWindowID(windowNumber),
+        layer: layer
       )
     }
   }
@@ -57,10 +60,12 @@ extension WindowController {
 
       let windowNumber = windowDict[kCGWindowNumber as String] as? Int ?? 0
       let rawTitle = windowDict[kCGWindowName as String] as? String
+      let layer = windowDict[kCGWindowLayer as String] as? Int ?? 0
       return HoverTarget(
         bounds: bounds,
         title: (rawTitle?.isEmpty == false) ? rawTitle : nil,
-        windowID: CGWindowID(windowNumber)
+        windowID: CGWindowID(windowNumber),
+        layer: layer
       )
     }
 
