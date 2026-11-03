@@ -74,6 +74,10 @@ final class SelectionCoordinator {
   private var overlayWindows: [SelectionOverlayWindow] = []
   private var borderWindow: RecordingBorderWindow?
 
+  var hasActiveSelection: Bool {
+    !overlayWindows.isEmpty
+  }
+
   func beginSelection(request: SelectionRequest) {
     let pointer = NSEvent.mouseLocation
     let pointerQuartz = CGPoint(x: pointer.x, y: NSScreen.primaryScreenHeight - pointer.y)

@@ -43,7 +43,16 @@ extension ScreenshotCoordinator {
   }
 
   func confirmWindowSet(_ windowIDs: [CGWindowID], includeShadow: Bool) {
-    Task { await finishWindowSetCapture(windowIDs, includeShadow: includeShadow) }
+    windowCaptureRequest += 1
+    let request = windowCaptureRequest
+    Task {
+      await finishWindowSetCapture(
+        windowIDs,
+        includeShadow: includeShadow,
+        frozenTargets: frozenHoverTargets,
+        request: request
+      )
+    }
   }
 
   func repeatWindowSet(_ selection: WindowSetSelection) async {
@@ -65,10 +74,15 @@ extension ScreenshotCoordinator {
     previousApplication = nil
   }
 
-  func captureWindowImages(_ windowIDs: [CGWindowID], includeShadow: Bool) async -> WindowSetCapture {
+  func captureWindowImages(
+    _ windowIDs: [CGWindowID],
+    includeShadow: Bool,
+    frozenTargets: [HoverTarget] = []
+  ) async -> WindowSetCapture {
     var results: [ScreenshotResult] = []
     var capturedIDs: [CGWindowID] = []
     var skipped = 0
+    var firstFailure: String?
     for windowID in windowIDs {
       do {
         let window = try await captureSession.resolveWindow(id: windowID)
@@ -81,11 +95,26 @@ extension ScreenshotCoordinator {
         )
         capturedIDs.append(windowID)
       } catch {
-        skipped += 1
+        if let target = frozenTargets.first(where: { $0.windowID == windowID && $0.layer != 0 }),
+          let frozen = frozenDisplays[
+            NSScreen.displayID(for: CGPoint(x: target.bounds.midX, y: target.bounds.midY))
+          ],
+          let fallback = try? frameService.cropFrozenWindow(target, from: frozen)
+        {
+          results.append(fallback)
+        } else {
+          firstFailure = firstFailure ?? error.localizedDescription
+          skipped += 1
+        }
       }
     }
     guard let first = results.first else {
-      return WindowSetCapture(result: nil, capturedIDs: [], skipped: skipped)
+      return WindowSetCapture(
+        result: nil,
+        capturedIDs: [],
+        skipped: skipped,
+        failure: firstFailure
+      )
     }
     let scale = first.backingScale > 0 ? first.backingScale : 1
     guard let image = WindowCaptureComposer.compose(results.map(\.image), scale: scale) else {
@@ -104,17 +133,32 @@ extension ScreenshotCoordinator {
     return WindowSetCapture(result: composed, capturedIDs: capturedIDs, skipped: skipped)
   }
 
-  private func finishWindowSetCapture(_ windowIDs: [CGWindowID], includeShadow: Bool) async {
-    let captured = await captureWindowImages(windowIDs, includeShadow: includeShadow)
+  private func finishWindowSetCapture(
+    _ windowIDs: [CGWindowID],
+    includeShadow: Bool,
+    frozenTargets: [HoverTarget],
+    request: Int
+  ) async {
+    let captured = await captureWindowImages(
+      windowIDs,
+      includeShadow: includeShadow,
+      frozenTargets: frozenTargets
+    )
+    guard request == windowCaptureRequest else { return }
+    frozenHoverTargets.removeAll()
     guard let result = captured.result else {
       isCapturing = false
       frozenDisplays.removeAll()
+      selectionCoordinator.destroyAll()
       present(captured.failure ?? "Those windows are no longer available to capture.")
       restoreFocus(previousApplication)
       previousApplication = nil
       return
     }
-    lastWindowSelection = WindowSetSelection(windowIDs: captured.capturedIDs, includeShadow: includeShadow)
+    lastWindowSelection =
+      captured.capturedIDs.isEmpty
+      ? nil
+      : WindowSetSelection(windowIDs: captured.capturedIDs, includeShadow: includeShadow)
     if let notice = captured.notice {
       ScreenshotFeedbackWindow.show(notice, detail: "Captured the rest", near: NSEvent.mouseLocation)
     }
