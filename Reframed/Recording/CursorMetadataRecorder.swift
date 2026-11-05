@@ -20,6 +20,9 @@ final class CursorMetadataRecorder: @unchecked Sendable {
   private var keystrokes: [KeystrokeEvent] = []
   private var cachedCursorType: Int = 0
   private var cursorTypeTimer: DispatchSourceTimer?
+  private var agentCursorX: Double?
+  private var agentCursorY: Double?
+  private var agentCursorMovementGraceUntil: TimeInterval = 0
 
   private var startHostTime: CMTime = .invalid
   private var isPaused = false
@@ -100,6 +103,7 @@ final class CursorMetadataRecorder: @unchecked Sendable {
 
   func recordClick(at screenPoint: CGPoint, button: Int) {
     lock.lock()
+    clearAgentCursorLocked()
     guard isConfigured, !isPaused, startHostTime.isValid else {
       lock.unlock()
       return
@@ -112,6 +116,40 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     }
     clicks.append(CursorClickEvent(t: t, x: nx, y: ny, button: button))
     lock.unlock()
+  }
+
+  func clearAgentCursorForPhysicalMovement() {
+    lock.lock()
+    if ProcessInfo.processInfo.systemUptime >= agentCursorMovementGraceUntil {
+      clearAgentCursorLocked()
+    }
+    lock.unlock()
+  }
+
+  func recordAgentClick(
+    x: Double,
+    y: Double,
+    button: Int
+  ) -> Double? {
+    lock.lock()
+    guard
+      isConfigured,
+      !isPaused,
+      startHostTime.isValid,
+      (0...1).contains(x),
+      (0...1).contains(y)
+    else {
+      lock.unlock()
+      return nil
+    }
+    let t = adjustedTime()
+    clicks.append(CursorClickEvent(t: t, x: x, y: y, button: button))
+    samples.append(CursorSample(t: t, x: x, y: y, p: false, c: nil))
+    agentCursorX = x
+    agentCursorY = y
+    agentCursorMovementGraceUntil = ProcessInfo.processInfo.systemUptime + 0.25
+    lock.unlock()
+    return t
   }
 
   func recordKeystroke(keyCode: UInt16, modifiers: UInt, isDown: Bool) {
@@ -181,6 +219,9 @@ final class CursorMetadataRecorder: @unchecked Sendable {
   }
 
   private func sampleCursor() {
+    let mouseLocation = NSEvent.mouseLocation
+    let physicalPressed = NSEvent.pressedMouseButtons != 0
+
     lock.lock()
     guard isConfigured, !isPaused, startHostTime.isValid else {
       lock.unlock()
@@ -194,20 +235,28 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     let captH = captureHeight
     let dispH = quartzFlipHeight
     let cursorType = cachedCursorType
-    lock.unlock()
+    let virtualCursor: (x: Double, y: Double)?
+    if let agentCursorX, let agentCursorY {
+      virtualCursor = (agentCursorX, agentCursorY)
+    } else {
+      virtualCursor = nil
+    }
 
-    let mouseLocation = NSEvent.mouseLocation
-    let pressed = NSEvent.pressedMouseButtons != 0
-    let mouseX = Double(mouseLocation.x)
-    let mouseY = Double(mouseLocation.y)
-
-    let sckY = dispH - mouseY
-    let nx = (mouseX - captOriginX) / captW
-    let ny = (sckY - captOriginY) / captH
+    let pressed = virtualCursor == nil && physicalPressed
+    let nx: Double
+    let ny: Double
+    if let virtualCursor {
+      nx = virtualCursor.x
+      ny = virtualCursor.y
+    } else {
+      let mouseX = Double(mouseLocation.x)
+      let mouseY = Double(mouseLocation.y)
+      let sckY = dispH - mouseY
+      nx = (mouseX - captOriginX) / captW
+      ny = (sckY - captOriginY) / captH
+    }
 
     let sample = CursorSample(t: t, x: nx, y: ny, p: pressed, c: cursorType == 0 ? nil : cursorType)
-
-    lock.lock()
     samples.append(sample)
     lock.unlock()
   }
@@ -318,6 +367,11 @@ final class CursorMetadataRecorder: @unchecked Sendable {
     let now = CMTimeGetSeconds(CMClockGetTime(CMClockGetHostTimeClock()))
     let start = CMTimeGetSeconds(startHostTime)
     return now - start - totalPauseOffset
+  }
+
+  private func clearAgentCursorLocked() {
+    agentCursorX = nil
+    agentCursorY = nil
   }
 
   private func normalizePoint(screenX: Double, screenY: Double) -> (Double, Double) {

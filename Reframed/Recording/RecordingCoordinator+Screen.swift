@@ -21,6 +21,13 @@ extension RecordingCoordinator {
   ) async throws -> Date {
     var verifiedCam: (capture: WebcamCapture, info: VerifiedCamera)?
     var verifiedMic: MicrophoneCapture?
+    var startupSucceeded = false
+    defer {
+      if !startupSucceeded {
+        verifiedCam?.capture.stop()
+        verifiedMic?.stop()
+      }
+    }
 
     if let existing = existingWebcam {
       verifiedCam = (existing.0, existing.1)
@@ -201,13 +208,15 @@ extension RecordingCoordinator {
       self.systemAudioWriter = sysWriter
 
       let sysCapture = SystemAudioCapture(audioWriter: sysWriter)
-      try await sysCapture.start(display: display)
       self.systemAudioCapture = sysCapture
+      try await sysCapture.start(display: display)
     }
 
     let videoRef = vidWriter
     systemAudioWriter?.setVideoPTSProvider { videoRef.lastWrittenPTS }
     micAudioWriter?.setVideoPTSProvider { videoRef.lastWrittenPTS }
+
+    try await vidWriter.waitForFirstFrame()
 
     let startedAt = Date()
     logger.info(
@@ -218,6 +227,7 @@ extension RecordingCoordinator {
         "camera": "\(cameraDeviceId ?? "none")",
       ]
     )
+    startupSucceeded = true
     return startedAt
   }
 }

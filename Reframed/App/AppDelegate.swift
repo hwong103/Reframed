@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   let session = SessionState()
   lazy var screenshotCoordinator = ScreenshotCoordinator(appState: session)
   private var permissionsWindow: NSWindow?
+  private var captureLibraryWindow: CaptureLibraryWindowController?
   private var shortcutManager: KeyboardShortcutManager?
   private var eventMonitor: Any?
 
@@ -13,6 +14,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     _ = SparkleUpdater.shared
     ConfigService.shared.applyAppearance()
     OCRService.warmUp()
+    LocalMCPService.shared.startIfEnabled(
+      session: session,
+      openLibrary: { [weak self] in self?.showCaptureLibrary() }
+    )
 
     let manager = KeyboardShortcutManager(session: session, screenshotCoordinator: screenshotCoordinator)
     manager.start()
@@ -90,6 +95,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     DispatchQueue.main.async {
       window.level = .normal
     }
+  }
+
+  func showCaptureLibrary() {
+    if captureLibraryWindow == nil {
+      captureLibraryWindow = CaptureLibraryWindowController(session: session)
+    }
+    captureLibraryWindow?.show()
   }
 
   func windowWillClose(_ notification: Notification) {

@@ -86,7 +86,7 @@ extension FrameRenderer {
       let snapshot = instruction.cursorSnapshot
     {
       let cursorPos = snapshot.sample(at: metadataTime)
-      zoomRect = ZoomTimeline.followCursor(zr, cursorPosition: cursorPos)
+      zoomRect = ZoomTimeline.followCursorIfInBounds(zr, cursorPosition: cursorPos)
     }
     return zoomRect
   }

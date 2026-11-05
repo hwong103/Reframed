@@ -245,7 +245,7 @@ final class EditorState {
     }
   }
 
-  func setup() async {
+  func setup(enableAutoSave: Bool = true) async {
     await playerController.loadDuration()
     await playerController.computeDriftRatios()
     trimEnd = playerController.duration
@@ -367,6 +367,8 @@ final class EditorState {
       history.pushSnapshot(createSnapshot())
     }
 
-    startAutoSave()
+    if enableAutoSave {
+      startAutoSave()
+    }
   }
 }

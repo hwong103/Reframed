@@ -101,6 +101,25 @@ final class ZoomTimeline: @unchecked Sendable {
     return CGRect(x: originX, y: originY, width: rect.width, height: rect.height)
   }
 
+  static func followCursorIfInBounds(_ rect: CGRect?, cursorPosition: CGPoint) -> CGRect? {
+    guard let rect else { return nil }
+    guard cursorPosition.x >= 0, cursorPosition.x <= 1,
+      cursorPosition.y >= 0, cursorPosition.y <= 1
+    else {
+      return rect
+    }
+    if rect.width < 1, rect.height < 1 {
+      let centerX = rect.origin.x / (1 - rect.width)
+      let centerY = rect.origin.y / (1 - rect.height)
+      if abs(cursorPosition.x - centerX) < 0.001,
+        abs(cursorPosition.y - centerY) < 0.001
+      {
+        return rect
+      }
+    }
+    return followCursor(rect, cursorPosition: cursorPosition)
+  }
+
   private static func softClamp(_ value: CGFloat, margin: CGFloat) -> CGFloat {
     if value < margin {
       let t = max(0, value / margin)

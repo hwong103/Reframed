@@ -42,6 +42,66 @@ Or grab the `.dmg` from [Releases](https://github.com/jkuri/reframed/releases).
 - **120 Hz cursor tracking** records position and click data independently from video frame rate
 - **`.frm` project bundles** preserve all source recordings and editor state for re-editing
 
+### Capture Library
+
+- **One local index** for screenshots and recording projects, searchable by name and file path
+- **Screenshots remain available** until they are explicitly removed
+- **Recording thumbnails, project metadata, rename, reveal, open, and delete actions** live in one window
+- **Local MCP access** through a tokenized loopback endpoint for compatible agents
+
+Open the Library from the Reframed menu bar. The **Copy setup** button in the Library
+sidebar copies a client configuration for the local MCP server. MCP can list captures,
+read a project document, validate and save `name` or `editorState` merge patches, open a
+project in the editor, and render an export. The server binds to the loopback interface,
+uses a per-install token, and can be disabled from the same sidebar.
+
+### Agent-controlled demos
+
+Reframed's local MCP server can record an agent-driven product demo end to end.
+Enable **Local MCP** in the Capture Library, choose **Copy setup**, and register
+the `mcpServers.reframed.url` value from that configuration with the client:
+
+```bash
+# Claude Code
+claude mcp add --transport http reframed "<LOCAL_MCP_URL_FROM_REFRAMED>"
+
+# Codex
+codex mcp add reframed --url "<LOCAL_MCP_URL_FROM_REFRAMED>"
+```
+
+The copied URL contains the per-install token, so treat it as a secret. The
+server only listens on `127.0.0.1`. Grant Screen Recording and Accessibility
+permission before recording.
+
+An agent can then:
+
+1. Call `list_recording_targets` and choose a `screen` or `window` target.
+2. Call `start_recording` with that target's `type` and `id`. Reframed returns
+   only after the first video frame is written.
+3. Drive the product with its normal computer-use tools.
+4. After each agent-driven click, call `record_agent_click` with normalized
+   `x` and `y` coordinates for the whole captured screen or window (`0...1`,
+   measured left to right and top to bottom). A window recording includes the
+   full application window, including browser or application chrome. If an
+   automation tool reports coordinates relative to a web viewport or app
+   content area, convert them to whole-window coordinates first by adding the
+   toolbar and window offsets, then divide by the captured window dimensions.
+   Reframed does not automatically translate viewport coordinates or crop a
+   recording to app-only content. This preserves cursor movement and makes the
+   click available to auto-zoom when the agent's control surface does not emit
+   native mouse events. Report each action immediately; do not batch calls.
+5. Call `stop_recording` to get the saved `projectId`.
+6. Call `export_project` with that `projectId` and optional `format`, `fps`,
+   `autoZoom`, or `outputPath` arguments. Set `autoZoom: true` to generate
+   click-based zoom for that export without changing the project's saved
+   editor settings.
+
+Reports are timestamped when they arrive, so each click and its virtual cursor
+share one timestamp. Calls never remove or rewrite real pointer samples, so
+physical and agent input can be mixed safely. The virtual agent pointer remains
+active until physical mouse movement, a physical click, or the end of the
+recording.
+
 ### Video editor
 
 - **Timeline trimming** with independent trim ranges for video, system audio, and microphone

@@ -458,16 +458,18 @@ extension EditorState {
     }
   }
 
-  func teardown() {
+  func teardown(persistChanges: Bool = true) {
     pendingSaveTask?.cancel()
     pendingUndoTask?.cancel()
     micProcessingTask?.cancel()
     micProcessingTask = nil
     transcriptionTask?.cancel()
     transcriptionTask = nil
-    saveState()
-    if let project {
-      try? project.saveHistory(history.toData())
+    if persistChanges {
+      saveState()
+      if let project {
+        try? project.saveHistory(history.toData())
+      }
     }
     playerController.teardown()
     if let url = processedMicAudioURL {

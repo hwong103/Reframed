@@ -100,6 +100,21 @@ final class ConfigService {
     set { data.appearance = newValue; save(); applyAppearance() }
   }
 
+  var localMCPEnabled: Bool {
+    get { data.localMCPEnabled }
+    set { data.localMCPEnabled = newValue; save() }
+  }
+
+  var localMCPPort: Int {
+    get { data.localMCPPort }
+    set { data.localMCPPort = newValue; save() }
+  }
+
+  var localMCPToken: String {
+    get { data.localMCPToken }
+    set { data.localMCPToken = newValue; save() }
+  }
+
   func updateEditorDefaults(with snapshot: EditorStateData) {
     var next = snapshot
     let existing = data.editorDefaults
@@ -171,7 +186,11 @@ final class ConfigService {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     guard let raw = try? encoder.encode(data) else { return }
-    try? raw.write(to: fileURL, options: .atomic)
+    guard (try? raw.write(to: fileURL, options: .atomic)) != nil else { return }
+    try? FileManager.default.setAttributes(
+      [.posixPermissions: 0o600],
+      ofItemAtPath: fileURL.path
+    )
   }
 
   func shortcut(for action: ShortcutAction) -> KeyboardShortcut {
@@ -212,6 +231,9 @@ private struct ConfigData: Codable {
   var hdrCapture: Bool = false
   var isMicrophoneOn: Bool = false
   var appearance: String = "system"
+  var localMCPEnabled: Bool = true
+  var localMCPPort: Int = 48_484
+  var localMCPToken: String = ""
   var shortcuts: [String: KeyboardShortcut] = [:]
   var editorDefaults: EditorStateData? = nil
 }
