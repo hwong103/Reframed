@@ -13,6 +13,7 @@ final class VideoTrackWriter: @unchecked Sendable {
   let queue = DispatchQueue(label: "eu.jankuri.reframed.video-track-writer.queue", qos: .userInteractive)
   var writtenFrames = 0
   var droppedFrames = 0
+  private(set) var hasWrittenFirstFrame = false
   private(set) var firstSamplePTS: CMTime = .invalid
   nonisolated(unsafe) private(set) var lastWrittenPTS: CMTime = .invalid
   private var isPaused = false
@@ -143,12 +144,33 @@ final class VideoTrackWriter: @unchecked Sendable {
       sampleBufferOut: &adjustedBuffer
     )
     if status == noErr, let adjusted = adjustedBuffer {
-      videoInput.append(adjusted)
+      guard videoInput.append(adjusted) else {
+        droppedFrames += 1
+        return
+      }
       writtenFrames += 1
+      hasWrittenFirstFrame = true
       lastWrittenPTS = adjustedPTS
     } else {
       droppedFrames += 1
     }
+  }
+
+  func waitForFirstFrame(timeoutSeconds: TimeInterval = 5) async throws {
+    let deadline = ContinuousClock.now.advanced(by: .seconds(timeoutSeconds))
+    while ContinuousClock.now < deadline {
+      let hasWrittenFrame = await withCheckedContinuation { continuation in
+        queue.async {
+          continuation.resume(returning: self.hasWrittenFirstFrame)
+        }
+      }
+      if hasWrittenFrame {
+        return
+      }
+      try await Task.sleep(for: .milliseconds(50))
+    }
+
+    throw CaptureError.recordingFailed("Screen capture did not produce a video frame in time")
   }
 
   func finish() async -> URL? {

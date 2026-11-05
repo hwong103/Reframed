@@ -320,6 +320,8 @@
 		FE1324E865074398BCC4317D /* WindowSelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A435021272D7425AB77F93DF /* WindowSelectionOverlay.swift */; };
 		FF04FF4666451E0283DB5FEC /* CaptureToolbar+ModeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815C681612F3844727C988EF /* CaptureToolbar+ModeSelection.swift */; };
 		CF0000000000000000000001 /* LocalMCPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000002 /* LocalMCPService.swift */; };
+		CF0000000000000000000005 /* LocalMCPHTTPParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000006 /* LocalMCPHTTPParser.swift */; };
+		CF0000000000000000000007 /* LocalMCPListenerGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000008 /* LocalMCPListenerGeneration.swift */; };
 		CF0000000000000000000003 /* CaptureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000004 /* CaptureLibrary.swift */; };
 /* End PBXBuildFile section */
 
@@ -636,6 +638,8 @@
 		FB10000000000000000000D4 /* AreaSizePresetsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AreaSizePresetsPopover.swift; sourceTree = "<group>"; };
 		FB20000000000000000000B1 /* PropertiesPanel+EffectsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PropertiesPanel+EffectsTab.swift"; sourceTree = "<group>"; };
 		CF0000000000000000000002 /* LocalMCPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMCPService.swift; sourceTree = "<group>"; };
+		CF0000000000000000000006 /* LocalMCPHTTPParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMCPHTTPParser.swift; sourceTree = "<group>"; };
+		CF0000000000000000000008 /* LocalMCPListenerGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMCPListenerGeneration.swift; sourceTree = "<group>"; };
 		CF0000000000000000000004 /* CaptureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureLibrary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -697,6 +701,8 @@
 			children = (
 				B10000000000000000000002 /* AppDelegate.swift */,
 				CF0000000000000000000002 /* LocalMCPService.swift */,
+				CF0000000000000000000006 /* LocalMCPHTTPParser.swift */,
+				CF0000000000000000000008 /* LocalMCPListenerGeneration.swift */,
 				B10000000000000000000003 /* Permissions.swift */,
 				EC41BA6DF5654C57AC930549 /* WindowController.swift */,
 				AB5C0000000000000000004A /* WindowController+HoverTarget.swift */,
@@ -1217,6 +1223,8 @@
 				A10000000000000000000001 /* ReframedApp.swift in Sources */,
 				A10000000000000000000002 /* AppDelegate.swift in Sources */,
 				CF0000000000000000000001 /* LocalMCPService.swift in Sources */,
+				CF0000000000000000000005 /* LocalMCPHTTPParser.swift in Sources */,
+				CF0000000000000000000007 /* LocalMCPListenerGeneration.swift in Sources */,
 				A10000000000000000000003 /* Permissions.swift in Sources */,
 				A10000000000000000000004 /* LogBootstrap.swift in Sources */,
 				A10000000000000000000005 /* RotatingFileLogHandler.swift in Sources */,

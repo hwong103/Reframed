@@ -13,8 +13,14 @@ final class MouseClickMonitor {
   func start() {
     guard monitor == nil else { return }
     let cursorRecorder = metadataRecorder
-    monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { event in
+    monitor = NSEvent.addGlobalMonitorForEvents(
+      matching: [.leftMouseDown, .rightMouseDown, .mouseMoved]
+    ) { event in
       MainActor.assumeIsolated {
+        if event.type == .mouseMoved {
+          cursorRecorder?.clearAgentCursorForPhysicalMovement()
+          return
+        }
         let screenPoint = NSEvent.mouseLocation
         let button = event.type == .rightMouseDown ? 1 : 0
         cursorRecorder?.recordClick(at: screenPoint, button: button)

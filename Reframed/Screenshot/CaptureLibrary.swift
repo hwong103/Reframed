@@ -318,6 +318,7 @@ final class CaptureLibraryWindowController: NSObject, NSWindowDelegate {
 
 private struct CaptureLibraryView: View {
   @Bindable var store: CaptureLibraryStore
+  @ObservedObject private var mcpService = LocalMCPService.shared
   @State private var selectionID: String?
   @State private var mcpEnabled = ConfigService.shared.localMCPEnabled
   @State private var copiedEndpoint = false
@@ -430,9 +431,9 @@ private struct CaptureLibraryView: View {
           }
       }
 
-      Text(mcpEnabled ? "MCP is running on this Mac." : "MCP is off.")
+      Text(mcpStatusText)
         .font(.system(size: FontSize.xxs))
-        .foregroundStyle(ReframedColors.secondaryText)
+        .foregroundStyle(mcpStatusColor)
 
       Button {
         NSPasteboard.general.clearContents()
@@ -452,11 +453,34 @@ private struct CaptureLibraryView: View {
         .frame(height: 28)
       }
       .buttonStyle(OutlineButtonStyle())
-      .disabled(!mcpEnabled)
+      .disabled(!mcpEnabled || mcpService.listenerStatus != .listening)
     }
     .padding(12)
     .overlay(alignment: .top) {
       Rectangle().fill(ReframedColors.divider).frame(height: 1)
+    }
+  }
+
+  private var mcpStatusText: String {
+    guard mcpEnabled else { return "MCP is off." }
+    switch mcpService.listenerStatus {
+    case .disabled:
+      return "MCP is enabled, but the listener is stopped."
+    case .starting:
+      return "Starting local MCP listener..."
+    case .listening:
+      return "MCP is listening on 127.0.0.1:\(ConfigService.shared.localMCPPort)."
+    case .waiting(let message), .failed(let message):
+      return "MCP is enabled but unavailable: \(message)"
+    }
+  }
+
+  private var mcpStatusColor: Color {
+    switch mcpService.listenerStatus {
+    case .waiting, .failed:
+      return .red
+    case .disabled, .starting, .listening:
+      return ReframedColors.secondaryText
     }
   }
 

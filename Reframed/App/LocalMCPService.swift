@@ -1,17 +1,29 @@
 import AppKit
+import Combine
 import Foundation
 import Network
+import ScreenCaptureKit
+
+enum LocalMCPListenerStatus: Equatable {
+  case disabled
+  case starting
+  case listening
+  case waiting(String)
+  case failed(String)
+}
 
 @MainActor
-final class LocalMCPService {
+final class LocalMCPService: ObservableObject {
   static let shared = LocalMCPService()
 
   private let queue = DispatchQueue(label: "eu.jankuri.reframed.local-mcp", qos: .userInitiated)
   private var listener: NWListener?
+  private var listenerGeneration = LocalMCPListenerGeneration()
   private weak var session: SessionState?
   private var openLibrary: (() -> Void)?
   private var connections: [ObjectIdentifier: NWConnection] = [:]
   private var requestBuffers: [ObjectIdentifier: Data] = [:]
+  @Published private(set) var listenerStatus: LocalMCPListenerStatus = .disabled
 
   var endpointURL: String {
     "http://127.0.0.1:\(ConfigService.shared.localMCPPort)/mcp?token=\(token)"
@@ -39,7 +51,10 @@ final class LocalMCPService {
   func startIfEnabled(session: SessionState, openLibrary: @escaping () -> Void) {
     self.session = session
     self.openLibrary = openLibrary
-    guard ConfigService.shared.localMCPEnabled else { return }
+    guard ConfigService.shared.localMCPEnabled else {
+      listenerStatus = .disabled
+      return
+    }
     start()
   }
 
@@ -55,9 +70,16 @@ final class LocalMCPService {
   func start() {
     guard listener == nil else { return }
     _ = token
-    guard let port = NWEndpoint.Port(rawValue: UInt16(clamping: ConfigService.shared.localMCPPort))
-    else { return }
+    let configuredPort = ConfigService.shared.localMCPPort
+    guard (1...Int(UInt16.max)).contains(configuredPort),
+      let port = NWEndpoint.Port(rawValue: UInt16(configuredPort))
+    else {
+      listenerStatus = .failed("Invalid local MCP port \(configuredPort)")
+      return
+    }
 
+    let generation = listenerGeneration.begin()
+    listenerStatus = .starting
     do {
       let parameters = NWParameters.tcp
       parameters.allowLocalEndpointReuse = true
@@ -66,23 +88,24 @@ final class LocalMCPService {
       let listener = try NWListener(using: parameters)
       listener.newConnectionHandler = { [weak self] connection in
         Task { @MainActor in
-          self?.accept(connection)
+          self?.accept(connection, generation: generation)
         }
       }
-      listener.stateUpdateHandler = { state in
-        guard case .failed = state else { return }
+      listener.stateUpdateHandler = { [weak self] state in
         Task { @MainActor in
-          LocalMCPService.shared.stop()
+          self?.updateListenerState(state, generation: generation)
         }
       }
-      listener.start(queue: queue)
       self.listener = listener
+      listener.start(queue: queue)
     } catch {
       self.listener = nil
+      listenerStatus = .failed("Could not start local MCP listener: \(error.localizedDescription)")
     }
   }
 
   func stop() {
+    listenerGeneration.invalidate()
     listener?.cancel()
     listener = nil
     for connection in connections.values {
@@ -90,6 +113,40 @@ final class LocalMCPService {
     }
     connections.removeAll()
     requestBuffers.removeAll()
+    listenerStatus = .disabled
+  }
+
+  private func updateListenerState(
+    _ state: NWListener.State,
+    generation: UInt64
+  ) {
+    guard listenerGeneration.accepts(generation) else { return }
+    switch state {
+    case .ready:
+      listenerStatus = .listening
+    case .waiting(let error):
+      listenerStatus = .waiting(
+        "Could not bind 127.0.0.1:\(ConfigService.shared.localMCPPort): \(error.localizedDescription)"
+      )
+    case .failed(let error):
+      listenerGeneration.invalidate()
+      listener?.cancel()
+      listener = nil
+      for connection in connections.values {
+        connection.cancel()
+      }
+      connections.removeAll()
+      requestBuffers.removeAll()
+      listenerStatus = .failed(
+        "Could not bind 127.0.0.1:\(ConfigService.shared.localMCPPort): \(error.localizedDescription)"
+      )
+    case .cancelled:
+      break
+    case .setup:
+      listenerStatus = .starting
+    @unknown default:
+      listenerStatus = .starting
+    }
   }
 
   private var token: String {
@@ -103,7 +160,11 @@ final class LocalMCPService {
     return created
   }
 
-  private func accept(_ connection: NWConnection) {
+  private func accept(_ connection: NWConnection, generation: UInt64) {
+    guard listenerGeneration.accepts(generation) else {
+      connection.cancel()
+      return
+    }
     let connectionID = ObjectIdentifier(connection)
     connections[connectionID] = connection
     requestBuffers[connectionID] = Data()
@@ -138,7 +199,9 @@ final class LocalMCPService {
     }
     if let data {
       requestBuffers[connectionID, default: Data()].append(data)
-      if requestBuffers[connectionID, default: Data()].count > 8 * 1024 * 1024 {
+      if requestBuffers[connectionID, default: Data()].count
+        > LocalMCPHTTPParser.maxBufferedRequestBytes
+      {
         respond(
           HTTPResponse.jsonError(status: 413, message: "Request body is too large"),
           on: connection
@@ -152,12 +215,23 @@ final class LocalMCPService {
       return
     }
 
-    if let request = parseBufferedRequest(connectionID: connectionID) {
+    guard let buffer = requestBuffers[connectionID] else { return }
+    switch LocalMCPHTTPParser.parse(buffer) {
+    case .failure(let parseError):
       requestBuffers.removeValue(forKey: connectionID)
-      Task { @MainActor in
-        await handle(request, on: connection)
-      }
+      respond(
+        HTTPResponse.jsonError(status: parseError.status, message: parseError.message),
+        on: connection
+      )
       return
+    case .success(let request):
+      if let request {
+        requestBuffers.removeValue(forKey: connectionID)
+        Task { @MainActor in
+          await handle(request, on: connection)
+        }
+        return
+      }
     }
 
     if isComplete {
@@ -170,40 +244,7 @@ final class LocalMCPService {
     }
   }
 
-  private func parseBufferedRequest(connectionID: ObjectIdentifier) -> HTTPRequest? {
-    guard let buffer = requestBuffers[connectionID] else { return nil }
-    let delimiter = Data("\r\n\r\n".utf8)
-    guard let headerRange = buffer.range(of: delimiter) else { return nil }
-
-    let headerData = buffer[..<headerRange.lowerBound]
-    guard let headerText = String(data: headerData, encoding: .utf8) else { return nil }
-    let lines = headerText.components(separatedBy: "\r\n")
-    guard let requestLine = lines.first else { return nil }
-    let requestParts = requestLine.split(separator: " ")
-    guard requestParts.count >= 2 else { return nil }
-
-    var headers: [String: String] = [:]
-    for line in lines.dropFirst() {
-      guard let separator = line.firstIndex(of: ":") else { continue }
-      let key = line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
-      let value = line[line.index(after: separator)...].trimmingCharacters(in: .whitespaces)
-      headers[key] = value
-    }
-
-    let contentLength = Int(headers["content-length"] ?? "0") ?? 0
-    let bodyStart = headerRange.upperBound
-    guard buffer.count >= bodyStart + contentLength else { return nil }
-    let body = buffer.subdata(in: bodyStart..<(bodyStart + contentLength))
-
-    return HTTPRequest(
-      method: String(requestParts[0]),
-      target: String(requestParts[1]),
-      headers: headers,
-      body: body
-    )
-  }
-
-  private func handle(_ request: HTTPRequest, on connection: NWConnection) async {
+  private func handle(_ request: LocalMCPHTTPRequest, on connection: NWConnection) async {
     guard request.method == "OPTIONS" || authorized(request) else {
       respond(.jsonError(status: 401, message: "Missing or invalid MCP token"), on: connection)
       return
@@ -234,7 +275,7 @@ final class LocalMCPService {
     }
   }
 
-  private func authorized(_ request: HTTPRequest) -> Bool {
+  private func authorized(_ request: LocalMCPHTTPRequest) -> Bool {
     if request.headers["authorization"] == "Bearer \(token)" {
       return true
     }
@@ -317,6 +358,14 @@ final class LocalMCPService {
 
   private func callTool(_ name: String, arguments: [String: Any]) async throws -> String {
     switch name {
+    case "list_recording_targets":
+      return try await listRecordingTargets()
+    case "start_recording":
+      return try await startRecording(arguments: arguments)
+    case "stop_recording":
+      return try await stopRecording()
+    case "record_agent_click":
+      return try recordAgentClick(arguments: arguments)
     case "list_captures":
       return try jsonString(captureListPayload())
     case "open_library":
@@ -466,8 +515,16 @@ final class LocalMCPService {
     }
 
     let state = EditorState(project: project)
-    await state.setup()
-    defer { state.teardown() }
+    await state.setup(enableAutoSave: false)
+    defer { state.teardown(persistChanges: false) }
+    if arguments["autoZoom"] as? Bool == true {
+      guard let clicks = state.cursorMetadataProvider?.metadata.clicks, !clicks.isEmpty else {
+        throw MCPError("autoZoom requires cursor click metadata")
+      }
+      state.zoomEnabled = true
+      state.autoZoomEnabled = true
+      state.generateAutoZoom()
+    }
     let exported = try await state.export(settings: settings)
     let finalURL: URL
     if let outputPath = arguments["outputPath"] as? String, !outputPath.isEmpty {
@@ -495,6 +552,198 @@ final class LocalMCPService {
     ])
   }
 
+  private func listRecordingTargets() async throws -> String {
+    guard Permissions.hasScreenRecordingPermission else {
+      throw MCPError(CaptureError.permissionDenied.localizedDescription)
+    }
+
+    let content = try await Permissions.fetchShareableContent()
+    let displaysByID = Dictionary(
+      uniqueKeysWithValues: content.displays.map { ($0.displayID, $0) }
+    )
+    let screens = NSScreen.screens.compactMap { screen -> [String: Any]? in
+      let displayID = screen.displayID
+      guard let display = displaysByID[displayID] else { return nil }
+      return screenTargetPayload(screen: screen, display: display)
+    }
+    let windows = content.windows
+      .filter { isRecordableWindow($0) }
+      .map { windowTargetPayload($0) }
+      .sorted {
+        (($0["applicationName"] as? String) ?? "")
+          .localizedCaseInsensitiveCompare(
+            ($1["applicationName"] as? String) ?? ""
+          ) == .orderedAscending
+      }
+
+    return try jsonString([
+      "coordinateSpace": recordingCoordinateSpace,
+      "targets": screens + windows,
+    ])
+  }
+
+  private func startRecording(arguments: [String: Any]) async throws -> String {
+    guard let targetType = arguments["targetType"] as? String else {
+      throw MCPError("targetType must be screen or window")
+    }
+    guard let targetID = arguments["targetId"] as? Int else {
+      throw MCPError("targetId must be an integer from list_recording_targets")
+    }
+
+    let content = try await Permissions.fetchShareableContent()
+    let selection: (target: CaptureTarget, mode: CaptureMode, payload: [String: Any])
+
+    switch targetType {
+    case "screen":
+      guard let rawDisplayID = UInt32(exactly: targetID),
+        let screen = NSScreen.screen(for: rawDisplayID),
+        let display = content.displays.first(where: { $0.displayID == rawDisplayID })
+      else {
+        throw MCPError("Screen target is no longer available. Call list_recording_targets again.")
+      }
+      selection = (
+        .region(SelectionRect(rect: screen.frame, displayID: rawDisplayID)),
+        .entireScreen,
+        screenTargetPayload(screen: screen, display: display)
+      )
+    case "window":
+      guard let window = content.windows.first(where: { Int($0.windowID) == targetID }),
+        isRecordableWindow(window)
+      else {
+        throw MCPError("Window target is no longer available. Call list_recording_targets again.")
+      }
+      selection = (.window(window), .selectedWindow, windowTargetPayload(window))
+    default:
+      throw MCPError("targetType must be screen or window")
+    }
+
+    let session = try requireSession()
+    guard !session.isStartingRecording else {
+      throw MCPError("Recording is already starting")
+    }
+    switch session.state {
+    case .idle, .selecting, .countdown:
+      break
+    default:
+      throw MCPError("Reframed is already recording or processing")
+    }
+
+    session.captureTarget = selection.target
+    session.captureMode = selection.mode
+    do {
+      try await session.startRecording()
+    } catch {
+      if case .idle = session.state {
+        session.captureTarget = nil
+        session.captureMode = .none
+      }
+      throw error
+    }
+
+    return try jsonString([
+      "coordinateSpace": recordingCoordinateSpace,
+      "recording": true,
+      "target": selection.payload,
+    ])
+  }
+
+  private func stopRecording() async throws -> String {
+    let session = try requireSession()
+    guard let project = try await session.stopRecording() else {
+      throw MCPError("Recording stopped without creating an exportable project")
+    }
+    return try jsonString([
+      "stopped": true,
+      "projectId": CaptureLibraryStore.projectID(for: project.bundleURL),
+      "name": project.name,
+      "path": project.bundleURL.path,
+    ])
+  }
+
+  private func recordAgentClick(arguments: [String: Any]) throws -> String {
+    let x = try requiredNumber("x", from: arguments)
+    let y = try requiredNumber("y", from: arguments)
+    let button = arguments["button"] as? Int ?? 0
+    guard (0...1).contains(x), (0...1).contains(y) else {
+      throw MCPError(
+        "x and y must be normalized coordinates within the whole captured screen or window from 0 to 1"
+      )
+    }
+    guard button == 0 || button == 1 else {
+      throw MCPError("button must be 0 for left click or 1 for right click")
+    }
+
+    let session = try requireSession()
+    guard case .recording = session.state else {
+      throw MCPError("Agent clicks can only be recorded while recording")
+    }
+    guard
+      let recorder = session.cursorMetadataRecorder,
+      let timestamp = recorder.recordAgentClick(x: x, y: y, button: button)
+    else {
+      throw MCPError("Cursor metadata recording is not ready")
+    }
+
+    return try jsonString([
+      "recorded": true,
+      "time": timestamp,
+      "x": x,
+      "y": y,
+      "button": button,
+    ])
+  }
+
+  private func screenTargetPayload(
+    screen: NSScreen,
+    display: SCDisplay
+  ) -> [String: Any] {
+    [
+      "type": "screen",
+      "id": Int(display.displayID),
+      "name": screen.localizedName,
+      "width": display.width,
+      "height": display.height,
+      "isMain": (NSScreen.main?.displayID ?? 0) == screen.displayID,
+    ]
+  }
+
+  private func windowTargetPayload(_ window: SCWindow) -> [String: Any] {
+    let applicationName = window.owningApplication?.applicationName ?? "Unknown application"
+    let trimmedTitle = window.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+    var payload: [String: Any] = [
+      "type": "window",
+      "id": Int(window.windowID),
+      "name": trimmedTitle.flatMap { $0.isEmpty ? nil : $0 } ?? applicationName,
+      "applicationName": applicationName,
+      "width": Int(window.frame.width),
+      "height": Int(window.frame.height),
+    ]
+    if let bundleIdentifier = window.owningApplication?.bundleIdentifier {
+      payload["bundleIdentifier"] = bundleIdentifier
+    }
+    return payload
+  }
+
+  private var recordingCoordinateSpace: [String: Any] {
+    [
+      "name": "whole_capture",
+      "origin": "top_left",
+      "normalization": "x and y divided by the full captured screen or window dimensions",
+      "viewportConversion": "not automatic",
+    ]
+  }
+
+  private func isRecordableWindow(_ window: SCWindow) -> Bool {
+    guard window.isOnScreen,
+      window.frame.width >= 2,
+      window.frame.height >= 2,
+      let application = window.owningApplication
+    else {
+      return false
+    }
+    return application.bundleIdentifier != Bundle.main.bundleIdentifier
+  }
+
   private func requiredDictionary(
     _ key: String,
     from arguments: [String: Any]
@@ -503,6 +752,16 @@ final class LocalMCPService {
       throw MCPError("\(key) must be an object")
     }
     return value
+  }
+
+  private func requiredNumber(
+    _ key: String,
+    from arguments: [String: Any]
+  ) throws -> Double {
+    guard let value = arguments[key] as? NSNumber else {
+      throw MCPError("\(key) must be a number")
+    }
+    return value.doubleValue
   }
 
   private func jsonString(_ object: Any) throws -> String {
@@ -546,6 +805,57 @@ final class LocalMCPService {
   private var tools: [[String: Any]] {
     [
       tool(
+        name: "list_recording_targets",
+        description:
+          "Lists the on-screen displays and application windows that the agent can record.",
+        properties: [:]
+      ),
+      tool(
+        name: "start_recording",
+        description:
+          "Starts recording a screen or window from list_recording_targets. Returns after a video frame is confirmed.",
+        properties: [
+          "targetType": [
+            "type": "string",
+            "enum": ["screen", "window"],
+          ],
+          "targetId": [
+            "type": "integer",
+            "description": "The id returned by list_recording_targets.",
+          ],
+        ],
+        required: ["targetType", "targetId"]
+      ),
+      tool(
+        name: "stop_recording",
+        description:
+          "Stops the active Reframed recording and returns the new project id for editing or export.",
+        properties: [:]
+      ),
+      tool(
+        name: "record_agent_click",
+        description:
+          "Reports an agent-driven click using coordinates for the whole captured screen or window, including browser or application chrome. x and y are normalized from 0 to 1, top-left to bottom-right. Viewport-relative coordinates must be converted to whole-window coordinates first; Reframed does not perform this conversion. This records the click and virtual cursor for auto-zoom.",
+        properties: [
+          "x": [
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+          ],
+          "y": [
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+          ],
+          "button": [
+            "type": "integer",
+            "enum": [0, 1],
+            "description": "0 for left click, 1 for right click.",
+          ],
+        ],
+        required: ["x", "y"]
+      ),
+      tool(
         name: "list_captures",
         description: "Lists local Reframed screenshots and recording projects, newest first.",
         properties: [:]
@@ -584,6 +894,11 @@ final class LocalMCPService {
           "projectId": ["type": "string"],
           "format": ["type": "string", "enum": ["mp4", "mov", "gif"]],
           "fps": ["type": "integer", "enum": [24, 30, 40, 50, 60]],
+          "autoZoom": [
+            "type": "boolean",
+            "description":
+              "Generates click-based auto-zoom keyframes for this export without changing the project's saved editor settings.",
+          ],
           "outputPath": [
             "type": "string",
             "description": "Optional absolute output file path. Existing files are rejected.",
@@ -650,17 +965,6 @@ private struct MCPError: LocalizedError {
   }
 
   var errorDescription: String? { message }
-}
-
-private struct HTTPRequest {
-  let method: String
-  let target: String
-  let headers: [String: String]
-  let body: Data
-
-  var path: String {
-    URLComponents(string: "http://127.0.0.1\(target)")?.path ?? target
-  }
 }
 
 private struct HTTPResponse {

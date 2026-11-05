@@ -32,6 +32,10 @@ extension SessionState {
   }
 
   func startRecording() async throws {
+    guard !isStartingRecording else {
+      throw CaptureError.recordingFailed("Recording is already starting")
+    }
+
     switch state {
     case .selecting, .idle, .countdown:
       break
@@ -39,67 +43,104 @@ extension SessionState {
       throw CaptureError.invalidTransition(from: "\(state)", to: "recording")
     }
 
-    if captureMode == .device, let capture = deviceCapture {
-      try await startDeviceRecordingInternal(capture: capture)
-      return
+    isStartingRecording = true
+    recordingStartupError = nil
+    defer { isStartingRecording = false }
+
+    do {
+      if captureMode == .device, let capture = deviceCapture {
+        try await startDeviceRecordingInternal(capture: capture)
+        return
+      }
+
+      guard let target = captureTarget else {
+        throw CaptureError.noSelectionStored
+      }
+
+      let coordinator = RecordingCoordinator()
+      await coordinator.setStreamErrorHandler { [weak self] error in
+        guard let self else { return }
+        let message = error.localizedDescription
+        Task { @MainActor in await self.handleStreamError(message) }
+      }
+      await coordinator.setDeviceLostHandler { [weak self] device in
+        guard let self else { return }
+        Task { @MainActor in self.handleDeviceLost(device) }
+      }
+      self.recordingCoordinator = coordinator
+      overlayView = nil
+
+      let useCam = isCameraOn && options.selectedCamera != nil
+      let useMic = isMicrophoneOn && options.selectedMicrophone != nil
+
+      let metadataRecorder = CursorMetadataRecorder()
+      self.cursorMetadataRecorder = metadataRecorder
+
+      SoundEffect.startRecording.play()
+
+      let startedAt = try await coordinator.startRecording(
+        target: target,
+        fps: options.fps,
+        captureSystemAudio: options.captureSystemAudio,
+        microphoneDeviceId: useMic ? options.selectedMicrophone?.id : nil,
+        cameraDeviceId: useCam ? options.selectedCamera?.id : nil,
+        cameraResolution: ConfigService.shared.cameraMaximumResolution,
+        existingWebcam: attachExistingWebcam(),
+        cursorMetadataRecorder: metadataRecorder,
+        captureQuality: options.captureQuality,
+        retinaCapture: options.retinaCapture,
+        hdrCapture: options.hdrCapture
+      )
+
+      metadataRecorder.start()
+
+      let box = await coordinator.getWebcamCaptureSessionBox()
+      showCameraPreviewIfNeeded(from: box)
+
+      let monitor = MouseClickMonitor(metadataRecorder: metadataRecorder)
+      monitor.start()
+      mouseClickMonitor = monitor
+
+      await startRecordingPreview(coordinator: coordinator)
+      try checkRecordingStartupError()
+      transition(to: .recording(startedAt: startedAt))
+    } catch {
+      await cleanupAfterFailedRecordingStartup()
+      throw error
     }
+  }
 
-    guard let target = captureTarget else {
-      throw CaptureError.noSelectionStored
-    }
+  private func cleanupAfterFailedRecordingStartup() async {
+    mouseClickMonitor?.stop()
+    mouseClickMonitor = nil
+    cursorMetadataRecorder = nil
+    cleanupCoordinators()
+    recordingPreviewWindow?.close()
+    recordingPreviewWindow = nil
 
-    let coordinator = RecordingCoordinator()
-    await coordinator.setStreamErrorHandler { [weak self] _ in
-      guard let self else { return }
-      Task { @MainActor in await self.handleStreamError() }
-    }
-    await coordinator.setDeviceLostHandler { [weak self] device in
-      guard let self else { return }
-      Task { @MainActor in self.handleDeviceLost(device) }
-    }
-    self.recordingCoordinator = coordinator
-    overlayView = nil
+    _ = try? await recordingCoordinator?.stopRecordingRaw(keepWebcamAlive: false)
+    recordingCoordinator = nil
+    FileManager.default.cleanupTempDir()
 
-    let useCam = isCameraOn && options.selectedCamera != nil
-    let useMic = isMicrophoneOn && options.selectedMicrophone != nil
-
-    let metadataRecorder = CursorMetadataRecorder()
-    self.cursorMetadataRecorder = metadataRecorder
-
-    SoundEffect.startRecording.play()
-
-    let startedAt = try await coordinator.startRecording(
-      target: target,
-      fps: options.fps,
-      captureSystemAudio: options.captureSystemAudio,
-      microphoneDeviceId: useMic ? options.selectedMicrophone?.id : nil,
-      cameraDeviceId: useCam ? options.selectedCamera?.id : nil,
-      cameraResolution: ConfigService.shared.cameraMaximumResolution,
-      existingWebcam: attachExistingWebcam(),
-      cursorMetadataRecorder: metadataRecorder,
-      captureQuality: options.captureQuality,
-      retinaCapture: options.retinaCapture,
-      hdrCapture: options.hdrCapture
-    )
-
-    metadataRecorder.start()
-
-    let box = await coordinator.getWebcamCaptureSessionBox()
-    showCameraPreviewIfNeeded(from: box)
-
-    let monitor = MouseClickMonitor(metadataRecorder: metadataRecorder)
-    monitor.start()
-    mouseClickMonitor = monitor
-
-    await startRecordingPreview(coordinator: coordinator)
-    transition(to: .recording(startedAt: startedAt))
+    captureTarget = nil
+    captureMode = .none
+    devicePreviewWindow?.close()
+    devicePreviewWindow = nil
+    deviceCapture?.stop()
+    deviceCapture = nil
+    deviceName = nil
+    stopCameraPreview()
+    isCameraOn = false
+    recordingStartupError = nil
+    transition(to: .idle)
   }
 
   private func startDeviceRecordingInternal(capture: DeviceCapture) async throws {
     let coordinator = RecordingCoordinator()
-    await coordinator.setStreamErrorHandler { [weak self] _ in
+    await coordinator.setStreamErrorHandler { [weak self] error in
       guard let self else { return }
-      Task { @MainActor in await self.handleStreamError() }
+      let message = error.localizedDescription
+      Task { @MainActor in await self.handleStreamError(message) }
     }
     await coordinator.setDeviceLostHandler { [weak self] device in
       guard let self else { return }
@@ -129,10 +170,15 @@ extension SessionState {
     showCameraPreviewIfNeeded(from: box)
 
     await startRecordingPreview(coordinator: coordinator)
+    try checkRecordingStartupError()
     transition(to: .recording(startedAt: startedAt))
   }
 
-  func stopRecording() async throws {
+  func stopRecording() async throws -> ReframedProject? {
+    guard !isStartingRecording else {
+      throw CaptureError.recordingFailed("Recording is still starting")
+    }
+
     switch state {
     case .recording, .paused:
       break
@@ -160,7 +206,7 @@ extension SessionState {
       SoundEffect.stopRecording.play()
       transition(to: .idle)
       showToolbar()
-      return
+      return nil
     }
 
     SoundEffect.stopRecording.play()
@@ -184,9 +230,11 @@ extension SessionState {
         in: saveDir
       )
       openEditor(project: project)
+      return project
     } catch {
       logger.error("Failed to create project bundle: \(error)")
       openEditor(project: nil, result: result)
+      return nil
     }
   }
 
@@ -360,7 +408,12 @@ extension SessionState {
     }
   }
 
-  func handleStreamError() async {
+  func handleStreamError(_ message: String? = nil) async {
+    if isStartingRecording {
+      recordingStartupError = message ?? "Screen capture stopped before recording finished starting"
+      return
+    }
+
     switch state {
     case .recording, .paused:
       logger.warning("Stream stopped unexpectedly, stopping recording")
@@ -380,5 +433,10 @@ extension SessionState {
     default:
       break
     }
+  }
+
+  private func checkRecordingStartupError() throws {
+    guard let recordingStartupError else { return }
+    throw CaptureError.recordingFailed(recordingStartupError)
   }
 }

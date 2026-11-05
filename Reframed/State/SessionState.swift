@@ -55,6 +55,8 @@ final class SessionState {
   var windowPositionObserver: WindowPositionObserver?
   var processingPulseTimer: Timer?
   var processingPulseOn = false
+  var isStartingRecording = false  // Reserved before the first await to block duplicate starts.
+  var recordingStartupError: String?
 
   weak var overlayView: SelectionOverlayView?
 
