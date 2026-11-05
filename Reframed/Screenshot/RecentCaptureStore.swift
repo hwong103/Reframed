@@ -27,8 +27,6 @@ extension RecentCapturePersisting {
 
 @MainActor
 final class RecentCaptureStore {
-  static let limit = 20
-  static let defaultByteLimit = 200 * 1024 * 1024
   static let folderName = "RecentCaptures"
 
   static let shared = RecentCaptureStore(
@@ -47,16 +45,13 @@ final class RecentCaptureStore {
 
   private let persistence: RecentCapturePersisting
   private let directory: URL
-  private let byteLimit: Int
 
   init(
     persistence: RecentCapturePersisting,
-    directory: URL,
-    byteLimit: Int? = nil
+    directory: URL
   ) {
     self.persistence = persistence
     self.directory = directory
-    self.byteLimit = byteLimit ?? Self.defaultByteLimit
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     pruneMissingFiles()
     removeOrphans()
@@ -87,12 +82,7 @@ final class RecentCaptureStore {
     guard (try? png.write(to: fileURL(for: item.id), options: .atomic)) != nil else { return }
     var items = persistence.recentCaptures
     items.insert(item, at: 0)
-    var evicted: [RecentCaptureData] = []
-    while items.count > 1, items.count > Self.limit || byteSize(of: items) > byteLimit {
-      evicted.append(items.removeLast())
-    }
     guard persistence.commitCaptureList(items) else { return }
-    removeFiles(for: evicted)
   }
 
   @discardableResult
@@ -120,6 +110,25 @@ final class RecentCaptureStore {
     let cleared = persistence.recentCaptures
     guard persistence.commitCaptureList([]) else { return }
     removeFiles(for: cleared)
+  }
+
+  @discardableResult
+  func remove(_ item: RecentCaptureData) -> Bool {
+    let remaining = persistence.recentCaptures.filter { $0.id != item.id }
+    guard remaining.count != persistence.recentCaptures.count else { return false }
+    guard persistence.commitCaptureList(remaining) else { return false }
+    removeFiles(for: [item])
+    return true
+  }
+
+  @discardableResult
+  func rename(_ item: RecentCaptureData, to filename: String) -> Bool {
+    let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return false }
+    var items = persistence.recentCaptures
+    guard let index = items.firstIndex(where: { $0.id == item.id }) else { return false }
+    items[index].filename = trimmed
+    return persistence.commitCaptureList(items)
   }
 
   private func pruneMissingFiles() {
@@ -152,10 +161,4 @@ final class RecentCaptureStore {
     }
   }
 
-  private func byteSize(of items: [RecentCaptureData]) -> Int {
-    items.reduce(0) { total, item in
-      let values = try? fileURL(for: item.id).resourceValues(forKeys: [.fileSizeKey])
-      return total + (values?.fileSize ?? 0)
-    }
-  }
 }

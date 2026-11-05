@@ -319,6 +319,8 @@
 		FA20000000000000000000B1 /* PropertiesPanel+EffectsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB20000000000000000000B1 /* PropertiesPanel+EffectsTab.swift */; };
 		FE1324E865074398BCC4317D /* WindowSelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A435021272D7425AB77F93DF /* WindowSelectionOverlay.swift */; };
 		FF04FF4666451E0283DB5FEC /* CaptureToolbar+ModeSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815C681612F3844727C988EF /* CaptureToolbar+ModeSelection.swift */; };
+		CF0000000000000000000001 /* LocalMCPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000002 /* LocalMCPService.swift */; };
+		CF0000000000000000000003 /* CaptureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000000000000000000004 /* CaptureLibrary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -633,6 +635,8 @@
 		FB10000000000000000000D3 /* ImageDropSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDropSection.swift; sourceTree = "<group>"; };
 		FB10000000000000000000D4 /* AreaSizePresetsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AreaSizePresetsPopover.swift; sourceTree = "<group>"; };
 		FB20000000000000000000B1 /* PropertiesPanel+EffectsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PropertiesPanel+EffectsTab.swift"; sourceTree = "<group>"; };
+		CF0000000000000000000002 /* LocalMCPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMCPService.swift; sourceTree = "<group>"; };
+		CF0000000000000000000004 /* CaptureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureLibrary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -692,6 +696,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000002 /* AppDelegate.swift */,
+				CF0000000000000000000002 /* LocalMCPService.swift */,
 				B10000000000000000000003 /* Permissions.swift */,
 				EC41BA6DF5654C57AC930549 /* WindowController.swift */,
 				AB5C0000000000000000004A /* WindowController+HoverTarget.swift */,
@@ -894,6 +899,7 @@
 				AB5C00000000000000000080 /* OCRService+Ordering.swift */,
 				AB5C00000000000000000082 /* RecentCaptureStore.swift */,
 				AB5C00000000000000000084 /* RecentCaptureStrip.swift */,
+				CF0000000000000000000004 /* CaptureLibrary.swift */,
 				AB5C00000000000000000064 /* CaptureAnnotationDragSource.swift */,
 				AB5C00000000000000000061 /* ScrollStitcher.swift */,
 				AB5C00000000000000000067 /* ScrollStitcher+Stitch.swift */,
@@ -1210,6 +1216,7 @@
 				0255AD69477B42D2B028628B /* CaptureTarget.swift in Sources */,
 				A10000000000000000000001 /* ReframedApp.swift in Sources */,
 				A10000000000000000000002 /* AppDelegate.swift in Sources */,
+				CF0000000000000000000001 /* LocalMCPService.swift in Sources */,
 				A10000000000000000000003 /* Permissions.swift in Sources */,
 				A10000000000000000000004 /* LogBootstrap.swift in Sources */,
 				A10000000000000000000005 /* RotatingFileLogHandler.swift in Sources */,
@@ -1490,6 +1497,7 @@
 				AB5C0000000000000000007B /* AnnotationRenderer+Beautify.swift in Sources */,
 				AB5C00000000000000000083 /* RecentCaptureStore.swift in Sources */,
 				AB5C00000000000000000085 /* RecentCaptureStrip.swift in Sources */,
+				CF0000000000000000000003 /* CaptureLibrary.swift in Sources */,
 				AC0000000000000000000022 /* AnnotationDocument.swift in Sources */,
 				AC0000000000000000000023 /* AnnotationRenderer.swift in Sources */,
 				AC0000000000000000000024 /* AnnotationRenderer+Shapes.swift in Sources */,
