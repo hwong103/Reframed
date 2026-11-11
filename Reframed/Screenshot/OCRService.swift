@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 import Vision
@@ -29,24 +30,54 @@ struct OCRResult: Sendable, Equatable {
 }
 
 enum OCRService {
-  @MainActor private static var warmUpStarted = false
+  typealias RecognitionAttempt = (CGImage, VNRequestTextRecognitionLevel) throws -> [String]
+
+  @MainActor private static var warmUpTask: Task<Void, Never>?
+
+  @discardableResult
+  @MainActor
+  static func warmUp() -> Task<Void, Never> {
+    if let warmUpTask {
+      return warmUpTask
+    }
+    let task: Task<Void, Never>
+    if let image = sampleImage() {
+      task = Task.detached(priority: .userInitiated) {
+        _ = try? recognize(in: image)
+      }
+    } else {
+      task = Task {}
+    }
+    warmUpTask = task
+    return task
+  }
 
   @MainActor
-  static func warmUp() {
-    guard !warmUpStarted else { return }
-    warmUpStarted = true
-    Task.detached(priority: .userInitiated) {
-      guard let image = sampleImage() else { return }
-      _ = try? recognize(in: image)
-    }
+  static func waitUntilWarm() async {
+    await warmUp().value
   }
 
   static func recognize(in image: CGImage) throws -> OCRResult {
+    try recognize(in: image, using: recognitionLines)
+  }
+
+  static func recognize(in image: CGImage, using attempt: RecognitionAttempt) throws -> OCRResult {
+    do {
+      return OCRResult(lines: try attempt(image, .accurate))
+    } catch {
+      return OCRResult(lines: try attempt(image, .fast))
+    }
+  }
+
+  static func recognitionLines(
+    in image: CGImage,
+    level: VNRequestTextRecognitionLevel
+  ) throws -> [String] {
     let request = VNRecognizeTextRequest()
-    request.recognitionLevel = .accurate
+    request.recognitionLevel = level
     request.usesLanguageCorrection = true
     request.automaticallyDetectsLanguage = true
-    return OCRResult(lines: try lines(of: request, in: image))
+    return try lines(of: request, in: image)
   }
 
   static func recognize(in image: CGImage, region: CGRect) throws -> OCRResult {
@@ -79,22 +110,36 @@ enum OCRService {
     return orderedLines(from: candidates)
   }
 
+  @MainActor
   private static func sampleImage() -> CGImage? {
     guard
-      let context = CGContext(
-        data: nil,
-        width: 64,
-        height: 64,
-        bitsPerComponent: 8,
+      let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: 320,
+        pixelsHigh: 64,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
         bytesPerRow: 0,
-        space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        bitsPerPixel: 0
       )
     else {
       return nil
     }
-    context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
-    context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
-    return context.makeImage()
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+    NSColor.white.setFill()
+    NSRect(x: 0, y: 0, width: 320, height: 64).fill()
+    NSString(string: "Text Snip 123").draw(
+      at: NSPoint(x: 16, y: 16),
+      withAttributes: [
+        .font: NSFont.systemFont(ofSize: 24, weight: .medium),
+        .foregroundColor: NSColor.black,
+      ]
+    )
+    NSGraphicsContext.restoreGraphicsState()
+    return bitmap.cgImage
   }
 }
