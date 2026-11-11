@@ -139,6 +139,7 @@ extension ScreenshotCoordinator {
       captureSession.adoptRendered(image: result.image, selection: selection)
       lastWindowSelection = nil
       let image = result.image
+      await OCRService.waitUntilWarm()
       let ocr = try await Task.detached(priority: .userInitiated) {
         try OCRService.recognize(in: image)
       }.value
